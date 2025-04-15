@@ -1,0 +1,188 @@
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// User model
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  fullName: text("full_name").notNull(),
+  role: text("role").notNull().default("student"), // "admin", "teacher", "student"
+  avatar: text("avatar"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true
+});
+
+// Course model
+export const courses = pgTable("courses", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // "Algebra", "Geometry", "Calculus", etc.
+  thumbnail: text("thumbnail"),
+  createdBy: integer("created_by").notNull(), // Reference to users.id
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertCourseSchema = createInsertSchema(courses).omit({
+  id: true,
+  createdAt: true
+});
+
+// Module model (for course sections)
+export const modules = pgTable("modules", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull(), // Reference to courses.id
+  title: text("title").notNull(),
+  description: text("description"),
+  sortOrder: integer("sort_order").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertModuleSchema = createInsertSchema(modules).omit({
+  id: true,
+  createdAt: true
+});
+
+// Test model
+export const tests = pgTable("tests", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  courseId: integer("course_id"), // Optional reference to courses.id
+  duration: integer("duration").notNull(), // in minutes
+  passingScore: integer("passing_score").notNull(), // percentage
+  createdBy: integer("created_by").notNull(), // Reference to users.id
+  isActive: boolean("is_active").notNull().default(true),
+  scheduledFor: timestamp("scheduled_for"), // Optional scheduled time
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertTestSchema = createInsertSchema(tests).omit({
+  id: true,
+  createdAt: true
+});
+
+// Question model
+export const questions = pgTable("questions", {
+  id: serial("id").primaryKey(),
+  testId: integer("test_id").notNull(), // Reference to tests.id
+  type: text("type").notNull(), // "mcq", "truefalse", "fillblank", "subjective"
+  question: text("question").notNull(),
+  options: jsonb("options"), // For MCQs: [{"id": "a", "text": "Option A"}, ...]
+  correctAnswer: jsonb("correct_answer"), // Depends on type (string or array)
+  points: integer("points").notNull().default(1),
+  explanation: text("explanation"),
+  sortOrder: integer("sort_order").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertQuestionSchema = createInsertSchema(questions).omit({
+  id: true,
+  createdAt: true
+});
+
+// Test Attempt model
+export const testAttempts = pgTable("test_attempts", {
+  id: serial("id").primaryKey(),
+  testId: integer("test_id").notNull(), // Reference to tests.id
+  userId: integer("user_id").notNull(), // Reference to users.id
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  score: integer("score"), // Calculated score
+  status: text("status").notNull().default("in_progress"), // "in_progress", "completed", "abandoned"
+  answers: jsonb("answers").default({}) // {questionId: answer}
+});
+
+export const insertTestAttemptSchema = createInsertSchema(testAttempts).omit({
+  id: true,
+  startedAt: true
+});
+
+// Course Enrollment model
+export const enrollments = pgTable("enrollments", {
+  userId: integer("user_id").notNull(), // Reference to users.id
+  courseId: integer("course_id").notNull(), // Reference to courses.id
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+  progress: integer("progress").notNull().default(0), // Percentage
+  isCompleted: boolean("is_completed").notNull().default(false),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.courseId] })
+  };
+});
+
+export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({
+  enrolledAt: true
+});
+
+// Doubt Session model
+export const doubtSessions = pgTable("doubt_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Reference to users.id (student)
+  teacherId: integer("teacher_id"), // Reference to users.id (teacher)
+  topic: text("topic").notNull(),
+  description: text("description"),
+  scheduledFor: timestamp("scheduled_for").notNull(),
+  status: text("status").notNull().default("pending"), // "pending", "confirmed", "completed", "cancelled"
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertDoubtSessionSchema = createInsertSchema(doubtSessions).omit({
+  id: true,
+  createdAt: true
+});
+
+// Study Time tracking model
+export const studyTimes = pgTable("study_times", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Reference to users.id
+  courseId: integer("course_id"), // Optional reference to courses.id
+  moduleId: integer("module_id"), // Optional reference to modules.id
+  testId: integer("test_id"), // Optional reference to tests.id
+  startedAt: timestamp("started_at").notNull(),
+  endedAt: timestamp("ended_at"),
+  duration: integer("duration"), // in seconds, calculated upon endedAt
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertStudyTimeSchema = createInsertSchema(studyTimes).omit({
+  id: true,
+  createdAt: true
+});
+
+// Types for the models
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Course = typeof courses.$inferSelect;
+export type InsertCourse = z.infer<typeof insertCourseSchema>;
+
+export type Module = typeof modules.$inferSelect;
+export type InsertModule = z.infer<typeof insertModuleSchema>;
+
+export type Test = typeof tests.$inferSelect;
+export type InsertTest = z.infer<typeof insertTestSchema>;
+
+export type Question = typeof questions.$inferSelect;
+export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
+
+export type TestAttempt = typeof testAttempts.$inferSelect;
+export type InsertTestAttempt = z.infer<typeof insertTestAttemptSchema>;
+
+export type Enrollment = typeof enrollments.$inferSelect;
+export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
+
+export type DoubtSession = typeof doubtSessions.$inferSelect;
+export type InsertDoubtSession = z.infer<typeof insertDoubtSessionSchema>;
+
+export type StudyTime = typeof studyTimes.$inferSelect;
+export type InsertStudyTime = z.infer<typeof insertStudyTimeSchema>;
