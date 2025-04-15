@@ -26,7 +26,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import {
   Card,
   CardContent
@@ -34,7 +34,7 @@ import {
 
 export default function ManageStudents() {
   const { toast } = useToast();
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<any>(null);
   

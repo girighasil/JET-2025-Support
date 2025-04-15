@@ -5,7 +5,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { format, isPast, isFuture, addMinutes } from 'date-fns';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -72,7 +72,7 @@ const completedTestsColumns = [
 
 export default function StudentTests() {
   const { toast } = useToast();
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   
   // Fetch all active tests
   const { data: tests = [], isLoading: isTestsLoading } = useQuery({

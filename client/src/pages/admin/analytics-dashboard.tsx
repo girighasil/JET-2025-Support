@@ -42,7 +42,7 @@ import {
   BrainCircuit
 } from 'lucide-react';
 import { format, subMonths } from 'date-fns';
-import { Link, useNavigate } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -67,7 +67,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF', '#FF5252'
 export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState('last30days');
   const [activeTab, setActiveTab] = useState('overview');
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   
   // Fetch analytics data
   const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery({

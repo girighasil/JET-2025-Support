@@ -47,7 +47,7 @@ import {
   Grip,
   Loader2
 } from 'lucide-react';
-import { useNavigate, useParams } from 'wouter';
+import { useLocation, useParams } from 'wouter';
 import {
   DragDropContext,
   Droppable,
@@ -82,7 +82,7 @@ export default function TestCreator() {
   const testId = params?.id ? parseInt(params.id) : undefined;
   const isEditMode = !!testId;
   
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('test-details');
