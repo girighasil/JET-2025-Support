@@ -355,6 +355,12 @@ export default function TestCreator() {
   // Set form values when editing a question
   useEffect(() => {
     if (currentQuestion) {
+      // First update the question type state to ensure UI components render correctly
+      if (currentQuestion.type) {
+        setQuestionType(currentQuestion.type as 'mcq' | 'truefalse' | 'fillblank' | 'subjective');
+      }
+      
+      // Then reset the form with all values
       questionForm.reset({
         testId: currentQuestion.testId,
         type: currentQuestion.type,
@@ -365,8 +371,6 @@ export default function TestCreator() {
         explanation: currentQuestion.explanation || '',
         sortOrder: currentQuestion.sortOrder,
       });
-      
-      setQuestionType(currentQuestion.type);
       
       // Set the appropriate answer state based on question type
       if (currentQuestion.type === 'mcq') {
@@ -387,9 +391,15 @@ export default function TestCreator() {
       }
     } else {
       // Reset form for new question
+      const defaultType = 'mcq' as const;
+      
+      // Reset the question type state first
+      setQuestionType(defaultType);
+      
+      // Then reset the form
       questionForm.reset({
         testId: testId || 0,
-        type: 'mcq',
+        type: defaultType,
         question: '',
         options: mcqOptions,
         correctAnswer: [],
@@ -468,21 +478,27 @@ export default function TestCreator() {
   
   // Reset all answer-related states
   const resetAnswerStates = () => {
-    setQuestionType('mcq' as const);
+    const defaultType = 'mcq' as const;
     const defaultOptions = [
       { id: 'a', text: '' },
       { id: 'b', text: '' },
       { id: 'c', text: '' },
       { id: 'd', text: '' }
     ];
+    
+    // Update local state
+    setQuestionType(defaultType);
     setMcqOptions(defaultOptions);
-    // Make sure to also update the form state with the default options
-    questionForm.setValue('options', defaultOptions);
     setSelectedMcqAnswers([]);
     setTrueFalseAnswer(null);
     setFillBlankAnswer('');
     setSubjectiveKeywords([]);
     setKeywordInput('');
+    
+    // Update form values to stay in sync with local state
+    questionForm.setValue('type', defaultType, { shouldValidate: true });
+    questionForm.setValue('options', defaultOptions, { shouldValidate: true });
+    questionForm.setValue('correctAnswer', [], { shouldValidate: true });
   };
   
   // Handle MCQ option change
@@ -804,11 +820,15 @@ export default function TestCreator() {
                               <FormLabel>Question Type</FormLabel>
                               <FormControl>
                                 <Select
-                                  defaultValue={field.value}
+                                  value={field.value}
                                   onValueChange={(value) => {
                                     const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
-                                    setQuestionType(typedValue);
+                                    
+                                    // Update form value
                                     field.onChange(typedValue);
+                                    
+                                    // Update local state to sync with form
+                                    setQuestionType(typedValue);
                                     
                                     // Reset all relevant answer state when switching types
                                     setSelectedMcqAnswers([]);
@@ -826,7 +846,7 @@ export default function TestCreator() {
                                     );
                                   }}
                                 >
-                                  <SelectTrigger>
+                                  <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Select question type" />
                                   </SelectTrigger>
                                   <SelectContent>
