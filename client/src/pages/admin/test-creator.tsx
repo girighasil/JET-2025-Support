@@ -81,7 +81,7 @@ export default function TestCreator() {
   const [matched, params] = useRoute<{id: string}>('/admin/test-creator/:id');
   const testId = matched && params?.id ? parseInt(params.id) : undefined;
   const isEditMode = !!testId;
-  
+
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -101,26 +101,26 @@ export default function TestCreator() {
   const [subjectiveKeywords, setSubjectiveKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
   const [deleteConfirmQuestion, setDeleteConfirmQuestion] = useState<any>(null);
-  
+
   // Fetch test if editing
   const { data: test, isLoading: isTestLoading } = useQuery({
     queryKey: [`/api/tests/${testId}`],
     queryFn: testId ? undefined : () => Promise.resolve(null),
     enabled: !!testId,
   });
-  
+
   // Fetch questions for this test
   const { data: fetchedQuestions = [], isLoading: isQuestionsLoading } = useQuery({
     queryKey: [`/api/tests/${testId}/questions`],
     queryFn: testId ? undefined : () => Promise.resolve([]),
     enabled: !!testId,
   });
-  
+
   // Fetch courses for dropdown
   const { data: courses = [], isLoading: isCoursesLoading } = useQuery({
     queryKey: ['/api/courses'],
   });
-  
+
   // Test form
   const testForm = useForm<z.infer<typeof testSchema>>({
     resolver: zodResolver(testSchema),
@@ -134,7 +134,7 @@ export default function TestCreator() {
       scheduledFor: null,
     },
   });
-  
+
   // Question form
   const questionForm = useForm<z.infer<typeof questionSchema>>({
     resolver: zodResolver(questionSchema),
@@ -149,7 +149,7 @@ export default function TestCreator() {
       sortOrder: 0,
     },
   });
-  
+
   // Create test mutation
   const createTestMutation = useMutation({
     mutationFn: async (testData: z.infer<typeof testSchema>) => {
@@ -174,7 +174,7 @@ export default function TestCreator() {
       });
     }
   });
-  
+
   // Update test mutation
   const updateTestMutation = useMutation({
     mutationFn: async (testData: z.infer<typeof testSchema>) => {
@@ -197,7 +197,7 @@ export default function TestCreator() {
       });
     }
   });
-  
+
   // Create question mutation
   const createQuestionMutation = useMutation({
     mutationFn: async (questionData: z.infer<typeof questionSchema>) => {
@@ -222,7 +222,7 @@ export default function TestCreator() {
       });
     }
   });
-  
+
   // Update question mutation
   const updateQuestionMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof questionSchema> }) => {
@@ -247,7 +247,7 @@ export default function TestCreator() {
       });
     }
   });
-  
+
   // Delete question mutation
   const deleteQuestionMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -275,7 +275,7 @@ export default function TestCreator() {
       });
     }
   });
-  
+
   // Update question order mutation
   const updateQuestionOrderMutation = useMutation({
     mutationFn: async (updates: { id: number; sortOrder: number }[]) => {
@@ -297,7 +297,7 @@ export default function TestCreator() {
       });
     }
   });
-  
+
   // Set form values when editing a test
   useEffect(() => {
     if (isEditMode && test) {
@@ -312,14 +312,14 @@ export default function TestCreator() {
       });
     }
   }, [isEditMode, test, testForm]);
-  
+
   // Set questions when fetched
   useEffect(() => {
     if (fetchedQuestions && fetchedQuestions.length > 0) {
       setQuestions(fetchedQuestions);
     }
   }, [fetchedQuestions]);
-  
+
   // Set tab to questions if editing and questions exist
   useEffect(() => {
     if (isEditMode && questions.length > 0 && activeTab === 'test-details') {
@@ -329,7 +329,7 @@ export default function TestCreator() {
       }
     }
   }, [activeTab, isEditMode, testId, questions.length, currentQuestion, questionForm, mcqOptions]);
-  
+
   // Set form values when editing a question
   useEffect(() => {
     if (currentQuestion) {
@@ -337,7 +337,7 @@ export default function TestCreator() {
       if (currentQuestion.type) {
         setQuestionType(currentQuestion.type as 'mcq' | 'truefalse' | 'fillblank' | 'subjective');
       }
-      
+
       // Then reset the form with all values
       questionForm.reset({
         testId: currentQuestion.testId,
@@ -349,7 +349,7 @@ export default function TestCreator() {
         explanation: currentQuestion.explanation || '',
         sortOrder: currentQuestion.sortOrder,
       });
-      
+
       // Set the appropriate answer state based on question type
       if (currentQuestion.type === 'mcq') {
         setMcqOptions(currentQuestion.options || mcqOptions);
@@ -370,10 +370,10 @@ export default function TestCreator() {
     } else {
       // Reset form for new question
       const defaultType = 'mcq' as const;
-      
+
       // Reset the question type state first
       setQuestionType(defaultType);
-      
+
       // Then reset the form
       questionForm.reset({
         testId: testId || 0,
@@ -385,12 +385,12 @@ export default function TestCreator() {
         explanation: '',
         sortOrder: questions.length,
       });
-      
+
       // Reset answer states
       resetAnswerStates();
     }
   }, [currentQuestion, questions.length, testId, questionForm, mcqOptions]);
-  
+
   // Handle test form submission
   function onTestSubmit(values: z.infer<typeof testSchema>) {
     if (isEditMode) {
@@ -399,12 +399,12 @@ export default function TestCreator() {
       createTestMutation.mutate(values);
     }
   }
-  
+
   // Handle question form submission
   function onQuestionSubmit(values: z.infer<typeof questionSchema>) {
     // Prepare correctAnswer based on question type
     let correctAnswer;
-    
+
     switch (questionType) {
       case 'mcq':
         correctAnswer = selectedMcqAnswers;
@@ -421,7 +421,7 @@ export default function TestCreator() {
       default:
         correctAnswer = [];
     }
-    
+
     const formattedValues = {
       ...values,
       type: questionType,
@@ -430,14 +430,14 @@ export default function TestCreator() {
       testId: testId || 0,
       sortOrder: currentQuestion?.sortOrder ?? questions.length,
     };
-    
+
     if (currentQuestion) {
       updateQuestionMutation.mutate({ id: currentQuestion.id, data: formattedValues });
     } else {
       createQuestionMutation.mutate(formattedValues);
     }
   }
-  
+
   // Reset question form and states
   const resetQuestionForm = () => {
     setCurrentQuestion(null);
@@ -453,7 +453,7 @@ export default function TestCreator() {
     });
     resetAnswerStates();
   };
-  
+
   // Reset all answer-related states
   const resetAnswerStates = () => {
     const defaultType = 'mcq' as const;
@@ -463,7 +463,7 @@ export default function TestCreator() {
       { id: 'c', text: '' },
       { id: 'd', text: '' }
     ];
-    
+
     // Update local state
     setQuestionType(defaultType);
     setMcqOptions(defaultOptions);
@@ -472,20 +472,20 @@ export default function TestCreator() {
     setFillBlankAnswer('');
     setSubjectiveKeywords([]);
     setKeywordInput('');
-    
+
     // Update form values to stay in sync with local state
     questionForm.setValue('type', defaultType, { shouldValidate: true });
     questionForm.setValue('options', defaultOptions, { shouldValidate: true });
     questionForm.setValue('correctAnswer', [], { shouldValidate: true });
   };
-  
+
   // Handle MCQ option change
   const handleMcqOptionChange = (id: string, text: string) => {
     const updatedOptions = mcqOptions.map(opt => 
       opt.id === id ? { ...opt, text } : opt
     );
     setMcqOptions(updatedOptions);
-    
+
     // Update the form's options value and force a re-render
     questionForm.setValue('options', updatedOptions, {
       shouldValidate: true,
@@ -493,20 +493,20 @@ export default function TestCreator() {
       shouldTouch: true
     });
   };
-  
+
   // Handle MCQ answer selection
   const handleMcqAnswerChange = (id: string) => {
     const updatedAnswers = selectedMcqAnswers.includes(id)
       ? selectedMcqAnswers.filter(a => a !== id)
       : [...selectedMcqAnswers, id];
-    
+
     setSelectedMcqAnswers(updatedAnswers);
-    
+
     // Update the form's correctAnswer value
     questionForm.setValue('correctAnswer', updatedAnswers);
     questionForm.trigger('correctAnswer');
   };
-  
+
   // Add keyword to subjective question
   const addKeyword = () => {
     if (keywordInput.trim() && !subjectiveKeywords.includes(keywordInput.trim())) {
@@ -520,7 +520,7 @@ export default function TestCreator() {
       setKeywordInput('');
     }
   };
-  
+
   // Remove keyword from subjective question
   const removeKeyword = (keyword: string) => {
     const updatedKeywords = subjectiveKeywords.filter(k => k !== keyword);
@@ -528,38 +528,38 @@ export default function TestCreator() {
     questionForm.setValue('correctAnswer', updatedKeywords);
     questionForm.trigger('correctAnswer');
   };
-  
+
   // Handle question deletion
   const handleDeleteQuestion = () => {
     if (deleteConfirmQuestion) {
       deleteQuestionMutation.mutate(deleteConfirmQuestion.id);
     }
   };
-  
+
   // Handle drag and drop reordering
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
-    
+
     const items = Array.from(questions);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-    
+
     // Update local state
     setQuestions(items);
-    
+
     // Prepare updates for API calls
     const updates = items.map((item, index) => ({
       id: item.id,
       sortOrder: index
     }));
-    
+
     // Update in the database
     updateQuestionOrderMutation.mutate(updates);
   };
-  
+
   // Loading state
   const isLoading = isEditMode && (isTestLoading || isQuestionsLoading);
-  
+
   return (
     <Layout title={isEditMode ? 'Edit Test' : 'Create New Test'}>
       <div className="mb-4">
@@ -572,7 +572,7 @@ export default function TestCreator() {
           Back to Tests
         </Button>
       </div>
-      
+
       {isLoading ? (
         <Skeleton className="h-[600px] w-full" />
       ) : (
@@ -589,7 +589,7 @@ export default function TestCreator() {
               Questions {questions.length > 0 && `(${questions.length})`}
             </TabsTrigger>
           </TabsList>
-          
+
           {/* Test Details Tab */}
           <TabsContent value="test-details">
             <Card>
@@ -617,7 +617,7 @@ export default function TestCreator() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={testForm.control}
@@ -652,7 +652,7 @@ export default function TestCreator() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={testForm.control}
                         name="scheduledFor"
@@ -672,7 +672,7 @@ export default function TestCreator() {
                         )}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={testForm.control}
@@ -693,7 +693,7 @@ export default function TestCreator() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={testForm.control}
                         name="passingScore"
@@ -715,7 +715,7 @@ export default function TestCreator() {
                         )}
                       />
                     </div>
-                    
+
                     <FormField
                       control={testForm.control}
                       name="description"
@@ -733,7 +733,7 @@ export default function TestCreator() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={testForm.control}
                       name="isActive"
@@ -754,7 +754,7 @@ export default function TestCreator() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <div className="flex justify-end">
                       <Button 
                         type="submit"
@@ -772,7 +772,7 @@ export default function TestCreator() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Questions Tab */}
           <TabsContent value="questions">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -802,17 +802,17 @@ export default function TestCreator() {
                                 onValueChange={(value) => {
                                   // Update form value
                                   field.onChange(value);
-                                  
+
                                   // Update the question type state
                                   const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
                                   setQuestionType(typedValue);
-                                  
+
                                   // Reset answer states
                                   setSelectedMcqAnswers([]);
                                   setTrueFalseAnswer(null);
                                   setFillBlankAnswer('');
                                   setSubjectiveKeywords([]);
-                                  
+
                                   // Reset the correct answer in the form
                                   questionForm.setValue('correctAnswer', 
                                     typedValue === 'mcq' ? [] : 
@@ -839,7 +839,7 @@ export default function TestCreator() {
                             </FormItem>
                           )}
                         />
-                        
+
                         {/* Question Text */}
                         <FormField
                           control={questionForm.control}
@@ -858,16 +858,16 @@ export default function TestCreator() {
                             </FormItem>
                           )}
                         />
-                        
+
                         {/* Answer Options based on question type */}
                         <div className="border rounded-md p-4">
                           <h3 className="font-medium mb-3">Answer Options</h3>
-                          
+
                           {/* Multiple Choice Options */}
                           {questionType === 'mcq' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Define options and select correct answer(s)</p>
-                              
+
                               {/* MCQ Options */}
                               <div className="space-y-3">
                                 {mcqOptions.map((option, index) => (
@@ -880,7 +880,7 @@ export default function TestCreator() {
                                           const updatedAnswers = checked 
                                             ? [...selectedMcqAnswers, option.id]
                                             : selectedMcqAnswers.filter(a => a !== option.id);
-                                          
+
                                           setSelectedMcqAnswers(updatedAnswers);
                                           questionForm.setValue('correctAnswer', updatedAnswers, {
                                             shouldValidate: true
@@ -897,15 +897,7 @@ export default function TestCreator() {
                                         <Input
                                           placeholder={`Enter option ${option.id}`}
                                           value={option.text}
-                                          onChange={(e) => {
-                                            const updatedOptions = mcqOptions.map(opt => 
-                                              opt.id === option.id ? { ...opt, text: e.target.value } : opt
-                                            );
-                                            setMcqOptions(updatedOptions);
-                                            questionForm.setValue('options', updatedOptions, {
-                                              shouldValidate: true
-                                            });
-                                          }}
+                                          onChange={(e) => handleMcqOptionChange(option.id, e.target.value)}
                                           className="mt-1"
                                         />
                                       </div>
@@ -913,7 +905,7 @@ export default function TestCreator() {
                                   </div>
                                 ))}
                               </div>
-                              
+
                               {/* Validation message */}
                               {selectedMcqAnswers.length === 0 && (
                                 <p className="text-sm text-destructive mt-2">
@@ -922,12 +914,12 @@ export default function TestCreator() {
                               )}
                             </div>
                           )}
-                          
+
                           {/* True/False Options */}
                           {questionType === 'truefalse' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Select the correct answer</p>
-                              
+
                               <FormField
                                 control={questionForm.control}
                                 name="correctAnswer"
@@ -947,7 +939,7 @@ export default function TestCreator() {
                                       }`} />
                                       <span>True</span>
                                     </div>
-                                    
+
                                     <div 
                                       className={`flex items-center space-x-2 p-3 rounded-md border cursor-pointer ${
                                         trueFalseAnswer === false ? 'border-primary bg-primary/5' : 'border-input'
@@ -957,12 +949,11 @@ export default function TestCreator() {
                                         field.onChange(false);
                                       }}
                                     >
-                                      <div className={`h-4 w-4 rounded-full ${
-                                        trueFalseAnswer === false ? 'bg-primary' : 'border border-input'
+                                      <div className={`h-4 w-4 rounded-full`bg-primary' : 'border border-input'
                                       }`} />
                                       <span>False</span>
                                     </div>
-                                    
+
                                     {trueFalseAnswer === null && (
                                       <FormMessage>
                                         Please select the correct answer
@@ -973,12 +964,12 @@ export default function TestCreator() {
                               />
                             </div>
                           )}
-                          
+
                           {/* Fill in the Blank */}
                           {questionType === 'fillblank' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Enter the correct answer</p>
-                              
+
                               <FormField
                                 control={questionForm.control}
                                 name="correctAnswer"
@@ -1005,14 +996,14 @@ export default function TestCreator() {
                               />
                             </div>
                           )}
-                          
+
                           {/* Subjective Question */}
                           {questionType === 'subjective' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">
                                 Add keywords that should be present in a good answer (for auto-grading)
                               </p>
-                              
+
                               <FormField
                                 control={questionForm.control}
                                 name="correctAnswer"
@@ -1041,7 +1032,7 @@ export default function TestCreator() {
                                           Add
                                         </Button>
                                       </div>
-                                      
+
                                       {subjectiveKeywords.length > 0 && (
                                         <div className="flex flex-wrap gap-2 mt-2">
                                           {subjectiveKeywords.map((keyword, i) => (
@@ -1062,7 +1053,7 @@ export default function TestCreator() {
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Points */}
                         <FormField
                           control={questionForm.control}
@@ -1083,7 +1074,7 @@ export default function TestCreator() {
                             </FormItem>
                           )}
                         />
-                        
+
                         {/* Explanation */}
                         <FormField
                           control={questionForm.control}
@@ -1102,7 +1093,7 @@ export default function TestCreator() {
                             </FormItem>
                           )}
                         />
-                        
+
                         {/* Form Actions */}
                         <div className="flex justify-end space-x-3">
                           {currentQuestion && (
@@ -1114,7 +1105,7 @@ export default function TestCreator() {
                               Cancel
                             </Button>
                           )}
-                          
+
                           <Button 
                             type="submit"
                             disabled={
@@ -1136,7 +1127,7 @@ export default function TestCreator() {
                   </CardContent>
                 </Card>
               </div>
-              
+
               {/* Questions List */}
               <div className="md:col-span-1">
                 <Card>
