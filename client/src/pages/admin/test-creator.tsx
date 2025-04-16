@@ -584,7 +584,7 @@ export default function TestCreator() {
                             <Select
                               value={field.value?.toString() || ''}
                               onValueChange={(value) => 
-                                field.onChange(value ? parseInt(value) : null)
+                                field.onChange(value === "null" ? null : parseInt(value))
                               }
                             >
                               <FormControl>
@@ -593,7 +593,7 @@ export default function TestCreator() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">No specific course</SelectItem>
+                                <SelectItem value="null">No specific course</SelectItem>
                                 {!isCoursesLoading && courses.map((course: any) => (
                                   <SelectItem 
                                     key={course.id} 
