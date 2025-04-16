@@ -1,15 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useRoute } from 'wouter';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { apiRequest } from '@/lib/queryClient';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-
 import { Layout } from '@/components/ui/layout';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useLocation, useRoute } from 'wouter';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Form, 
   FormControl, 
@@ -20,6 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { 
   Select, 
   SelectContent, 
@@ -27,62 +41,47 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { 
-  ArrowLeft, 
-  FolderOpen, 
-  Loader2, 
-  Pencil, 
-  Trash2, 
-  X 
+  FileText, 
+  Plus, 
+  Save, 
+  Trash, 
+  ArrowLeft,
+  Grip,
+  Loader2
 } from 'lucide-react';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable
+} from '@hello-pangea/dnd';
 
-// Test form schema
+// Test schema
 const testSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().nullable().optional(),
-  courseId: z.number().nullable().optional(),
-  duration: z.number().min(1, "Duration must be at least 1 minute"),
-  passingScore: z.number().min(1, "Passing score must be at least 1%").max(100, "Passing score cannot exceed 100%"),
-  isActive: z.boolean().default(false),
-  scheduledFor: z.string().nullable().optional(),
+  title: z.string().min(3, 'Title must be at least 3 characters'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  courseId: z.number().optional().nullable(),
+  duration: z.number().min(1, 'Duration must be at least 1 minute'),
+  passingScore: z.number().min(1, 'Passing score must be at least 1%').max(100, 'Passing score cannot exceed 100%'),
+  isActive: z.boolean().default(true),
+  scheduledFor: z.string().optional().nullable(),
 });
 
-// Question form schema
-// More specific schema matching database structure for better type safety
+// Question schema
 const questionSchema = z.object({
   testId: z.number(),
   type: z.enum(['mcq', 'truefalse', 'fillblank', 'subjective']),
-  question: z.string().min(1, "Question text is required"),
-  options: z.array(z.object({
-    id: z.string(),
-    text: z.string()
-  })).optional().nullable(),
-  correctAnswer: z.union([
-    z.array(z.string()),  // For MCQ and subjective (array of option IDs or keywords)
-    z.boolean(),          // For true/false
-    z.string(),           // For fill in the blank
-    z.null()              // For initial state
-  ]),
-  points: z.number().min(1, "Points must be at least 1"),
-  explanation: z.string().optional().nullable(),
+  question: z.string().min(3, 'Question must be at least 3 characters'),
+  options: z.array(z.object({ id: z.string(), text: z.string() })).optional(),
+  correctAnswer: z.any(),
+  points: z.number().min(1, 'Points must be at least 1'),
+  explanation: z.string().optional(),
   sortOrder: z.number(),
 });
 
@@ -114,49 +113,18 @@ export default function TestCreator() {
   // Fetch test if editing
   const { data: test, isLoading: isTestLoading } = useQuery({
     queryKey: [`/api/tests/${testId}`],
-    queryFn: testId ? undefined : () => Promise.resolve(null),
     enabled: !!testId,
   });
   
-  // Fetch questions for this test
+  // Fetch questions if editing
   const { data: fetchedQuestions = [], isLoading: isQuestionsLoading } = useQuery({
     queryKey: [`/api/tests/${testId}/questions`],
-    queryFn: testId ? undefined : () => Promise.resolve([]),
     enabled: !!testId,
   });
   
   // Fetch courses for dropdown
   const { data: courses = [], isLoading: isCoursesLoading } = useQuery({
     queryKey: ['/api/courses'],
-  });
-  
-  // Test form
-  const testForm = useForm<z.infer<typeof testSchema>>({
-    resolver: zodResolver(testSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      courseId: null,
-      duration: 60,
-      passingScore: 70,
-      isActive: false,
-      scheduledFor: null,
-    },
-  });
-  
-  // Question form
-  const questionForm = useForm<z.infer<typeof questionSchema>>({
-    resolver: zodResolver(questionSchema),
-    defaultValues: {
-      testId: testId || 0,
-      type: 'mcq',
-      question: '',
-      options: mcqOptions,
-      correctAnswer: [],
-      points: 1,
-      explanation: '',
-      sortOrder: 0,
-    },
   });
   
   // Create test mutation
@@ -190,9 +158,8 @@ export default function TestCreator() {
       const res = await apiRequest('PUT', `/api/tests/${testId}`, testData);
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tests/${testId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
       toast({
         title: 'Test Updated',
         description: 'The test has been updated successfully.',
@@ -219,6 +186,7 @@ export default function TestCreator() {
         title: 'Question Added',
         description: 'The question has been added successfully.',
       });
+      
       // Add new question to the local state
       setQuestions(prev => [...prev, data]);
       resetQuestionForm();
@@ -244,7 +212,8 @@ export default function TestCreator() {
         title: 'Question Updated',
         description: 'The question has been updated successfully.',
       });
-      // Update the question in the local state
+      
+      // Update question in local state
       setQuestions(prev => prev.map(q => q.id === data.id ? data : q));
       resetQuestionForm();
     },
@@ -260,21 +229,19 @@ export default function TestCreator() {
   // Delete question mutation
   const deleteQuestionMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/questions/${id}`);
-      return id;
+      const res = await apiRequest('DELETE', `/api/questions/${id}`, {});
+      return res.json();
     },
-    onSuccess: (id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tests/${testId}/questions`] });
       toast({
         title: 'Question Deleted',
         description: 'The question has been deleted successfully.',
       });
-      // Remove the question from the local state
-      setQuestions(prev => prev.filter(q => q.id !== id));
+      
+      // Remove question from local state
+      setQuestions(prev => prev.filter(q => q.id !== deleteConfirmQuestion.id));
       setDeleteConfirmQuestion(null);
-      if (currentQuestion?.id === id) {
-        resetQuestionForm();
-      }
     },
     onError: (error: Error) => {
       toast({
@@ -288,28 +255,60 @@ export default function TestCreator() {
   // Update question order mutation
   const updateQuestionOrderMutation = useMutation({
     mutationFn: async (updates: { id: number; sortOrder: number }[]) => {
-      const res = await apiRequest('PUT', '/api/questions/reorder', { updates });
-      return res.json();
+      // Make multiple requests to update each question's order
+      const promises = updates.map(update => 
+        apiRequest('PUT', `/api/questions/${update.id}`, { sortOrder: update.sortOrder })
+      );
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tests/${testId}/questions`] });
       toast({
-        title: 'Order Updated',
-        description: 'The question order has been updated.',
+        title: 'Question Order Updated',
+        description: 'The question order has been updated successfully.',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to Update Order',
+        title: 'Failed to Update Question Order',
         description: error.message || 'There was an error updating the question order.',
         variant: 'destructive',
       });
     }
   });
   
-  // Set form values when editing a test
+  // Test form
+  const testForm = useForm<z.infer<typeof testSchema>>({
+    resolver: zodResolver(testSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      courseId: null,
+      duration: 60,
+      passingScore: 70,
+      isActive: true,
+      scheduledFor: null,
+    },
+  });
+  
+  // Question form
+  const questionForm = useForm<z.infer<typeof questionSchema>>({
+    resolver: zodResolver(questionSchema),
+    defaultValues: {
+      testId: testId || 0,
+      type: 'mcq',
+      question: '',
+      options: mcqOptions,
+      correctAnswer: [],
+      points: 1,
+      explanation: '',
+      sortOrder: 0,
+    },
+  });
+  
+  // Initialize from existing test data
   useEffect(() => {
-    if (isEditMode && test) {
+    if (test) {
       testForm.reset({
         title: test.title,
         description: test.description,
@@ -317,37 +316,44 @@ export default function TestCreator() {
         duration: test.duration,
         passingScore: test.passingScore,
         isActive: test.isActive,
-        scheduledFor: test.scheduledFor,
+        scheduledFor: test.scheduledFor || null,
       });
     }
-  }, [isEditMode, test, testForm]);
+  }, [test, testForm]);
   
-  // Set questions when fetched
+  // Initialize questions from fetched data
   useEffect(() => {
     if (fetchedQuestions && fetchedQuestions.length > 0) {
-      setQuestions(fetchedQuestions);
+      // Sort by sortOrder
+      const sortedQuestions = [...fetchedQuestions].sort((a, b) => a.sortOrder - b.sortOrder);
+      setQuestions(sortedQuestions);
     }
   }, [fetchedQuestions]);
   
-  // Set tab to questions if editing and questions exist
+  // Handle active tab change
   useEffect(() => {
-    if (isEditMode && questions.length > 0 && activeTab === 'test-details') {
-      // Only auto-switch to questions tab when first loading an existing test with questions
-      if (currentQuestion === null && testId && questions.length > 0) {
-        setActiveTab('questions');
+    if (activeTab === 'questions' && isEditMode) {
+      // Reset question form when switching to questions tab
+      if (!currentQuestion) {
+        questionForm.reset({
+          testId: testId || 0,
+          type: 'mcq',
+          question: '',
+          options: mcqOptions,
+          correctAnswer: [],
+          points: 1,
+          explanation: '',
+          sortOrder: questions.length,
+        });
+        
+        resetAnswerStates();
       }
     }
   }, [activeTab, isEditMode, testId, questions.length, currentQuestion, questionForm, mcqOptions]);
-  
+
   // Set form values when editing a question
   useEffect(() => {
     if (currentQuestion) {
-      // First update the question type state to ensure UI components render correctly
-      if (currentQuestion.type) {
-        setQuestionType(currentQuestion.type as 'mcq' | 'truefalse' | 'fillblank' | 'subjective');
-      }
-      
-      // Then reset the form with all values
       questionForm.reset({
         testId: currentQuestion.testId,
         type: currentQuestion.type,
@@ -358,6 +364,8 @@ export default function TestCreator() {
         explanation: currentQuestion.explanation || '',
         sortOrder: currentQuestion.sortOrder,
       });
+      
+      setQuestionType(currentQuestion.type);
       
       // Set the appropriate answer state based on question type
       if (currentQuestion.type === 'mcq') {
@@ -378,15 +386,9 @@ export default function TestCreator() {
       }
     } else {
       // Reset form for new question
-      const defaultType = 'mcq' as const;
-      
-      // Reset the question type state first
-      setQuestionType(defaultType);
-      
-      // Then reset the form
       questionForm.reset({
         testId: testId || 0,
-        type: defaultType,
+        type: 'mcq',
         question: '',
         options: mcqOptions,
         correctAnswer: [],
@@ -431,19 +433,11 @@ export default function TestCreator() {
         correctAnswer = [];
     }
     
-    // Make sure options are properly formatted for database
-    const options = questionType === 'mcq' 
-      ? mcqOptions.map(opt => ({ 
-          id: opt.id, 
-          text: opt.text 
-        }))
-      : null;
-    
     const formattedValues = {
       ...values,
       type: questionType,
       correctAnswer,
-      options: options,
+      options: questionType === 'mcq' ? mcqOptions : undefined,
       testId: testId || 0,
       sortOrder: currentQuestion?.sortOrder ?? questions.length,
     };
@@ -473,27 +467,18 @@ export default function TestCreator() {
   
   // Reset all answer-related states
   const resetAnswerStates = () => {
-    const defaultType = 'mcq' as const;
-    const defaultOptions = [
+    setQuestionType('mcq' as const);
+    setMcqOptions([
       { id: 'a', text: '' },
       { id: 'b', text: '' },
       { id: 'c', text: '' },
       { id: 'd', text: '' }
-    ];
-    
-    // Update local state
-    setQuestionType(defaultType);
-    setMcqOptions(defaultOptions);
+    ]);
     setSelectedMcqAnswers([]);
     setTrueFalseAnswer(null);
     setFillBlankAnswer('');
     setSubjectiveKeywords([]);
     setKeywordInput('');
-    
-    // Update form values to stay in sync with local state
-    questionForm.setValue('type', defaultType, { shouldValidate: true });
-    questionForm.setValue('options', defaultOptions, { shouldValidate: true });
-    questionForm.setValue('correctAnswer', [], { shouldValidate: true });
   };
   
   // Handle MCQ option change
@@ -503,12 +488,8 @@ export default function TestCreator() {
     );
     setMcqOptions(updatedOptions);
     
-    // Update the form's options value and force a re-render
-    questionForm.setValue('options', updatedOptions, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
+    // Update the form's options value
+    questionForm.setValue('options', updatedOptions);
   };
   
   // Handle MCQ answer selection
@@ -521,47 +502,23 @@ export default function TestCreator() {
     
     // Update the form's correctAnswer value
     questionForm.setValue('correctAnswer', updatedAnswers);
-    questionForm.trigger('correctAnswer');
   };
   
-  // Add keyword to subjective question - properly updates form value and local state
+  // Add keyword to subjective question
   const addKeyword = () => {
     if (keywordInput.trim() && !subjectiveKeywords.includes(keywordInput.trim())) {
-      // Create updated keywords array
       const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
-      
-      // Update local state
       setSubjectiveKeywords(updatedKeywords);
-      
-      // Update form value with validation
-      questionForm.setValue('correctAnswer', updatedKeywords, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true
-      });
-      
-      // Clear input
+      questionForm.setValue('correctAnswer', updatedKeywords);
       setKeywordInput('');
     }
   };
   
-  // Remove keyword from subjective question - properly updates form value and local state
+  // Remove keyword from subjective question
   const removeKeyword = (keyword: string) => {
-    // Create updated keywords array
     const updatedKeywords = subjectiveKeywords.filter(k => k !== keyword);
-    
-    // Update local state
     setSubjectiveKeywords(updatedKeywords);
-    
-    // Update form value with validation
-    questionForm.setValue('correctAnswer', updatedKeywords, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
-    
-    // Trigger validation
-    questionForm.trigger('correctAnswer');
+    questionForm.setValue('correctAnswer', updatedKeywords);
   };
   
   // Handle question deletion
@@ -825,7 +782,6 @@ export default function TestCreator() {
                   <CardContent>
                     <Form {...questionForm}>
                       <form onSubmit={questionForm.handleSubmit(onQuestionSubmit)} className="space-y-6">
-                        {/* Question Type */}
                         <FormField
                           control={questionForm.control}
                           name="type"
@@ -833,45 +789,10 @@ export default function TestCreator() {
                             <FormItem>
                               <FormLabel>Question Type</FormLabel>
                               <Select
-                                value={field.value}
-                                onValueChange={(value) => {
-                                  // Update form value
+                                value={questionType}
+                                onValueChange={(value: 'mcq' | 'truefalse' | 'fillblank' | 'subjective') => {
+                                  setQuestionType(value);
                                   field.onChange(value);
-                                  
-                                  // Update the question type state
-                                  const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
-                                  setQuestionType(typedValue);
-                                  
-                                  // Reset the initial options based on the type
-                                  const defaultMcqOptions = [
-                                    { id: 'a', text: '' },
-                                    { id: 'b', text: '' },
-                                    { id: 'c', text: '' },
-                                    { id: 'd', text: '' }
-                                  ];
-                                  
-                                  // Reset MCQ options if switching to MCQ
-                                  if (typedValue === 'mcq') {
-                                    setMcqOptions(defaultMcqOptions);
-                                    questionForm.setValue('options', defaultMcqOptions, { shouldValidate: true });
-                                  }
-                                  
-                                  // Reset answer-related states
-                                  setSelectedMcqAnswers([]);
-                                  setTrueFalseAnswer(null);
-                                  setFillBlankAnswer('');
-                                  setSubjectiveKeywords([]);
-                                  setKeywordInput('');
-                                  
-                                  // Reset the correct answer in the form based on type
-                                  const defaultAnswers = {
-                                    mcq: [],
-                                    truefalse: null,
-                                    fillblank: '',
-                                    subjective: []
-                                  };
-                                  
-                                  questionForm.setValue('correctAnswer', defaultAnswers[typedValue], { shouldValidate: true });
                                 }}
                               >
                                 <FormControl>
@@ -891,7 +812,6 @@ export default function TestCreator() {
                           )}
                         />
                         
-                        {/* Question Text */}
                         <FormField
                           control={questionForm.control}
                           name="question"
@@ -910,7 +830,7 @@ export default function TestCreator() {
                           )}
                         />
                         
-                        {/* Answer Options based on question type */}
+                        {/* Question Type Specific Inputs */}
                         <div className="border rounded-md p-4">
                           <h3 className="font-medium mb-3">Answer Options</h3>
                           
@@ -918,77 +838,33 @@ export default function TestCreator() {
                           {questionType === 'mcq' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Define options and select correct answer(s)</p>
-                              
-                              {/* MCQ Options */}
-                              <div className="space-y-3">
-                                {mcqOptions.map((option, index) => (
-                                  <div key={`mcq-option-${option.id}`} className="flex items-start gap-3">
-                                    <div className="flex items-start space-x-3 space-y-0">
-                                      <FormField
-                                        control={questionForm.control}
-                                        name="correctAnswer"
-                                        render={({ field }) => (
-                                          <FormItem className="flex items-start space-x-3 space-y-0 mt-0">
-                                            <FormControl>
-                                              <Checkbox 
-                                                id={`option-${option.id}`}
-                                                checked={selectedMcqAnswers.includes(option.id)}
-                                                onCheckedChange={(checked) => {
-                                                  // Update the local state
-                                                  const updatedAnswers = checked 
-                                                    ? [...selectedMcqAnswers, option.id]
-                                                    : selectedMcqAnswers.filter(a => a !== option.id);
-                                                  
-                                                  // Set both local state and form value
-                                                  setSelectedMcqAnswers(updatedAnswers);
-                                                  field.onChange(updatedAnswers);
-                                                }}
-                                              />
-                                            </FormControl>
-                                            <div className="flex-1">
-                                              <label 
-                                                htmlFor={`option-${option.id}`} 
-                                                className="font-medium text-sm"
-                                              >
-                                                Option {option.id.toUpperCase()}
-                                              </label>
-                                              <FormField
-                                                control={questionForm.control}
-                                                name="options"
-                                                render={({ field: optionsField }) => (
-                                                  <FormItem className="mt-0">
-                                                    <FormControl>
-                                                      <Input
-                                                        placeholder={`Enter option ${option.id}`}
-                                                        value={option.text}
-                                                        onChange={(e) => {
-                                                          // Update local options state
-                                                          const updatedOptions = mcqOptions.map(opt => 
-                                                            opt.id === option.id ? { ...opt, text: e.target.value } : opt
-                                                          );
-                                                          
-                                                          // Update both local state and form value
-                                                          setMcqOptions(updatedOptions);
-                                                          optionsField.onChange(updatedOptions);
-                                                        }}
-                                                        className="mt-1"
-                                                      />
-                                                    </FormControl>
-                                                  </FormItem>
-                                                )}
-                                              />
-                                            </div>
-                                          </FormItem>
-                                        )}
-                                      />
-                                    </div>
+                              {mcqOptions.map((option) => (
+                                <div key={option.id} className="flex items-start gap-3">
+                                  <Checkbox 
+                                    id={`option-${option.id}`}
+                                    checked={selectedMcqAnswers.includes(option.id)}
+                                    onCheckedChange={() => handleMcqAnswerChange(option.id)}
+                                  />
+                                  <div className="flex-1">
+                                    <Label 
+                                      htmlFor={`option-${option.id}`} 
+                                      className="mb-1 block font-medium"
+                                    >
+                                      Option {option.id.toUpperCase()}
+                                    </Label>
+                                    <Input
+                                      type="text"
+                                      placeholder={`Enter option ${option.id}`}
+                                      value={option.text}
+                                      onChange={(e) => handleMcqOptionChange(option.id, e.target.value)}
+                                      className="w-full"
+                                      key={`mcq-option-${option.id}`}
+                                    />
                                   </div>
-                                ))}
-                              </div>
-                              
-                              {/* Validation message */}
+                                </div>
+                              ))}
                               {selectedMcqAnswers.length === 0 && (
-                                <p className="text-sm text-destructive mt-2">
+                                <p className="text-sm text-red-500">
                                   Please select at least one correct answer
                                 </p>
                               )}
@@ -999,50 +875,28 @@ export default function TestCreator() {
                           {questionType === 'truefalse' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Select the correct answer</p>
-                              
-                              <FormField
-                                control={questionForm.control}
-                                name="correctAnswer"
-                                render={({ field }) => (
-                                  <FormItem className="space-y-3">
-                                    <div 
-                                      className={`flex items-center space-x-2 p-3 rounded-md border cursor-pointer ${
-                                        trueFalseAnswer === true ? 'border-primary bg-primary/5' : 'border-input'
-                                      }`}
-                                      onClick={() => {
-                                        setTrueFalseAnswer(true);
-                                        field.onChange(true);
-                                      }}
-                                    >
-                                      <div className={`h-4 w-4 rounded-full ${
-                                        trueFalseAnswer === true ? 'bg-primary' : 'border border-input'
-                                      }`} />
-                                      <span>True</span>
-                                    </div>
-                                    
-                                    <div 
-                                      className={`flex items-center space-x-2 p-3 rounded-md border cursor-pointer ${
-                                        trueFalseAnswer === false ? 'border-primary bg-primary/5' : 'border-input'
-                                      }`}
-                                      onClick={() => {
-                                        setTrueFalseAnswer(false);
-                                        field.onChange(false);
-                                      }}
-                                    >
-                                      <div className={`h-4 w-4 rounded-full ${
-                                        trueFalseAnswer === false ? 'bg-primary' : 'border border-input'
-                                      }`} />
-                                      <span>False</span>
-                                    </div>
-                                    
-                                    {trueFalseAnswer === null && (
-                                      <FormMessage>
-                                        Please select the correct answer
-                                      </FormMessage>
-                                    )}
-                                  </FormItem>
-                                )}
-                              />
+                              <RadioGroup
+                                value={trueFalseAnswer === null ? undefined : trueFalseAnswer.toString()}
+                                onValueChange={(value) => {
+                                  const boolValue = value === 'true';
+                                  setTrueFalseAnswer(boolValue);
+                                  questionForm.setValue('correctAnswer', boolValue);
+                                }}
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="true" id="true" />
+                                  <Label htmlFor="true">True</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="false" id="false" />
+                                  <Label htmlFor="false">False</Label>
+                                </div>
+                              </RadioGroup>
+                              {trueFalseAnswer === null && (
+                                <p className="text-sm text-red-500">
+                                  Please select the correct answer
+                                </p>
+                              )}
                             </div>
                           )}
                           
@@ -1050,31 +904,22 @@ export default function TestCreator() {
                           {questionType === 'fillblank' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Enter the correct answer</p>
-                              
-                              <FormField
-                                control={questionForm.control}
-                                name="correctAnswer"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="Correct answer"
-                                        value={fillBlankAnswer}
-                                        onChange={(e) => {
-                                          const newValue = e.target.value;
-                                          setFillBlankAnswer(newValue);
-                                          field.onChange(newValue);
-                                        }}
-                                      />
-                                    </FormControl>
-                                    {!fillBlankAnswer && (
-                                      <FormMessage>
-                                        Please enter the correct answer
-                                      </FormMessage>
-                                    )}
-                                  </FormItem>
-                                )}
+                              <Input
+                                type="text"
+                                placeholder="Correct answer"
+                                value={fillBlankAnswer}
+                                onChange={(e) => {
+                                  setFillBlankAnswer(e.target.value);
+                                  questionForm.setValue('correctAnswer', e.target.value);
+                                }}
+                                className="w-full"
+                                key="fill-blank-answer"
                               />
+                              {!fillBlankAnswer && (
+                                <p className="text-sm text-red-500">
+                                  Please enter the correct answer
+                                </p>
+                              )}
                             </div>
                           )}
                           
@@ -1084,97 +929,77 @@ export default function TestCreator() {
                               <p className="text-sm text-muted-foreground mb-2">
                                 Add keywords that should be present in a good answer (for auto-grading)
                               </p>
-                              
-                              <FormField
-                                control={questionForm.control}
-                                name="correctAnswer"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="space-y-4">
-                                      <div className="flex gap-2">
-                                        <Input
-                                          placeholder="Enter keyword"
-                                          value={keywordInput}
-                                          onChange={(e) => setKeywordInput(e.target.value)}
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                              e.preventDefault();
-                                              if (keywordInput.trim()) {
-                                                // Only update if we have a non-empty keyword
-                                                const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
-                                                setSubjectiveKeywords(updatedKeywords);
-                                                field.onChange(updatedKeywords);
-                                                setKeywordInput('');
-                                              }
-                                            }
-                                          }}
-                                          className="flex-1"
-                                        />
-                                        <Button 
-                                          type="button" 
-                                          onClick={() => {
-                                            if (keywordInput.trim()) {
-                                              // Only update if we have a non-empty keyword
-                                              const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
-                                              setSubjectiveKeywords(updatedKeywords);
-                                              field.onChange(updatedKeywords);
-                                              setKeywordInput('');
-                                            }
-                                          }}
-                                          className="shrink-0"
-                                          size="sm"
-                                        >
-                                          Add
-                                        </Button>
-                                      </div>
-                                      
-                                      {subjectiveKeywords.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                          {subjectiveKeywords.map((keyword, i) => (
-                                            <Badge key={`keyword-${i}`} variant="secondary" className="px-2 py-1">
-                                              {keyword}
-                                              <X 
-                                                className="h-3 w-3 ml-1 cursor-pointer" 
-                                                onClick={() => {
-                                                  const updatedKeywords = subjectiveKeywords.filter(k => k !== keyword);
-                                                  setSubjectiveKeywords(updatedKeywords);
-                                                  field.onChange(updatedKeywords);
-                                                }}
-                                              />
-                                            </Badge>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </FormItem>
+                              <div className="flex gap-2">
+                                <Input
+                                  type="text"
+                                  placeholder="Enter keyword"
+                                  value={keywordInput}
+                                  onChange={(e) => setKeywordInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      addKeyword();
+                                    }
+                                  }}
+                                  className="w-full"
+                                  key="keyword-input"
+                                />
+                                <Button 
+                                  type="button" 
+                                  onClick={addKeyword}
+                                  disabled={!keywordInput.trim()}
+                                >
+                                  Add
+                                </Button>
+                              </div>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {subjectiveKeywords.map((keyword, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                                  >
+                                    {keyword}
+                                    <button
+                                      type="button"
+                                      onClick={() => removeKeyword(keyword)}
+                                      className="text-primary hover:text-primary/70 h-4 w-4 rounded-full flex items-center justify-center"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ))}
+                                {subjectiveKeywords.length === 0 && (
+                                  <p className="text-sm text-muted-foreground">
+                                    No keywords added yet
+                                  </p>
                                 )}
-                              />
+                              </div>
                             </div>
                           )}
                         </div>
                         
-                        {/* Points */}
-                        <FormField
-                          control={questionForm.control}
-                          name="points"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Points</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min={1} 
-                                  {...field}
-                                  value={field.value}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            control={questionForm.control}
+                            name="points"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Points</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min={1} 
+                                    {...field}
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                         
-                        {/* Explanation */}
                         <FormField
                           control={questionForm.control}
                           name="explanation"
@@ -1193,23 +1018,21 @@ export default function TestCreator() {
                           )}
                         />
                         
-                        {/* Form Actions */}
-                        <div className="flex justify-end space-x-3">
+                        <div className="flex justify-end gap-2">
                           {currentQuestion && (
                             <Button 
-                              type="button"
+                              type="button" 
                               variant="outline"
-                              onClick={() => resetQuestionForm()}
+                              onClick={resetQuestionForm}
                             >
                               Cancel
                             </Button>
                           )}
-                          
                           <Button 
                             type="submit"
                             disabled={
                               createQuestionMutation.isPending || 
-                              updateQuestionMutation.isPending || 
+                              updateQuestionMutation.isPending ||
                               (questionType === 'mcq' && selectedMcqAnswers.length === 0) ||
                               (questionType === 'truefalse' && trueFalseAnswer === null) ||
                               (questionType === 'fillblank' && !fillBlankAnswer)
@@ -1231,114 +1054,94 @@ export default function TestCreator() {
               <div className="md:col-span-1">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Questions</CardTitle>
+                    <CardTitle>Questions ({questions.length})</CardTitle>
                     <CardDescription>
-                      {questions.length > 0 
-                        ? `This test has ${questions.length} questions` 
-                        : 'No questions have been added yet'}
+                      Drag to reorder questions
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {questions.length > 0 ? (
-                      <DragDropContext onDragEnd={handleDragEnd}>
-                        <Droppable droppableId="questions-list">
-                          {(provided) => (
-                            <div
-                              {...provided.droppableProps}
-                              ref={provided.innerRef}
-                              className="space-y-2"
-                            >
-                              {questions.map((question, index) => (
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <Droppable droppableId="questions">
+                        {(provided) => (
+                          <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="space-y-2"
+                          >
+                            {questions.length > 0 ? (
+                              questions.map((question, index) => (
                                 <Draggable 
-                                  key={`question-${question.id}`} 
-                                  draggableId={`question-${question.id}`} 
+                                  key={question.id} 
+                                  draggableId={question.id.toString()} 
                                   index={index}
                                 >
                                   {(provided) => (
                                     <div
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className={`p-3 border rounded-md ${
-                                        currentQuestion?.id === question.id
-                                          ? 'border-primary bg-primary/5'
-                                          : 'border-border'
-                                      }`}
+                                      className={`p-3 rounded-md border flex items-start gap-2
+                                        ${currentQuestion?.id === question.id ? 'bg-primary/5 border-primary' : 'bg-white'}
+                                      `}
                                     >
-                                      <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant="outline" className="text-xs">
-                                              {question.type === 'mcq' ? 'Multiple Choice' :
-                                               question.type === 'truefalse' ? 'True/False' :
-                                               question.type === 'fillblank' ? 'Fill Blank' :
-                                               'Subjective'}
-                                            </Badge>
-                                            <span className="text-xs text-muted-foreground">
-                                              {question.points} {question.points === 1 ? 'point' : 'points'}
-                                            </span>
-                                          </div>
-                                          <p className="text-sm line-clamp-2">{question.question}</p>
+                                      <div 
+                                        {...provided.dragHandleProps}
+                                        className="mt-1"
+                                      >
+                                        <Grip className="h-5 w-5 text-gray-400" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between">
+                                          <span className="text-xs font-medium bg-gray-100 rounded px-2 py-0.5 capitalize">
+                                            {question.type === 'mcq' ? 'Multiple Choice' : 
+                                             question.type === 'truefalse' ? 'True/False' : 
+                                             question.type === 'fillblank' ? 'Fill Blank' : 
+                                             'Subjective'}
+                                          </span>
+                                          <span className="text-xs font-medium bg-blue-50 text-blue-800 rounded px-2 py-0.5">
+                                            {question.points} {question.points === 1 ? 'point' : 'points'}
+                                          </span>
                                         </div>
-                                        <div className="flex items-center ms-2">
+                                        <p className="text-sm mt-1 break-words line-clamp-2">
+                                          {question.question}
+                                        </p>
+                                        <div className="flex gap-2 mt-2">
                                           <Button
+                                            type="button"
                                             variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7"
+                                            size="sm"
                                             onClick={() => setCurrentQuestion(question)}
+                                            className="h-8 px-2 text-xs"
                                           >
-                                            <Pencil className="h-3.5 w-3.5" />
+                                            Edit
                                           </Button>
-                                          <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                              <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-destructive"
-                                              >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                              </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                              <AlertDialogHeader>
-                                                <AlertDialogTitle>Delete Question</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                  Are you sure you want to delete this question? This action cannot be undone.
-                                                </AlertDialogDescription>
-                                              </AlertDialogHeader>
-                                              <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction 
-                                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                  onClick={() => {
-                                                    setDeleteConfirmQuestion(question);
-                                                    handleDeleteQuestion();
-                                                  }}
-                                                >
-                                                  Delete
-                                                </AlertDialogAction>
-                                              </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                          </AlertDialog>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setDeleteConfirmQuestion(question)}
+                                            className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                          >
+                                            Delete
+                                          </Button>
                                         </div>
                                       </div>
                                     </div>
                                   )}
                                 </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </DragDropContext>
-                    ) : (
-                      <div className="text-center p-4">
-                        <FolderOpen className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                        <p className="text-sm text-muted-foreground">
-                          Use the form on the left to add questions to this test
-                        </p>
-                      </div>
-                    )}
+                              ))
+                            ) : (
+                              <div className="text-center p-6 border border-dashed rounded-md">
+                                <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-gray-500">
+                                  No questions added yet
+                                </p>
+                              </div>
+                            )}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </CardContent>
                 </Card>
               </div>
@@ -1346,6 +1149,39 @@ export default function TestCreator() {
           </TabsContent>
         </Tabs>
       )}
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmQuestion} onOpenChange={(open) => !open && setDeleteConfirmQuestion(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this question? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 p-3 border rounded-md bg-gray-50">
+            <p className="text-sm">{deleteConfirmQuestion?.question}</p>
+          </div>
+          <DialogFooter className="pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmQuestion(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteQuestion}
+              disabled={deleteQuestionMutation.isPending}
+            >
+              {deleteQuestionMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Question
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
