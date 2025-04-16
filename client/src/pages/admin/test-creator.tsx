@@ -507,14 +507,18 @@ export default function TestCreator() {
   // Add keyword to subjective question
   const addKeyword = () => {
     if (keywordInput.trim() && !subjectiveKeywords.includes(keywordInput.trim())) {
-      setSubjectiveKeywords(prev => [...prev, keywordInput.trim()]);
+      const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
+      setSubjectiveKeywords(updatedKeywords);
+      questionForm.setValue('correctAnswer', updatedKeywords);
       setKeywordInput('');
     }
   };
   
   // Remove keyword from subjective question
   const removeKeyword = (keyword: string) => {
-    setSubjectiveKeywords(prev => prev.filter(k => k !== keyword));
+    const updatedKeywords = subjectiveKeywords.filter(k => k !== keyword);
+    setSubjectiveKeywords(updatedKeywords);
+    questionForm.setValue('correctAnswer', updatedKeywords);
   };
   
   // Handle question deletion
@@ -564,7 +568,13 @@ export default function TestCreator() {
       {isLoading ? (
         <Skeleton className="h-[600px] w-full" />
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(value) => {
+            setActiveTab(value);
+            // Reset form states when switching to questions tab
+            if (value === "questions" && !currentQuestion) {
+              resetQuestionForm();
+            }
+          }} className="w-full">
           <TabsList className="mb-6 grid w-full grid-cols-2">
             <TabsTrigger value="test-details">Test Details</TabsTrigger>
             <TabsTrigger value="questions" disabled={!isEditMode}>
@@ -843,9 +853,12 @@ export default function TestCreator() {
                                       Option {option.id.toUpperCase()}
                                     </Label>
                                     <Input
+                                      type="text"
                                       placeholder={`Enter option ${option.id}`}
                                       value={option.text}
                                       onChange={(e) => handleMcqOptionChange(option.id, e.target.value)}
+                                      className="w-full"
+                                      key={`mcq-option-${option.id}`}
                                     />
                                   </div>
                                 </div>
@@ -864,7 +877,11 @@ export default function TestCreator() {
                               <p className="text-sm text-muted-foreground mb-2">Select the correct answer</p>
                               <RadioGroup
                                 value={trueFalseAnswer === null ? undefined : trueFalseAnswer.toString()}
-                                onValueChange={(value) => setTrueFalseAnswer(value === 'true')}
+                                onValueChange={(value) => {
+                                  const boolValue = value === 'true';
+                                  setTrueFalseAnswer(boolValue);
+                                  questionForm.setValue('correctAnswer', boolValue);
+                                }}
                               >
                                 <div className="flex items-center space-x-2">
                                   <RadioGroupItem value="true" id="true" />
@@ -888,9 +905,15 @@ export default function TestCreator() {
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Enter the correct answer</p>
                               <Input
+                                type="text"
                                 placeholder="Correct answer"
                                 value={fillBlankAnswer}
-                                onChange={(e) => setFillBlankAnswer(e.target.value)}
+                                onChange={(e) => {
+                                  setFillBlankAnswer(e.target.value);
+                                  questionForm.setValue('correctAnswer', e.target.value);
+                                }}
+                                className="w-full"
+                                key="fill-blank-answer"
                               />
                               {!fillBlankAnswer && (
                                 <p className="text-sm text-red-500">
@@ -908,6 +931,7 @@ export default function TestCreator() {
                               </p>
                               <div className="flex gap-2">
                                 <Input
+                                  type="text"
                                   placeholder="Enter keyword"
                                   value={keywordInput}
                                   onChange={(e) => setKeywordInput(e.target.value)}
@@ -917,6 +941,8 @@ export default function TestCreator() {
                                       addKeyword();
                                     }
                                   }}
+                                  className="w-full"
+                                  key="keyword-input"
                                 />
                                 <Button 
                                   type="button" 
