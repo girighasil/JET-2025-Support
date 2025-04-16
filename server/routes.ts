@@ -317,7 +317,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                        undefined;
       
       const tests = await storage.listTests(courseId, isActive);
-      res.json(tests);
+      
+      // Add creator information to each test
+      const testsWithCreatorInfo = await Promise.all(tests.map(async (test) => {
+        const creator = await storage.getUser(test.createdBy);
+        return {
+          ...test,
+          creatorName: creator ? creator.fullName || creator.username : "Unknown"
+        };
+      }));
+      
+      res.json(testsWithCreatorInfo);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
     }
@@ -332,7 +342,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Test not found" });
       }
       
-      res.json(test);
+      // Add creator information to the test
+      const creator = await storage.getUser(test.createdBy);
+      const testWithCreatorInfo = {
+        ...test,
+        creatorName: creator ? creator.fullName || creator.username : "Unknown"
+      };
+      
+      res.json(testWithCreatorInfo);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
     }
