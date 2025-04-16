@@ -330,6 +330,27 @@ export default function TestCreator() {
     }
   }, [fetchedQuestions]);
   
+  // Handle active tab change
+  useEffect(() => {
+    if (activeTab === 'questions' && isEditMode) {
+      // Reset question form when switching to questions tab
+      if (!currentQuestion) {
+        questionForm.reset({
+          testId: testId || 0,
+          type: 'mcq',
+          question: '',
+          options: mcqOptions,
+          correctAnswer: [],
+          points: 1,
+          explanation: '',
+          sortOrder: questions.length,
+        });
+        
+        resetAnswerStates();
+      }
+    }
+  }, [activeTab, isEditMode, testId, questions.length, currentQuestion, questionForm, mcqOptions]);
+
   // Set form values when editing a question
   useEffect(() => {
     if (currentQuestion) {
@@ -367,7 +388,7 @@ export default function TestCreator() {
       // Reset form for new question
       questionForm.reset({
         testId: testId || 0,
-        type: questionType,
+        type: 'mcq',
         question: '',
         options: mcqOptions,
         correctAnswer: [],
@@ -379,7 +400,7 @@ export default function TestCreator() {
       // Reset answer states
       resetAnswerStates();
     }
-  }, [currentQuestion, questionType, questions.length, testId, questionForm, mcqOptions]);
+  }, [currentQuestion, questions.length, testId, questionForm, mcqOptions]);
   
   // Handle test form submission
   function onTestSubmit(values: z.infer<typeof testSchema>) {
@@ -462,20 +483,25 @@ export default function TestCreator() {
   
   // Handle MCQ option change
   const handleMcqOptionChange = (id: string, text: string) => {
-    setMcqOptions(prev => prev.map(opt => 
+    const updatedOptions = mcqOptions.map(opt => 
       opt.id === id ? { ...opt, text } : opt
-    ));
+    );
+    setMcqOptions(updatedOptions);
+    
+    // Update the form's options value
+    questionForm.setValue('options', updatedOptions);
   };
   
   // Handle MCQ answer selection
   const handleMcqAnswerChange = (id: string) => {
-    setSelectedMcqAnswers(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(a => a !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
+    const updatedAnswers = selectedMcqAnswers.includes(id)
+      ? selectedMcqAnswers.filter(a => a !== id)
+      : [...selectedMcqAnswers, id];
+    
+    setSelectedMcqAnswers(updatedAnswers);
+    
+    // Update the form's correctAnswer value
+    questionForm.setValue('correctAnswer', updatedAnswers);
   };
   
   // Add keyword to subjective question
