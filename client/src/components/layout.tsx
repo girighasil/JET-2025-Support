@@ -12,10 +12,10 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, title }: LayoutProps) {
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logout();
   };
   
   const getInitials = (fullName: string) => {
