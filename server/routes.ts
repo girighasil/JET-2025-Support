@@ -431,6 +431,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.post("/api/tests/:testId/questions", isAuthenticated, hasRole(["admin", "teacher"]), async (req, res) => {
+    try {
+      const testId = parseInt(req.params.testId);
+      const questionData = insertQuestionSchema.parse({
+        ...req.body,
+        testId
+      });
+      
+      // Check if test exists
+      const test = await storage.getTest(testId);
+      if (!test) {
+        return res.status(404).json({ message: "Test not found" });
+      }
+      
+      // Check if user is authorized to add questions to this test
+      if (test.createdBy !== req.user.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const question = await storage.createQuestion(questionData);
+      res.status(201).json(question);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors });
+      } else {
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  });
+  
   app.get("/api/questions/:id", async (req, res) => {
     try {
       const questionId = parseInt(req.params.id);
