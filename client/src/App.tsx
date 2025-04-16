@@ -18,6 +18,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import ManageCourses from "@/pages/admin/manage-courses";
 import ManageTests from "@/pages/admin/manage-tests";
 import TestCreator from "@/pages/admin/test-creator";
+import SimpleTestCreator from "@/pages/admin/simple-test-creator";
 import ManageStudents from "@/pages/admin/manage-students";
 import ManageEnrollments from "@/pages/admin/manage-enrollments";
 import SessionSchedule from "@/pages/admin/session-schedule";
@@ -72,6 +73,12 @@ function App() {
         </Route>
         <Route path="/admin/test-creator/:id">
           <ProtectedRoute path="/admin/test-creator/:id" component={TestCreator} roles={["admin", "teacher"]} />
+        </Route>
+        <Route path="/admin/simple-test-creator">
+          <ProtectedRoute path="/admin/simple-test-creator" component={SimpleTestCreator} roles={["admin", "teacher"]} />
+        </Route>
+        <Route path="/admin/simple-test-creator/:id">
+          <ProtectedRoute path="/admin/simple-test-creator/:id" component={SimpleTestCreator} roles={["admin", "teacher"]} />
         </Route>
         <Route path="/admin/manage-students">
           <ProtectedRoute path="/admin/manage-students" component={ManageStudents} roles={["admin", "teacher"]} />

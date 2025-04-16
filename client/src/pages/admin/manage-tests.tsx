@@ -190,6 +190,11 @@ export default function ManageTests() {
     navigate('/admin/test-creator');
   };
   
+  // Handle creating a test using the simplified creator
+  const handleCreateSimpleTest = () => {
+    navigate('/admin/simple-test-creator');
+  };
+  
   // Handle test deletion
   const handleDeleteTest = () => {
     if (deleteConfirmTest) {
@@ -205,10 +210,16 @@ export default function ManageTests() {
       title="Manage Tests" 
       description="Create, edit, and manage tests for students"
       rightContent={
-        <Button onClick={handleCreateTest} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Create New Test
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleCreateSimpleTest} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Simple Test Creator
+          </Button>
+          <Button onClick={handleCreateTest} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Advanced Test Creator
+          </Button>
+        </div>
       }
     >
       {isLoading ? (
@@ -230,10 +241,16 @@ export default function ManageTests() {
             <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
               Create your first test to assess student knowledge and track their progress.
             </p>
-            <Button onClick={handleCreateTest} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Your First Test
-            </Button>
+            <div className="flex flex-col sm:flex-row justify-center gap-2">
+              <Button variant="outline" onClick={handleCreateSimpleTest} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Simple Test Creator
+              </Button>
+              <Button onClick={handleCreateTest} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Advanced Test Creator
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
