@@ -185,7 +185,7 @@ export default function ManageTests() {
     },
   ];
   
-  // Handle creating a new test
+  // Handle creating a new test with advanced editor
   const handleCreateTest = () => {
     navigate('/admin/test-creator');
   };
