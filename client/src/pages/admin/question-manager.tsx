@@ -42,8 +42,16 @@ const questionSchema = z.object({
   question: z.string().min(3, 'Question is required'),
   options: z.any().optional(),
   correctAnswer: z.any(),
-  points: z.number().min(1, 'Points must be at least 1'),
-  negativePoints: z.number().min(0, 'Negative points must be 0 or greater'),
+  points: z.union([
+    z.number().min(0.1, 'Points must be greater than 0'),
+    z.string().regex(/^\d*\.?\d*$/, 'Must be a valid number').transform(val => parseFloat(val) || 1)
+  ]),
+  negativePoints: z.union([
+    z.number().min(0, 'Negative points must be 0 or greater'),
+    z.string().regex(/^\d*\.?\d*$/, 'Must be a valid number').transform(val => parseFloat(val) || 0)
+  ]),
+  pointsFloat: z.string().regex(/^\d*\.?\d*$/, 'Must be a valid number').optional(),
+  negativePointsFloat: z.string().regex(/^\d*\.?\d*$/, 'Must be a valid number').optional(),
   explanation: z.string().optional(),
   sortOrder: z.number(),
 });

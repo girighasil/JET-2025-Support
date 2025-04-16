@@ -50,7 +50,8 @@ const testSchema = z.object({
   passingScore: z.number().min(1, 'Passing score must be at least 1%').max(100, 'Passing score cannot exceed 100%'),
   isActive: z.boolean().default(true),
   hasNegativeMarking: z.boolean().default(false),
-  defaultNegativeMarking: z.string().default('0'),
+  defaultNegativeMarking: z.string().regex(/^\d*\.?\d*$/, 'Must be a valid number').default('0'),
+  defaultPoints: z.string().regex(/^\d*\.?\d*$/, 'Must be a valid number').default('1'),
   scheduledFor: z.string().optional().nullable(),
 });
 
@@ -138,6 +139,7 @@ export default function TestCreator() {
       isActive: true,
       hasNegativeMarking: false,
       defaultNegativeMarking: '0',
+      defaultPoints: '1',
       scheduledFor: null,
     },
   });
@@ -154,6 +156,7 @@ export default function TestCreator() {
         isActive: test.isActive !== undefined ? test.isActive : true,
         hasNegativeMarking: test.hasNegativeMarking !== undefined ? test.hasNegativeMarking : false,
         defaultNegativeMarking: test.defaultNegativeMarking || '0',
+        defaultPoints: test.defaultPoints || '1',
         scheduledFor: test.scheduledFor || null,
       });
     }
@@ -400,34 +403,61 @@ export default function TestCreator() {
                   />
                 </div>
                 
-                {testForm.watch('hasNegativeMarking') && (
-                  <div className="p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-medium mb-4">Negative Marking Settings</h3>
+                <div className="p-4 border rounded-lg bg-muted/30">
+                  <h3 className="font-medium mb-4">Points Settings</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={testForm.control}
-                      name="defaultNegativeMarking"
+                      name="defaultPoints"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Default Negative Points</FormLabel>
+                          <FormLabel>Default Points for Correct Answer</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
                               min="0"
                               step="0.01"
-                              placeholder="0.25"
+                              placeholder="1.0"
                               {...field}
                               onChange={(e) => field.onChange(e.target.value)}
                             />
                           </FormControl>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Points to deduct for incorrect answers (applies to all questions by default)
+                            Points awarded for correct answers (applies to all questions by default)
                           </p>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {testForm.watch('hasNegativeMarking') && (
+                      <FormField
+                        control={testForm.control}
+                        name="defaultNegativeMarking"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Default Negative Points</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="0"
+                                step="0.01"
+                                placeholder="0.25"
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value)}
+                              />
+                            </FormControl>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Points to deduct for incorrect answers (applies to all questions by default)
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
-                )}
+                </div>
                 
                 <div className="flex justify-end">
                   <Button 
