@@ -49,6 +49,7 @@ const testSchema = z.object({
   duration: z.number().min(1, 'Duration must be at least 1 minute'),
   passingScore: z.number().min(1, 'Passing score must be at least 1%').max(100, 'Passing score cannot exceed 100%'),
   isActive: z.boolean().default(true),
+  hasNegativeMarking: z.boolean().default(false),
   scheduledFor: z.string().optional().nullable(),
 });
 
@@ -134,6 +135,7 @@ export default function TestCreator() {
       duration: 60,
       passingScore: 70,
       isActive: true,
+      hasNegativeMarking: false,
       scheduledFor: null,
     },
   });
@@ -148,6 +150,7 @@ export default function TestCreator() {
         duration: test.duration || 60,
         passingScore: test.passingScore || 70,
         isActive: test.isActive !== undefined ? test.isActive : true,
+        hasNegativeMarking: test.hasNegativeMarking !== undefined ? test.hasNegativeMarking : false,
         scheduledFor: test.scheduledFor || null,
       });
     }
@@ -350,26 +353,49 @@ export default function TestCreator() {
                   )}
                 />
                 
-                <FormField
-                  control={testForm.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Active Status</FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          Determine if this test is visible to students
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={testForm.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                          <FormLabel>Active Status</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            Determine if this test is visible to students
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={testForm.control}
+                    name="hasNegativeMarking"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                          <FormLabel>Negative Marking</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            Deduct marks for incorrect answers
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <div className="flex justify-end">
                   <Button 

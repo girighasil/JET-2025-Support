@@ -43,6 +43,7 @@ const questionSchema = z.object({
   options: z.any().optional(),
   correctAnswer: z.any(),
   points: z.number().min(1, 'Points must be at least 1'),
+  negativePoints: z.number().min(0, 'Negative points must be 0 or greater'),
   explanation: z.string().optional(),
   sortOrder: z.number(),
 });
