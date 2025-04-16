@@ -400,6 +400,35 @@ export default function TestCreator() {
                   />
                 </div>
                 
+                {testForm.watch('hasNegativeMarking') && (
+                  <div className="p-4 border rounded-lg bg-muted/30">
+                    <h3 className="font-medium mb-4">Negative Marking Settings</h3>
+                    <FormField
+                      control={testForm.control}
+                      name="defaultNegativeMarking"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Default Negative Points</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              step="0.01"
+                              placeholder="0.25"
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.value)}
+                            />
+                          </FormControl>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Points to deduct for incorrect answers (applies to all questions by default)
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+                
                 <div className="flex justify-end">
                   <Button 
                     type="submit"

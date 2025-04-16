@@ -100,7 +100,7 @@ export default function QuestionManager() {
       options: mcqOptions,
       correctAnswer: [],
       points: 1,
-      negativePoints: 0,
+      negativePoints: 0, // Will be updated from test.defaultNegativeMarking once test is loaded
       explanation: '',
       sortOrder: 0,
     }
@@ -339,6 +339,11 @@ export default function QuestionManager() {
     setSubjectiveKeywords([]);
     setKeywordInput('');
     
+    // Get default negative points from test if available
+    const defaultNegativePoints = test?.hasNegativeMarking && test?.defaultNegativeMarking 
+      ? parseFloat(test.defaultNegativeMarking) 
+      : 0;
+    
     // Also make sure form fields are updated
     questionForm.reset({
       testId: testId || 0,
@@ -347,7 +352,7 @@ export default function QuestionManager() {
       options: initialOptions,
       correctAnswer: [],
       points: 1,
-      negativePoints: 0,
+      negativePoints: defaultNegativePoints,
       explanation: '',
       sortOrder: questions.length,
     });
