@@ -468,12 +468,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
       
-      const question = await storage.createQuestion(questionData);
+      // Handle decimal values for points and negative points
+      const formattedQuestionData = {
+        ...questionData,
+        // Store original decimal values as strings in separate fields
+        pointsFloat: questionData.points?.toString(),
+        negativePointsFloat: questionData.negativePoints?.toString(),
+      };
+      
+      // For safety, ensure the integer fields are integers (floor the values)
+      if (typeof formattedQuestionData.points === 'number') {
+        formattedQuestionData.points = Math.floor(formattedQuestionData.points);
+      }
+      
+      if (typeof formattedQuestionData.negativePoints === 'number') {
+        formattedQuestionData.negativePoints = Math.floor(formattedQuestionData.negativePoints);
+      }
+      
+      const question = await storage.createQuestion(formattedQuestionData);
       res.status(201).json(question);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: error.errors });
       } else {
+        console.error("Error creating question:", error);
         res.status(500).json({ message: "Server error" });
       }
     }
@@ -510,12 +528,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
       
-      const question = await storage.createQuestion(questionData);
+      // Handle decimal values for points and negative points
+      const formattedQuestionData = {
+        ...questionData,
+        // Store original decimal values as strings in separate fields
+        pointsFloat: questionData.points?.toString(),
+        negativePointsFloat: questionData.negativePoints?.toString(),
+      };
+      
+      // For safety, ensure the integer fields are integers (floor the values)
+      if (typeof formattedQuestionData.points === 'number') {
+        formattedQuestionData.points = Math.floor(formattedQuestionData.points);
+      }
+      
+      if (typeof formattedQuestionData.negativePoints === 'number') {
+        formattedQuestionData.negativePoints = Math.floor(formattedQuestionData.negativePoints);
+      }
+      
+      const question = await storage.createQuestion(formattedQuestionData);
       res.status(201).json(question);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: error.errors });
       } else {
+        console.error("Error creating question:", error);
         res.status(500).json({ message: "Server error" });
       }
     }
@@ -543,7 +579,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
       
-      const updatedQuestion = await storage.updateQuestion(questionId, questionData);
+      // Handle decimal values for points and negative points
+      const formattedQuestionData = {
+        ...questionData
+      };
+      
+      // Update point float values if points are provided
+      if (questionData.points !== undefined) {
+        formattedQuestionData.pointsFloat = questionData.points.toString();
+        
+        // For safety, ensure the integer field is an integer (floor the value)
+        if (typeof formattedQuestionData.points === 'number') {
+          formattedQuestionData.points = Math.floor(formattedQuestionData.points);
+        }
+      }
+      
+      // Update negative point float values if negative points are provided
+      if (questionData.negativePoints !== undefined) {
+        formattedQuestionData.negativePointsFloat = questionData.negativePoints.toString();
+        
+        // For safety, ensure the integer field is an integer (floor the value)
+        if (typeof formattedQuestionData.negativePoints === 'number') {
+          formattedQuestionData.negativePoints = Math.floor(formattedQuestionData.negativePoints);
+        }
+      }
+      
+      const updatedQuestion = await storage.updateQuestion(questionId, formattedQuestionData);
       if (!updatedQuestion) {
         return res.status(404).json({ message: "Question not found" });
       }
@@ -553,6 +614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: error.errors });
       } else {
+        console.error("Error updating question:", error);
         res.status(500).json({ message: "Server error" });
       }
     }
