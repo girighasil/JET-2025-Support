@@ -185,18 +185,16 @@ function NavItem({ title, href, icon: Icon, collapsed = false }: NavItemProps) {
   const [isActive] = useRoute(href);
   
   return (
-    <Link href={href}>
-      <a className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-        isActive 
-          ? "bg-blue-50 text-primary" 
-          : "text-gray-600 hover:bg-gray-50",
-        collapsed && "justify-center px-0"
-      )}>
-        <Icon className={cn("h-5 w-5 flex-shrink-0", 
-                           isActive ? "text-primary" : "text-gray-500")} />
-        {!collapsed && <span>{title}</span>}
-      </a>
+    <Link href={href} className={cn(
+      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+      isActive 
+        ? "bg-blue-50 text-primary" 
+        : "text-gray-600 hover:bg-gray-50",
+      collapsed && "justify-center px-0"
+    )}>
+      <Icon className={cn("h-5 w-5 flex-shrink-0", 
+                         isActive ? "text-primary" : "text-gray-500")} />
+      {!collapsed && <span>{title}</span>}
     </Link>
   );
 }
