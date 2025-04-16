@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Query to get session state
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['/api/auth/session'],
+    queryKey: ['/api/user'],
     queryFn: async ({ queryKey }) => {
       try {
         const res = await fetch(queryKey[0] as string, {
@@ -77,12 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const res = await apiRequest('POST', '/api/auth/login', { username, password });
+      const res = await apiRequest('POST', '/api/login', { username, password });
       return res.json();
     },
     onSuccess: (data) => {
       setUser(data);
-      queryClient.setQueryData(['/api/auth/session'], data);
+      queryClient.setQueryData(['/api/user'], data);
       toast({
         title: 'Login successful',
         description: `Welcome back, ${data.fullName}!`,
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest('POST', '/api/auth/register', userData);
+      const res = await apiRequest('POST', '/api/register', userData);
       return res.json();
     },
     onSuccess: () => {
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       setUser(null);
-      queryClient.setQueryData(['/api/auth/session'], null);
+      queryClient.setQueryData(['/api/user'], null);
       queryClient.invalidateQueries();
       toast({
         title: 'Logged out',

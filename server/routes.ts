@@ -1,10 +1,8 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import session from "express-session";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
 import { z } from "zod";
-import { storage, verifyPassword } from "./storage";
+import { storage } from "./storage";
+import { setupAuth } from "./auth";
 import {
   insertUserSchema,
   insertCourseSchema,
@@ -30,61 +28,8 @@ declare global {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Session setup
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "maths-magic-town-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: { secure: process.env.NODE_ENV === "production" }
-    })
-  );
-  
-  // Passport setup
-  app.use(passport.initialize());
-  app.use(passport.session());
-  
-  // Passport Local Strategy
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        
-        if (!user) {
-          return done(null, false, { message: "Incorrect username" });
-        }
-        
-        const isValid = await verifyPassword(password, user.password);
-        
-        if (!isValid) {
-          return done(null, false, { message: "Incorrect password" });
-        }
-        
-        // Return user without password
-        const { password: _, ...userWithoutPassword } = user;
-        return done(null, userWithoutPassword);
-      } catch (error) {
-        return done(error);
-      }
-    })
-  );
-  
-  passport.serializeUser((user, done) => {
-    done(null, user.id);
-  });
-  
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const user = await storage.getUser(id);
-      if (!user) {
-        return done(new Error("User not found"));
-      }
-      const { password: _, ...userWithoutPassword } = user;
-      done(null, userWithoutPassword);
-    } catch (error) {
-      done(error);
-    }
-  });
+  // Setup authentication
+  setupAuth(app);
   
   // Middleware to check authentication
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -109,71 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
   };
   
-  // Auth Routes
-  app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
-      if (err) {
-        return next(err);
-      }
-      if (!user) {
-        return res.status(401).json({ message: info.message || "Authentication failed" });
-      }
-      req.logIn(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-        return res.json(user);
-      });
-    })(req, res, next);
-  });
-  
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Check if username exists
-      const existingUsername = await storage.getUserByUsername(userData.username);
-      if (existingUsername) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-      
-      // Check if email exists
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-      
-      // Create user with student role by default
-      const user = await storage.createUser({
-        ...userData,
-        role: userData.role || "student"
-      });
-      
-      // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: error.errors });
-      } else {
-        res.status(500).json({ message: "Server error" });
-      }
-    }
-  });
-  
-  app.get("/api/auth/session", (req, res) => {
-    if (req.isAuthenticated()) {
-      res.json(req.user);
-    } else {
-      res.status(401).json({ message: "Not authenticated" });
-    }
-  });
-  
-  app.post("/api/auth/logout", (req, res) => {
-    req.logout(() => {
-      res.json({ message: "Logged out" });
-    });
-  });
+  // Auth routes are set up in setupAuth
   
   // User routes
   app.get("/api/users", isAuthenticated, hasRole(["admin"]), async (req, res) => {
