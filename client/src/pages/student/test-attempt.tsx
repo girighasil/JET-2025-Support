@@ -79,18 +79,23 @@ export default function StudentTestAttempt() {
       return res.json();
     },
     onSuccess: (data) => {
+      // First invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/test-attempts'] });
       
-      // First notify user with toast
+      // Notify user with toast
       toast({
         title: 'Test Submitted',
         description: `You've completed the test with a score of ${data.score}%.`,
       });
       
-      // Use setTimeout to ensure the navigation happens after React has updated the DOM
+      // Use window.history.pushState to avoid the 404 flash
+      // This directly manipulates the browser history without triggering a navigation event
+      window.history.pushState({}, "", `/student/tests/result/${testId}`);
+      
+      // Then force a navigation event after a small delay to ensure React router catches up
       setTimeout(() => {
-        navigate(`/student/tests/result/${testId}`);
-      }, 100);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, 200);
     },
     onError: (error: Error) => {
       toast({
@@ -196,7 +201,7 @@ export default function StudentTestAttempt() {
       // Close the timeout dialog first
       setShowTimeoutAlert(false);
       
-      // Then submit the test with a small delay to ensure UI updates first
+      // Then submit the test after a small delay to ensure UI updates first
       setTimeout(() => {
         submitAttemptMutation.mutate({
           id: attemptId,
