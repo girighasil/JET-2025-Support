@@ -712,10 +712,11 @@ export default function QuestionManager() {
                             <FormControl>
                               <Input 
                                 type="number" 
-                                min={1} 
+                                min={1}
+                                step="0.01"
                                 {...field}
                                 value={field.value}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -732,10 +733,11 @@ export default function QuestionManager() {
                             <FormControl>
                               <Input 
                                 type="number" 
-                                min={0} 
+                                min={0}
+                                step="0.01"
                                 {...field}
                                 value={field.value}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                               />
                             </FormControl>
                             <FormMessage />
