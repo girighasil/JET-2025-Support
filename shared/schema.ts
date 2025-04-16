@@ -63,6 +63,7 @@ export const tests = pgTable("tests", {
   createdBy: integer("created_by").notNull(), // Reference to users.id
   isActive: boolean("is_active").notNull().default(true),
   scheduledFor: timestamp("scheduled_for"), // Optional scheduled time
+  hasNegativeMarking: boolean("has_negative_marking").notNull().default(false), // Whether test has negative marking
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -80,6 +81,7 @@ export const questions = pgTable("questions", {
   options: jsonb("options"), // For MCQs: [{"id": "a", "text": "Option A"}, ...]
   correctAnswer: jsonb("correct_answer"), // Depends on type (string or array)
   points: integer("points").notNull().default(1),
+  negativePoints: integer("negative_points").default(0), // Points deducted for wrong answers
   explanation: text("explanation"),
   sortOrder: integer("sort_order").notNull(),
   createdAt: timestamp("created_at").defaultNow()
@@ -99,7 +101,11 @@ export const testAttempts = pgTable("test_attempts", {
   completedAt: timestamp("completed_at"),
   score: integer("score"), // Calculated score
   status: text("status").notNull().default("in_progress"), // "in_progress", "completed", "abandoned"
-  answers: jsonb("answers").default({}) // {questionId: answer}
+  totalPoints: integer("total_points"), // Total points earned (including negative)
+  correctPoints: integer("correct_points"), // Points earned from correct answers
+  negativePoints: integer("negative_points"), // Points deducted for incorrect answers
+  answers: jsonb("answers").default({}), // {questionId: answer}
+  results: jsonb("results").default({}) // Detailed results: {questionId: {correct: true/false, points: +/-, etc.}}
 });
 
 export const insertTestAttemptSchema = createInsertSchema(testAttempts).omit({
