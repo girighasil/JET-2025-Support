@@ -868,56 +868,69 @@ export default function TestCreator() {
                           {questionType === 'mcq' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Define options and select correct answer(s)</p>
-                              {mcqOptions.map((option, index) => (
-                                <div key={`mcq-option-row-${option.id}-${index}`} className="flex items-start gap-3">
-                                  <Checkbox 
-                                    id={`option-${option.id}-${index}`}
-                                    checked={selectedMcqAnswers.includes(option.id)}
-                                    onCheckedChange={() => {
-                                      const updatedAnswers = selectedMcqAnswers.includes(option.id)
-                                        ? selectedMcqAnswers.filter(a => a !== option.id)
-                                        : [...selectedMcqAnswers, option.id];
-                                      
-                                      setSelectedMcqAnswers(updatedAnswers);
-                                      questionForm.setValue('correctAnswer', updatedAnswers, {
-                                        shouldValidate: true,
-                                        shouldDirty: true,
-                                        shouldTouch: true
-                                      });
-                                    }}
-                                  />
-                                  <div className="flex-1">
-                                    <Label 
-                                      htmlFor={`option-${option.id}-${index}`} 
-                                      className="mb-1 block font-medium"
-                                    >
-                                      Option {option.id.toUpperCase()}
-                                    </Label>
-                                    <input
-                                      type="text"
-                                      placeholder={`Enter option ${option.id}`}
-                                      defaultValue={option.text}
-                                      onChange={(e) => {
-                                        const updatedOptions = mcqOptions.map(opt => 
-                                          opt.id === option.id ? { ...opt, text: e.target.value } : opt
-                                        );
-                                        setMcqOptions(updatedOptions);
-                                        questionForm.setValue('options', updatedOptions, {
-                                          shouldValidate: true,
-                                          shouldDirty: true,
-                                          shouldTouch: true
-                                        });
-                                      }}
-                                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                              {selectedMcqAnswers.length === 0 && (
-                                <p className="text-sm text-red-500">
-                                  Please select at least one correct answer
-                                </p>
-                              )}
+                              
+                              <FormField
+                                control={questionForm.control}
+                                name="options"
+                                render={() => (
+                                  <FormItem>
+                                    <div className="space-y-3">
+                                      {mcqOptions.map((option, index) => (
+                                        <div key={`mcq-option-row-${option.id}-${index}`} className="flex items-start gap-3">
+                                          <FormItem className="flex items-start space-x-3 space-y-0">
+                                            <FormControl>
+                                              <Checkbox 
+                                                id={`option-${option.id}-${index}`}
+                                                checked={selectedMcqAnswers.includes(option.id)}
+                                                onCheckedChange={() => {
+                                                  const updatedAnswers = selectedMcqAnswers.includes(option.id)
+                                                    ? selectedMcqAnswers.filter(a => a !== option.id)
+                                                    : [...selectedMcqAnswers, option.id];
+                                                  
+                                                  setSelectedMcqAnswers(updatedAnswers);
+                                                  questionForm.setValue('correctAnswer', updatedAnswers, {
+                                                    shouldValidate: true,
+                                                    shouldDirty: true
+                                                  });
+                                                }}
+                                              />
+                                            </FormControl>
+                                            <div className="flex-1">
+                                              <FormLabel 
+                                                htmlFor={`option-${option.id}-${index}`} 
+                                                className="font-medium"
+                                              >
+                                                Option {option.id.toUpperCase()}
+                                              </FormLabel>
+                                              <FormControl>
+                                                <Input
+                                                  placeholder={`Enter option ${option.id}`}
+                                                  value={option.text}
+                                                  onChange={(e) => {
+                                                    const updatedOptions = mcqOptions.map(opt => 
+                                                      opt.id === option.id ? { ...opt, text: e.target.value } : opt
+                                                    );
+                                                    setMcqOptions(updatedOptions);
+                                                    questionForm.setValue('options', updatedOptions, {
+                                                      shouldValidate: true,
+                                                      shouldDirty: true
+                                                    });
+                                                  }}
+                                                />
+                                              </FormControl>
+                                            </div>
+                                          </FormItem>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {selectedMcqAnswers.length === 0 && (
+                                      <FormMessage>
+                                        Please select at least one correct answer
+                                      </FormMessage>
+                                    )}
+                                  </FormItem>
+                                )}
+                              />
                             </div>
                           )}
                           
@@ -925,49 +938,73 @@ export default function TestCreator() {
                           {questionType === 'truefalse' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Select the correct answer</p>
-                              <div className="flex flex-col space-y-3">
-                                <div 
-                                  className={`flex items-center space-x-2 p-3 rounded border ${
-                                    trueFalseAnswer === true ? 'border-primary bg-primary/5' : 'border-input'
-                                  }`}
-                                  onClick={() => {
-                                    setTrueFalseAnswer(true);
-                                    questionForm.setValue('correctAnswer', true, {
-                                      shouldValidate: true,
-                                      shouldDirty: true,
-                                      shouldTouch: true
-                                    });
-                                  }}
-                                >
-                                  <div className={`h-4 w-4 rounded-full ${
-                                    trueFalseAnswer === true ? 'bg-primary' : 'border border-input'
-                                  }`} />
-                                  <Label className="cursor-pointer">True</Label>
-                                </div>
-                                <div 
-                                  className={`flex items-center space-x-2 p-3 rounded border ${
-                                    trueFalseAnswer === false ? 'border-primary bg-primary/5' : 'border-input'
-                                  }`}
-                                  onClick={() => {
-                                    setTrueFalseAnswer(false);
-                                    questionForm.setValue('correctAnswer', false, {
-                                      shouldValidate: true,
-                                      shouldDirty: true,
-                                      shouldTouch: true
-                                    });
-                                  }}
-                                >
-                                  <div className={`h-4 w-4 rounded-full ${
-                                    trueFalseAnswer === false ? 'bg-primary' : 'border border-input'
-                                  }`} />
-                                  <Label className="cursor-pointer">False</Label>
-                                </div>
-                              </div>
-                              {trueFalseAnswer === null && (
-                                <p className="text-sm text-red-500">
-                                  Please select the correct answer
-                                </p>
-                              )}
+                              
+                              <FormField
+                                control={questionForm.control}
+                                name="correctAnswer"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex flex-col space-y-3">
+                                      <div 
+                                        className={`flex items-center space-x-2 p-3 rounded border ${
+                                          trueFalseAnswer === true ? 'border-primary bg-primary/5' : 'border-input'
+                                        }`}
+                                        onClick={() => {
+                                          setTrueFalseAnswer(true);
+                                          field.onChange(true);
+                                        }}
+                                      >
+                                        <FormControl>
+                                          <RadioGroup 
+                                            value={trueFalseAnswer === true ? "true" : ""}
+                                            onValueChange={() => {}}
+                                            className="hidden"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="true" id="true" />
+                                            </div>
+                                          </RadioGroup>
+                                        </FormControl>
+                                        <div className={`h-4 w-4 rounded-full ${
+                                          trueFalseAnswer === true ? 'bg-primary' : 'border border-input'
+                                        }`} />
+                                        <FormLabel htmlFor="true" className="cursor-pointer">True</FormLabel>
+                                      </div>
+                                      
+                                      <div 
+                                        className={`flex items-center space-x-2 p-3 rounded border ${
+                                          trueFalseAnswer === false ? 'border-primary bg-primary/5' : 'border-input'
+                                        }`}
+                                        onClick={() => {
+                                          setTrueFalseAnswer(false);
+                                          field.onChange(false);
+                                        }}
+                                      >
+                                        <FormControl>
+                                          <RadioGroup 
+                                            value={trueFalseAnswer === false ? "false" : ""}
+                                            onValueChange={() => {}}
+                                            className="hidden"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="false" id="false" />
+                                            </div>
+                                          </RadioGroup>
+                                        </FormControl>
+                                        <div className={`h-4 w-4 rounded-full ${
+                                          trueFalseAnswer === false ? 'bg-primary' : 'border border-input'
+                                        }`} />
+                                        <FormLabel htmlFor="false" className="cursor-pointer">False</FormLabel>
+                                      </div>
+                                    </div>
+                                    {trueFalseAnswer === null && (
+                                      <FormMessage>
+                                        Please select the correct answer
+                                      </FormMessage>
+                                    )}
+                                  </FormItem>
+                                )}
+                              />
                             </div>
                           )}
                           
@@ -975,26 +1012,31 @@ export default function TestCreator() {
                           {questionType === 'fillblank' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Enter the correct answer</p>
-                              <input
-                                type="text"
-                                placeholder="Correct answer"
-                                defaultValue={fillBlankAnswer}
-                                onChange={(e) => {
-                                  const newValue = e.target.value;
-                                  setFillBlankAnswer(newValue);
-                                  questionForm.setValue('correctAnswer', newValue, { 
-                                    shouldValidate: true,
-                                    shouldDirty: true,
-                                    shouldTouch: true
-                                  });
-                                }}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              
+                              <FormField
+                                control={questionForm.control}
+                                name="correctAnswer"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Correct answer"
+                                        value={fillBlankAnswer}
+                                        onChange={(e) => {
+                                          const newValue = e.target.value;
+                                          setFillBlankAnswer(newValue);
+                                          field.onChange(newValue);
+                                        }}
+                                      />
+                                    </FormControl>
+                                    {!fillBlankAnswer && (
+                                      <FormMessage>
+                                        Please enter the correct answer
+                                      </FormMessage>
+                                    )}
+                                  </FormItem>
+                                )}
                               />
-                              {!fillBlankAnswer && (
-                                <p className="text-sm text-red-500">
-                                  Please enter the correct answer
-                                </p>
-                              )}
                             </div>
                           )}
                           
@@ -1004,69 +1046,78 @@ export default function TestCreator() {
                               <p className="text-sm text-muted-foreground mb-2">
                                 Add keywords that should be present in a good answer (for auto-grading)
                               </p>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="Enter keyword"
-                                  value={keywordInput}
-                                  onChange={(e) => setKeywordInput(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      addKeyword();
-                                    }
-                                  }}
-                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                <Button 
-                                  type="button" 
-                                  onClick={() => {
-                                    if (keywordInput.trim()) {
-                                      const newKeywords = [...subjectiveKeywords, keywordInput.trim()];
-                                      setSubjectiveKeywords(newKeywords);
-                                      questionForm.setValue('correctAnswer', newKeywords, {
-                                        shouldValidate: true,
-                                        shouldDirty: true,
-                                        shouldTouch: true
-                                      });
-                                      setKeywordInput('');
-                                    }
-                                  }}
-                                  disabled={!keywordInput.trim()}
-                                >
-                                  Add
-                                </Button>
-                              </div>
-                              <div className="flex flex-wrap gap-2 mt-2 border rounded-md p-3">
-                                {subjectiveKeywords.map((keyword, index) => (
-                                  <div 
-                                    key={`keyword-${index}-${keyword}`} 
-                                    className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center gap-1"
-                                  >
-                                    {keyword}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newKeywords = subjectiveKeywords.filter(k => k !== keyword);
-                                        setSubjectiveKeywords(newKeywords);
-                                        questionForm.setValue('correctAnswer', newKeywords, {
-                                          shouldValidate: true,
-                                          shouldDirty: true,
-                                          shouldTouch: true
-                                        });
-                                      }}
-                                      className="text-primary hover:text-primary/70 h-4 w-4 rounded-full flex items-center justify-center"
-                                    >
-                                      ×
-                                    </button>
-                                  </div>
-                                ))}
-                                {subjectiveKeywords.length === 0 && (
-                                  <p className="text-sm text-muted-foreground">
-                                    No keywords added yet
-                                  </p>
+                              
+                              <FormField
+                                control={questionForm.control}
+                                name="correctAnswer"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="space-y-4">
+                                      <div className="flex gap-2">
+                                        <FormControl>
+                                          <Input
+                                            placeholder="Enter keyword"
+                                            value={keywordInput}
+                                            onChange={(e) => setKeywordInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                if (keywordInput.trim()) {
+                                                  const newKeywords = [...subjectiveKeywords, keywordInput.trim()];
+                                                  setSubjectiveKeywords(newKeywords);
+                                                  field.onChange(newKeywords);
+                                                  setKeywordInput('');
+                                                }
+                                              }
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <Button 
+                                          type="button" 
+                                          onClick={() => {
+                                            if (keywordInput.trim()) {
+                                              const newKeywords = [...subjectiveKeywords, keywordInput.trim()];
+                                              setSubjectiveKeywords(newKeywords);
+                                              field.onChange(newKeywords);
+                                              setKeywordInput('');
+                                            }
+                                          }}
+                                          disabled={!keywordInput.trim()}
+                                        >
+                                          Add
+                                        </Button>
+                                      </div>
+                                      
+                                      <div className="flex flex-wrap gap-2 border rounded-md p-3">
+                                        {subjectiveKeywords.map((keyword, index) => (
+                                          <div 
+                                            key={`keyword-${index}-${keyword}`} 
+                                            className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                                          >
+                                            {keyword}
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const newKeywords = subjectiveKeywords.filter(k => k !== keyword);
+                                                setSubjectiveKeywords(newKeywords);
+                                                field.onChange(newKeywords);
+                                              }}
+                                              className="text-primary hover:text-primary/70 h-4 w-4 rounded-full flex items-center justify-center"
+                                            >
+                                              ×
+                                            </button>
+                                          </div>
+                                        ))}
+                                        {subjectiveKeywords.length === 0 && (
+                                          <p className="text-sm text-muted-foreground">
+                                            No keywords added yet
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </FormItem>
                                 )}
-                              </div>
+                              />
                             </div>
                           )}
                         </div>
