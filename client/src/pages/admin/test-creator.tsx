@@ -507,25 +507,43 @@ export default function TestCreator() {
     questionForm.trigger('correctAnswer');
   };
   
-  // Add keyword to subjective question
+  // Add keyword to subjective question - properly updates form value and local state
   const addKeyword = () => {
     if (keywordInput.trim() && !subjectiveKeywords.includes(keywordInput.trim())) {
+      // Create updated keywords array
       const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
+      
+      // Update local state
       setSubjectiveKeywords(updatedKeywords);
+      
+      // Update form value with validation
       questionForm.setValue('correctAnswer', updatedKeywords, {
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true
       });
+      
+      // Clear input
       setKeywordInput('');
     }
   };
   
-  // Remove keyword from subjective question
+  // Remove keyword from subjective question - properly updates form value and local state
   const removeKeyword = (keyword: string) => {
+    // Create updated keywords array
     const updatedKeywords = subjectiveKeywords.filter(k => k !== keyword);
+    
+    // Update local state
     setSubjectiveKeywords(updatedKeywords);
-    questionForm.setValue('correctAnswer', updatedKeywords);
+    
+    // Update form value with validation
+    questionForm.setValue('correctAnswer', updatedKeywords, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    
+    // Trigger validation
     questionForm.trigger('correctAnswer');
   };
   
@@ -807,20 +825,36 @@ export default function TestCreator() {
                                   const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
                                   setQuestionType(typedValue);
                                   
-                                  // Reset answer states
+                                  // Reset the initial options based on the type
+                                  const defaultMcqOptions = [
+                                    { id: 'a', text: '' },
+                                    { id: 'b', text: '' },
+                                    { id: 'c', text: '' },
+                                    { id: 'd', text: '' }
+                                  ];
+                                  
+                                  // Reset MCQ options if switching to MCQ
+                                  if (typedValue === 'mcq') {
+                                    setMcqOptions(defaultMcqOptions);
+                                    questionForm.setValue('options', defaultMcqOptions, { shouldValidate: true });
+                                  }
+                                  
+                                  // Reset answer-related states
                                   setSelectedMcqAnswers([]);
                                   setTrueFalseAnswer(null);
                                   setFillBlankAnswer('');
                                   setSubjectiveKeywords([]);
+                                  setKeywordInput('');
                                   
-                                  // Reset the correct answer in the form
-                                  questionForm.setValue('correctAnswer', 
-                                    typedValue === 'mcq' ? [] : 
-                                    typedValue === 'truefalse' ? null : 
-                                    typedValue === 'fillblank' ? '' : 
-                                    [], 
-                                    { shouldValidate: true }
-                                  );
+                                  // Reset the correct answer in the form based on type
+                                  const defaultAnswers = {
+                                    mcq: [],
+                                    truefalse: null,
+                                    fillblank: '',
+                                    subjective: []
+                                  };
+                                  
+                                  questionForm.setValue('correctAnswer', defaultAnswers[typedValue], { shouldValidate: true });
                                 }}
                               >
                                 <FormControl>
@@ -873,42 +907,63 @@ export default function TestCreator() {
                                 {mcqOptions.map((option, index) => (
                                   <div key={`mcq-option-${option.id}`} className="flex items-start gap-3">
                                     <div className="flex items-start space-x-3 space-y-0">
-                                      <Checkbox 
-                                        id={`option-${option.id}`}
-                                        checked={selectedMcqAnswers.includes(option.id)}
-                                        onCheckedChange={(checked) => {
-                                          const updatedAnswers = checked 
-                                            ? [...selectedMcqAnswers, option.id]
-                                            : selectedMcqAnswers.filter(a => a !== option.id);
-                                          
-                                          setSelectedMcqAnswers(updatedAnswers);
-                                          questionForm.setValue('correctAnswer', updatedAnswers, {
-                                            shouldValidate: true
-                                          });
-                                        }}
+                                      <FormField
+                                        control={questionForm.control}
+                                        name="correctAnswer"
+                                        render={({ field }) => (
+                                          <FormItem className="flex items-start space-x-3 space-y-0 mt-0">
+                                            <FormControl>
+                                              <Checkbox 
+                                                id={`option-${option.id}`}
+                                                checked={selectedMcqAnswers.includes(option.id)}
+                                                onCheckedChange={(checked) => {
+                                                  // Update the local state
+                                                  const updatedAnswers = checked 
+                                                    ? [...selectedMcqAnswers, option.id]
+                                                    : selectedMcqAnswers.filter(a => a !== option.id);
+                                                  
+                                                  // Set both local state and form value
+                                                  setSelectedMcqAnswers(updatedAnswers);
+                                                  field.onChange(updatedAnswers);
+                                                }}
+                                              />
+                                            </FormControl>
+                                            <div className="flex-1">
+                                              <label 
+                                                htmlFor={`option-${option.id}`} 
+                                                className="font-medium text-sm"
+                                              >
+                                                Option {option.id.toUpperCase()}
+                                              </label>
+                                              <FormField
+                                                control={questionForm.control}
+                                                name="options"
+                                                render={({ field: optionsField }) => (
+                                                  <FormItem className="mt-0">
+                                                    <FormControl>
+                                                      <Input
+                                                        placeholder={`Enter option ${option.id}`}
+                                                        value={option.text}
+                                                        onChange={(e) => {
+                                                          // Update local options state
+                                                          const updatedOptions = mcqOptions.map(opt => 
+                                                            opt.id === option.id ? { ...opt, text: e.target.value } : opt
+                                                          );
+                                                          
+                                                          // Update both local state and form value
+                                                          setMcqOptions(updatedOptions);
+                                                          optionsField.onChange(updatedOptions);
+                                                        }}
+                                                        className="mt-1"
+                                                      />
+                                                    </FormControl>
+                                                  </FormItem>
+                                                )}
+                                              />
+                                            </div>
+                                          </FormItem>
+                                        )}
                                       />
-                                      <div className="flex-1">
-                                        <label 
-                                          htmlFor={`option-${option.id}`} 
-                                          className="font-medium text-sm"
-                                        >
-                                          Option {option.id.toUpperCase()}
-                                        </label>
-                                        <Input
-                                          placeholder={`Enter option ${option.id}`}
-                                          value={option.text}
-                                          onChange={(e) => {
-                                            const updatedOptions = mcqOptions.map(opt => 
-                                              opt.id === option.id ? { ...opt, text: e.target.value } : opt
-                                            );
-                                            setMcqOptions(updatedOptions);
-                                            questionForm.setValue('options', updatedOptions, {
-                                              shouldValidate: true
-                                            });
-                                          }}
-                                          className="mt-1"
-                                        />
-                                      </div>
                                     </div>
                                   </div>
                                 ))}
@@ -1027,14 +1082,28 @@ export default function TestCreator() {
                                           onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                               e.preventDefault();
-                                              addKeyword();
+                                              if (keywordInput.trim()) {
+                                                // Only update if we have a non-empty keyword
+                                                const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
+                                                setSubjectiveKeywords(updatedKeywords);
+                                                field.onChange(updatedKeywords);
+                                                setKeywordInput('');
+                                              }
                                             }
                                           }}
                                           className="flex-1"
                                         />
                                         <Button 
                                           type="button" 
-                                          onClick={addKeyword}
+                                          onClick={() => {
+                                            if (keywordInput.trim()) {
+                                              // Only update if we have a non-empty keyword
+                                              const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
+                                              setSubjectiveKeywords(updatedKeywords);
+                                              field.onChange(updatedKeywords);
+                                              setKeywordInput('');
+                                            }
+                                          }}
                                           className="shrink-0"
                                           size="sm"
                                         >
@@ -1049,7 +1118,11 @@ export default function TestCreator() {
                                               {keyword}
                                               <X 
                                                 className="h-3 w-3 ml-1 cursor-pointer" 
-                                                onClick={() => removeKeyword(keyword)}
+                                                onClick={() => {
+                                                  const updatedKeywords = subjectiveKeywords.filter(k => k !== keyword);
+                                                  setSubjectiveKeywords(updatedKeywords);
+                                                  field.onChange(updatedKeywords);
+                                                }}
                                               />
                                             </Badge>
                                           ))}
