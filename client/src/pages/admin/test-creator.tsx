@@ -812,27 +812,23 @@ export default function TestCreator() {
                           )}
                         />
                         
-                        <FormField
-                          control={questionForm.control}
-                          name="question"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Question Text</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Enter the question..." 
-                                  className="min-h-[80px]"
-                                  value={field.value || ''}
-                                  onChange={(e) => field.onChange(e.target.value)}
-                                  onBlur={field.onBlur}
-                                  name={field.name}
-                                  ref={field.ref}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="space-y-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="question-text">Question Text</Label>
+                            <Textarea 
+                              id="question-text"
+                              placeholder="Enter the question..." 
+                              className="min-h-[80px] w-full"
+                              value={questionForm.getValues().question || ''}
+                              onChange={(e) => {
+                                questionForm.setValue('question', e.target.value);
+                              }}
+                            />
+                            {questionForm.formState.errors.question && (
+                              <p className="text-sm text-red-500">{questionForm.formState.errors.question.message}</p>
+                            )}
+                          </div>
+                        </div>
                         
                         {/* Question Type Specific Inputs */}
                         <div className="border rounded-md p-4">
@@ -1004,27 +1000,20 @@ export default function TestCreator() {
                           />
                         </div>
                         
-                        <FormField
-                          control={questionForm.control}
-                          name="explanation"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Explanation (Optional)</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Explain the correct answer..." 
-                                  className="min-h-[80px]"
-                                  value={field.value || ''}
-                                  onChange={(e) => field.onChange(e.target.value)}
-                                  onBlur={field.onBlur}
-                                  name={field.name}
-                                  ref={field.ref}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="space-y-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="explanation-text">Explanation (Optional)</Label>
+                            <Textarea 
+                              id="explanation-text"
+                              placeholder="Explain the correct answer..." 
+                              className="min-h-[80px] w-full"
+                              value={questionForm.getValues().explanation || ''}
+                              onChange={(e) => {
+                                questionForm.setValue('explanation', e.target.value);
+                              }}
+                            />
+                          </div>
+                        </div>
                         
                         <div className="flex justify-end gap-2">
                           {currentQuestion && (
