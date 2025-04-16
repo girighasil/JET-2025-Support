@@ -10,6 +10,7 @@ import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
 import StudentTests from "@/pages/student/tests";
 import StudentTestAttempt from "@/pages/student/test-attempt";
+import StudentTestResult from "@/pages/student/test-result";
 import StudentDoubts from "@/pages/student/doubts";
 import StudentProfile from "@/pages/student/profile";
 
@@ -50,6 +51,9 @@ function App() {
         </Route>
         <Route path="/student/test-attempt">
           <ProtectedRoute path="/student/test-attempt" component={StudentTestAttempt} roles={["student"]} />
+        </Route>
+        <Route path="/student/tests/result/:testId">
+          <ProtectedRoute path="/student/tests/result/:testId" component={StudentTestResult} roles={["student"]} />
         </Route>
         <Route path="/student/doubts">
           <ProtectedRoute path="/student/doubts" component={StudentDoubts} roles={["student"]} />
