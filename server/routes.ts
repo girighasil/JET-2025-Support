@@ -795,12 +795,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Calculate score
         let totalPoints = 0;
         let earnedPoints = 0;
+        let totalNegativePoints = 0;
+        
+        // Detailed results object to store per-question results
+        const results = {};
         
         for (const question of questions) {
-          totalPoints += question.points;
+          // Use decimal points if available, otherwise use integer points
+          const pointsValue = question.pointsFloat ? parseFloat(question.pointsFloat) : question.points;
+          const negPointsValue = question.negativePointsFloat ? parseFloat(question.negativePointsFloat) : question.negativePoints || 0;
+          
+          totalPoints += pointsValue;
           
           // Skip if question wasn't answered
-          if (!answers[question.id]) continue;
+          if (!answers[question.id]) {
+            results[question.id] = {
+              correct: false,
+              answered: false,
+              points: 0,
+              possiblePoints: pointsValue
+            };
+            continue;
+          }
           
           // Check if answer is correct
           let isCorrect = false;
@@ -845,15 +861,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
               break;
           }
           
+          let pointsForQuestion = 0;
+          
           if (isCorrect) {
-            earnedPoints += question.points;
+            pointsForQuestion = pointsValue;
+            earnedPoints += pointsValue;
+          } else if (negPointsValue > 0) {
+            // Apply negative marking only if the question was answered incorrectly
+            pointsForQuestion = -negPointsValue;
+            totalNegativePoints += negPointsValue;
           }
+          
+          // Store detailed results for this question
+          results[question.id] = {
+            correct: isCorrect,
+            answered: true,
+            points: pointsForQuestion,
+            possiblePoints: pointsValue
+          };
         }
         
-        // Calculate percentage score
+        // Calculate final score
+        const finalPoints = earnedPoints - totalNegativePoints;
+        
+        // Calculate percentage score (all positive for final score)
         attemptData.score = totalPoints > 0 
-          ? Math.round((earnedPoints / totalPoints) * 100) 
+          ? Math.round((Math.max(0, finalPoints) / totalPoints) * 100)
           : 0;
+        
+        // Store detailed information about points
+        attemptData.totalPoints = Math.round(finalPoints);
+        attemptData.correctPoints = Math.round(earnedPoints);
+        attemptData.negativePoints = Math.round(totalNegativePoints);
+        
+        // Store decimal values
+        attemptData.totalPointsFloat = finalPoints.toFixed(2);
+        attemptData.correctPointsFloat = earnedPoints.toFixed(2);
+        attemptData.negativePointsFloat = totalNegativePoints.toFixed(2);
+        
+        // Store detailed results
+        attemptData.results = results;
         
         // Set completedAt if not provided
         if (!attemptData.completedAt) {
