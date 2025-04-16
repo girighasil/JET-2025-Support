@@ -446,7 +446,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is authorized to add questions to this test
-      if (test.createdBy !== req.user.id && req.user.role !== "admin") {
+      // Allow teachers to add questions to any test, not just tests they created
+      if (req.user.role !== "admin" && req.user.role !== "teacher") {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -487,7 +488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is authorized to add questions to this test
-      if (test.createdBy !== req.user.id && req.user.role !== "admin") {
+      // Allow teachers to add questions to any test, not just tests they created
+      if (req.user.role !== "admin" && req.user.role !== "teacher") {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -519,7 +521,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Test not found" });
       }
       
-      if (test.createdBy !== req.user.id && req.user.role !== "admin") {
+      // Allow teachers to update questions for any test, not just tests they created
+      if (req.user.role !== "admin" && req.user.role !== "teacher") {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -554,7 +557,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Test not found" });
       }
       
-      if (test.createdBy !== req.user.id && req.user.role !== "admin") {
+      // Allow teachers to delete questions for any test, not just tests they created
+      if (req.user.role !== "admin" && req.user.role !== "teacher") {
         return res.status(403).json({ message: "Forbidden" });
       }
       
