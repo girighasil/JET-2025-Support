@@ -802,41 +802,41 @@ export default function TestCreator() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Question Type</FormLabel>
-                              <Select
-                                value={questionType}
-                                onValueChange={(value: any) => {
-                                  const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
-                                  setQuestionType(typedValue);
-                                  field.onChange(typedValue);
-                                  
-                                  // Reset all relevant answer state when switching types
-                                  setSelectedMcqAnswers([]);
-                                  setTrueFalseAnswer(null);
-                                  setFillBlankAnswer('');
-                                  setSubjectiveKeywords([]);
-                                  
-                                  // Set appropriate form values based on new question type
-                                  questionForm.setValue('correctAnswer', 
-                                    typedValue === 'mcq' ? [] : 
-                                    typedValue === 'truefalse' ? null : 
-                                    typedValue === 'fillblank' ? '' : 
-                                    [], 
-                                    { shouldValidate: true }
-                                  );
-                                }}
-                              >
-                                <FormControl>
+                              <FormControl>
+                                <Select
+                                  defaultValue={field.value}
+                                  onValueChange={(value) => {
+                                    const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
+                                    setQuestionType(typedValue);
+                                    field.onChange(typedValue);
+                                    
+                                    // Reset all relevant answer state when switching types
+                                    setSelectedMcqAnswers([]);
+                                    setTrueFalseAnswer(null);
+                                    setFillBlankAnswer('');
+                                    setSubjectiveKeywords([]);
+                                    
+                                    // Set appropriate form values based on new question type
+                                    questionForm.setValue('correctAnswer', 
+                                      typedValue === 'mcq' ? [] : 
+                                      typedValue === 'truefalse' ? null : 
+                                      typedValue === 'fillblank' ? '' : 
+                                      [], 
+                                      { shouldValidate: true }
+                                    );
+                                  }}
+                                >
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select question type" />
                                   </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="mcq">Multiple Choice</SelectItem>
-                                  <SelectItem value="truefalse">True/False</SelectItem>
-                                  <SelectItem value="fillblank">Fill in the Blank</SelectItem>
-                                  <SelectItem value="subjective">Subjective</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                  <SelectContent>
+                                    <SelectItem value="mcq">Multiple Choice</SelectItem>
+                                    <SelectItem value="truefalse">True/False</SelectItem>
+                                    <SelectItem value="fillblank">Fill in the Blank</SelectItem>
+                                    <SelectItem value="subjective">Subjective</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
