@@ -133,6 +133,18 @@ export default function ManageTests() {
       }
     },
     {
+      accessorKey: 'creatorName',
+      header: 'Created By',
+      cell: ({ row }: any) => {
+        const creatorName = row.getValue('creatorName');
+        return (
+          <div className="flex items-center">
+            <span className="font-medium">{creatorName || "Unknown"}</span>
+          </div>
+        );
+      }
+    },
+    {
       accessorKey: 'isActive',
       header: 'Status',
       cell: ({ row }: any) => {

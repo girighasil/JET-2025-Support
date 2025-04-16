@@ -206,7 +206,14 @@ export default function TestCreator() {
             <CardTitle>{isEditMode ? 'Edit Test' : 'Create New Test'}</CardTitle>
             <CardDescription>
               {isEditMode 
-                ? 'Update the test details and settings.' 
+                ? <>
+                    Update the test details and settings.
+                    {test?.creatorName && (
+                      <div className="mt-2 text-sm font-medium">
+                        Created by: {test.creatorName}
+                      </div>
+                    )}
+                  </> 
                 : 'Fill in the details to create a new test. You can add questions after saving the test.'}
             </CardDescription>
           </CardHeader>
