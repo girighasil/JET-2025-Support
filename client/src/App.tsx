@@ -52,8 +52,8 @@ function App() {
         <Route path="/student/test-attempt">
           <ProtectedRoute path="/student/test-attempt" component={StudentTestAttempt} roles={["student"]} />
         </Route>
-        <Route path="/student/tests/result/:testId">
-          <ProtectedRoute path="/student/tests/result/:testId" component={StudentTestResult} roles={["student"]} />
+        <Route path="/student/tests/result/:attemptId">
+          <ProtectedRoute path="/student/tests/result/:attemptId" component={StudentTestResult} roles={["student"]} />
         </Route>
         <Route path="/student/doubts">
           <ProtectedRoute path="/student/doubts" component={StudentDoubts} roles={["student"]} />

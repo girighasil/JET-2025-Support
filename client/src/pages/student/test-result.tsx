@@ -10,36 +10,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 
 export default function TestResult() {
-  const [match, params] = useRoute('/student/tests/result/:testId');
-  const testId = match ? parseInt(params?.testId as string) : null;
+  const [match, params] = useRoute('/student/tests/result/:attemptId');
+  const attemptId = match ? parseInt(params?.attemptId as string) : null;
   
-  // Get the most recent test attempt for this test
-  const { data: attempts, isLoading: isAttemptsLoading } = useQuery({
-    queryKey: ['/api/test-attempts'],
-    enabled: !!testId,
+  // Get the specific test attempt by ID
+  const { data: currentAttempt, isLoading: isAttemptsLoading } = useQuery({
+    queryKey: [`/api/test-attempts/${attemptId}`],
+    enabled: !!attemptId,
   });
   
-  // Filter to get this test's attempt
-  const [currentAttempt, setCurrentAttempt] = useState<any>(null);
+  // Fetch test details once we have the attempt
+  const testId = currentAttempt?.testId;
   
-  useEffect(() => {
-    if (attempts && testId) {
-      // Find the most recent completed attempt for this test
-      const testAttempts = attempts.filter((a: any) => 
-        a.testId === testId && a.status === 'completed'
-      );
-      
-      if (testAttempts.length > 0) {
-        // Sort by date (most recent first) and get the latest
-        const sortedAttempts = [...testAttempts].sort(
-          (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-        );
-        setCurrentAttempt(sortedAttempts[0]);
-      }
-    }
-  }, [attempts, testId]);
-  
-  // Fetch test details
   const { data: test, isLoading: isTestLoading } = useQuery({
     queryKey: [`/api/tests/${testId}`],
     enabled: !!testId,

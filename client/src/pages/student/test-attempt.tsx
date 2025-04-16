@@ -90,7 +90,7 @@ export default function StudentTestAttempt() {
       
       // Use window.history.pushState to avoid the 404 flash
       // This directly manipulates the browser history without triggering a navigation event
-      window.history.pushState({}, "", `/student/tests/result/${testId}`);
+      window.history.pushState({}, "", `/student/tests/result/${attemptId}`);
       
       // Then force a navigation event after a small delay to ensure React router catches up
       setTimeout(() => {
@@ -110,7 +110,7 @@ export default function StudentTestAttempt() {
   useEffect(() => {
     if (test && testAttempt) {
       if (testAttempt.status === 'completed') {
-        navigate(`/student/tests/result/${testId}`);
+        navigate(`/student/tests/result/${attemptId}`);
         return;
       }
       
