@@ -448,6 +448,11 @@ export default function QuestionManager() {
           <p className="text-muted-foreground">
             {isLoading ? <Skeleton className="h-5 w-96" /> : 'Manage questions and adjust their settings'}
           </p>
+          {!isLoading && test?.creatorName && (
+            <p className="text-sm font-medium text-muted-foreground">
+              Created by: {test.creatorName}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button 
