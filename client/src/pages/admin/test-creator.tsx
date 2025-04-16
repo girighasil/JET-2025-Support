@@ -3,6 +3,7 @@ import { Layout } from '@/components/ui/layout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation, useRoute } from 'wouter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { 
@@ -47,7 +48,6 @@ import {
   Grip,
   Loader2
 } from 'lucide-react';
-import { useLocation, useParams } from 'wouter';
 import {
   DragDropContext,
   Droppable,
