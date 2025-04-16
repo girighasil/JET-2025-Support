@@ -99,6 +99,15 @@ export default function QuestionManager() {
   });
 
   // Question form
+  // Get default values from test
+  const defaultPointsValue = test?.defaultPoints 
+    ? parseFloat(test.defaultPoints) 
+    : 1;
+    
+  const defaultNegativePoints = test?.hasNegativeMarking && test?.defaultNegativeMarking 
+    ? parseFloat(test.defaultNegativeMarking) 
+    : 0;
+    
   const questionForm = useForm<z.infer<typeof questionSchema>>({
     resolver: zodResolver(questionSchema),
     defaultValues: {
@@ -107,8 +116,8 @@ export default function QuestionManager() {
       question: '',
       options: mcqOptions,
       correctAnswer: [],
-      points: 1,
-      negativePoints: 0, // Will be updated from test.defaultNegativeMarking once test is loaded
+      points: defaultPointsValue,
+      negativePoints: defaultNegativePoints,
       explanation: '',
       sortOrder: 0,
     }
@@ -265,14 +274,23 @@ export default function QuestionManager() {
         { id: 'd', text: '' }
       ];
       
+      // Get default points values from test if available
+      const defaultNegativePoints = test?.hasNegativeMarking && test?.defaultNegativeMarking 
+        ? parseFloat(test.defaultNegativeMarking) 
+        : 0;
+        
+      const defaultPointsValue = test?.defaultPoints 
+        ? parseFloat(test.defaultPoints) 
+        : 1;
+      
       questionForm.reset({
         testId: testId || 0,
         type: initialType,
         question: '',
         options: initialOptions,
         correctAnswer: [],
-        points: 1,
-        negativePoints: 0,
+        points: defaultPointsValue,
+        negativePoints: defaultNegativePoints,
         explanation: '',
         sortOrder: questions.length,
       });
@@ -347,10 +365,14 @@ export default function QuestionManager() {
     setSubjectiveKeywords([]);
     setKeywordInput('');
     
-    // Get default negative points from test if available
+    // Get default points values from test if available
     const defaultNegativePoints = test?.hasNegativeMarking && test?.defaultNegativeMarking 
       ? parseFloat(test.defaultNegativeMarking) 
       : 0;
+      
+    const defaultPointsValue = test?.defaultPoints 
+      ? parseFloat(test.defaultPoints) 
+      : 1;
     
     // Also make sure form fields are updated
     questionForm.reset({
@@ -359,7 +381,7 @@ export default function QuestionManager() {
       question: '',
       options: initialOptions,
       correctAnswer: [],
-      points: 1,
+      points: defaultPointsValue,
       negativePoints: defaultNegativePoints,
       explanation: '',
       sortOrder: questions.length,
