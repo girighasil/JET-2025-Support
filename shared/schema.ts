@@ -65,12 +65,22 @@ export const tests = pgTable("tests", {
   scheduledFor: timestamp("scheduled_for"), // Optional scheduled time
   hasNegativeMarking: boolean("has_negative_marking").notNull().default(false), // Whether test has negative marking
   defaultNegativeMarking: text("default_negative_marking").default("0"), // Default points to deduct for wrong answers (as text to support decimals)
+  defaultPoints: text("default_points").default("1"), // Default points for correct answers (as text to support decimals)
   createdAt: timestamp("created_at").defaultNow()
 });
 
-export const insertTestSchema = createInsertSchema(tests).omit({
+// Create base test schema
+export const baseTestSchema = createInsertSchema(tests).omit({
   id: true,
   createdAt: true
+});
+
+// Extended schema with custom validation for decimal points
+export const insertTestSchema = baseTestSchema.extend({
+  // Allow decimal input for default negative marking (stored as string)
+  defaultNegativeMarking: z.string().regex(/^\d*\.?\d*$/).optional(),
+  // Allow decimal input for default points (stored as string)
+  defaultPoints: z.string().regex(/^\d*\.?\d*$/).optional(),
 });
 
 // Question model
@@ -90,9 +100,21 @@ export const questions = pgTable("questions", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
-export const insertQuestionSchema = createInsertSchema(questions).omit({
+// Create base question schema
+export const baseQuestionSchema = createInsertSchema(questions).omit({
   id: true,
   createdAt: true
+});
+
+// Extended schema with custom validation for decimal points
+export const insertQuestionSchema = baseQuestionSchema.extend({
+  // Allow string input for points (to support decimals)
+  points: z.number().or(z.string().regex(/^\d*\.?\d*$/).transform(val => Number(val))).optional(),
+  // Allow string input for negative points (to support decimals)
+  negativePoints: z.number().or(z.string().regex(/^\d*\.?\d*$/).transform(val => Number(val))).optional(),
+  // Store decimal values as strings
+  pointsFloat: z.string().regex(/^\d*\.?\d*$/).optional(),
+  negativePointsFloat: z.string().regex(/^\d*\.?\d*$/).optional(),
 });
 
 // Test Attempt model
@@ -114,9 +136,18 @@ export const testAttempts = pgTable("test_attempts", {
   results: jsonb("results").default({}) // Detailed results: {questionId: {correct: true/false, points: +/-, etc.}}
 });
 
-export const insertTestAttemptSchema = createInsertSchema(testAttempts).omit({
+// Create base test attempt schema
+export const baseTestAttemptSchema = createInsertSchema(testAttempts).omit({
   id: true,
   startedAt: true
+});
+
+// Extended schema with custom validation for decimal points
+export const insertTestAttemptSchema = baseTestAttemptSchema.extend({
+  // Accept decimal values for points (stored as strings)
+  totalPointsFloat: z.string().regex(/^-?\d*\.?\d*$/).optional(),
+  correctPointsFloat: z.string().regex(/^-?\d*\.?\d*$/).optional(),
+  negativePointsFloat: z.string().regex(/^-?\d*\.?\d*$/).optional(),
 });
 
 // Course Enrollment model
