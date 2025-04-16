@@ -72,6 +72,12 @@ export default function TestResult() {
       };
     }
   };
+  
+  // Format number display with sign (+ or -)
+  const formatNumberWithSign = (value: number | string) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    return numValue >= 0 ? `+${numValue.toFixed(2)}` : numValue.toFixed(2);
+  };
 
   // Loading state
   if (isLoading) {
@@ -162,7 +168,9 @@ export default function TestResult() {
               <div className="mb-4 md:mb-0">
                 <div className="text-sm font-medium text-gray-500 mb-1">Your Score</div>
                 <div className="text-3xl font-bold flex items-center">
-                  {currentAttempt.score}%
+                  <span className={currentAttempt.score < 0 ? 'text-red-600' : ''}>
+                    {currentAttempt.score}%
+                  </span>
                   <div className={`ml-2 py-1 px-2 text-sm rounded-full flex items-center ${scoreStatus.color}`}>
                     {scoreStatus.icon}
                     <span className="ml-1 text-xs font-medium">{scoreStatus.text}</span>
@@ -171,15 +179,25 @@ export default function TestResult() {
               </div>
               <div className="w-full md:w-1/2">
                 <div className="flex justify-between text-sm mb-1">
-                  <span>0%</span>
+                  <span>{currentAttempt.score < 0 ? currentAttempt.score + '%' : '0%'}</span>
                   <span>{test.passingScore}%</span>
                   <span>100%</span>
                 </div>
-                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${currentAttempt.score >= test.passingScore ? 'bg-green-500' : 'bg-red-500'}`}
-                    style={{ width: `${currentAttempt.score}%` }}
-                  ></div>
+                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden relative">
+                  {currentAttempt.score >= 0 ? (
+                    <div 
+                      className={`h-full ${currentAttempt.score >= test.passingScore ? 'bg-green-500' : 'bg-red-500'}`}
+                      style={{ width: `${Math.min(100, Math.max(0, currentAttempt.score))}%` }}
+                    ></div>
+                  ) : (
+                    <>
+                      <div className="absolute left-0 h-full w-px bg-black"></div>
+                      <div 
+                        className="h-full bg-red-500 absolute"
+                        style={{ width: `${Math.min(20, Math.abs(currentAttempt.score))}%`, left: 0 }}
+                      ></div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -202,7 +220,9 @@ export default function TestResult() {
                 
                 <div className="p-3 bg-white rounded border border-blue-200">
                   <div className="text-sm text-gray-500 mb-1">Total Points</div>
-                  <div className="text-xl font-semibold text-blue-600">{formatPoints(totalPoints)}</div>
+                  <div className={`text-xl font-semibold ${totalPoints >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatNumberWithSign(totalPoints)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -385,9 +405,12 @@ export default function TestResult() {
                         
                         {/* Explanation */}
                         {question.explanation && (
-                          <div className="mt-2 pl-4">
-                            <div className="font-medium text-sm mb-1">Explanation:</div>
-                            <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border">
+                          <div className="mt-4 pl-4">
+                            <div className="font-medium text-sm mb-1 flex items-center">
+                              <AlertCircle className="h-4 w-4 mr-1 text-blue-500" />
+                              Explanation:
+                            </div>
+                            <div className="text-sm text-gray-700 bg-blue-50 p-3 rounded border border-blue-200">
                               {question.explanation}
                             </div>
                           </div>

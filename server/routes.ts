@@ -864,10 +864,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let pointsForQuestion = 0;
           
           if (isCorrect) {
+            // For correct answers, award full points (no negative marking)
             pointsForQuestion = pointsValue;
             earnedPoints += pointsValue;
-          } else if (negPointsValue > 0) {
-            // Apply negative marking only if the question was answered incorrectly
+          } else if (negPointsValue > 0 && answers[question.id] !== undefined) {
+            // Apply negative marking ONLY if the question was answered incorrectly
+            // Skip unanswered questions (no penalty)
             pointsForQuestion = -negPointsValue;
             totalNegativePoints += negPointsValue;
           }
@@ -875,18 +877,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Store detailed results for this question
           results[question.id] = {
             correct: isCorrect,
-            answered: true,
+            answered: answers[question.id] !== undefined,
             points: pointsForQuestion,
             possiblePoints: pointsValue
           };
         }
         
-        // Calculate final score
+        // Calculate final score (can be negative)
         const finalPoints = earnedPoints - totalNegativePoints;
         
-        // Calculate percentage score (all positive for final score)
+        // Calculate percentage score (always as a percentage of total available points)
+        // Allow negative percentages if the student earned negative points overall
         attemptData.score = totalPoints > 0 
-          ? Math.round((Math.max(0, finalPoints) / totalPoints) * 100)
+          ? Math.round((finalPoints / totalPoints) * 100)
           : 0;
         
         // Store detailed information about points
