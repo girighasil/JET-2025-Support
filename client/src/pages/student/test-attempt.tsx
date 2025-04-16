@@ -299,24 +299,22 @@ export default function StudentTestAttempt() {
           <CardContent>
             {/* Multiple Choice Question */}
             {currentQuestion.type === 'mcq' && (
-              <div className="space-y-3">
+              <RadioGroup
+                value={answers[currentQuestion.id]?.toString()}
+                onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                className="space-y-3"
+              >
                 {currentQuestion.options.map((option: any) => (
                   <div key={option.id} className="flex items-start space-x-2">
-                    <RadioGroup
-                      value={answers[currentQuestion.id]?.toString()}
-                      onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-                      className="space-y-3"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.id} id={`option-${option.id}`} />
-                        <Label htmlFor={`option-${option.id}`} className="flex-1">
-                          {option.text}
-                        </Label>
-                      </div>
-                    </RadioGroup>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value={option.id} id={`option-${currentQuestion.id}-${option.id}`} />
+                      <Label htmlFor={`option-${currentQuestion.id}-${option.id}`} className="flex-1">
+                        {option.text}
+                      </Label>
+                    </div>
                   </div>
                 ))}
-              </div>
+              </RadioGroup>
             )}
             
             {/* True/False Question */}
@@ -327,12 +325,12 @@ export default function StudentTestAttempt() {
                 className="space-y-3"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="true" id="option-true" />
-                  <Label htmlFor="option-true">True</Label>
+                  <RadioGroupItem value="true" id={`option-${currentQuestion.id}-true`} />
+                  <Label htmlFor={`option-${currentQuestion.id}-true`}>True</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="false" id="option-false" />
-                  <Label htmlFor="option-false">False</Label>
+                  <RadioGroupItem value="false" id={`option-${currentQuestion.id}-false`} />
+                  <Label htmlFor={`option-${currentQuestion.id}-false`}>False</Label>
                 </div>
               </RadioGroup>
             )}
