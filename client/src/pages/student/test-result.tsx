@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, CheckCircle, XCircle, ArrowLeft, AlertTriangle } from 'lucide-react';
 
 export default function TestResult() {
   const [match, params] = useRoute('/student/tests/result/:attemptId');
@@ -45,6 +46,14 @@ export default function TestResult() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+  
+  // Format points to always show 2 decimal places
+  const formatPoints = (points: number | string) => {
+    if (typeof points === 'string') {
+      return parseFloat(points).toFixed(2);
+    }
+    return points.toFixed(2);
   };
   
   // Get status color based on score
@@ -96,6 +105,19 @@ export default function TestResult() {
   
   const scoreStatus = getScoreStatus(currentAttempt.score, test.passingScore);
   
+  // Parse float values from string fields if they exist
+  const totalPoints = currentAttempt.totalPointsFloat 
+    ? parseFloat(currentAttempt.totalPointsFloat) 
+    : currentAttempt.totalPoints || 0;
+    
+  const correctPoints = currentAttempt.correctPointsFloat 
+    ? parseFloat(currentAttempt.correctPointsFloat) 
+    : currentAttempt.correctPoints || 0;
+    
+  const negativePoints = currentAttempt.negativePointsFloat 
+    ? parseFloat(currentAttempt.negativePointsFloat) 
+    : currentAttempt.negativePoints || 0;
+  
   return (
     <Layout>
       <div className="mx-auto max-w-3xl">
@@ -136,7 +158,7 @@ export default function TestResult() {
             
             <Separator className="my-6" />
             
-            <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6">
               <div className="mb-4 md:mb-0">
                 <div className="text-sm font-medium text-gray-500 mb-1">Your Score</div>
                 <div className="text-3xl font-bold flex items-center">
@@ -161,6 +183,29 @@ export default function TestResult() {
                 </div>
               </div>
             </div>
+            
+            {/* Points Breakdown */}
+            <div className="bg-slate-50 rounded-lg p-4 mb-4">
+              <h3 className="font-medium text-lg mb-3">Points Breakdown</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-3 bg-white rounded border border-green-200">
+                  <div className="text-sm text-gray-500 mb-1">Correct Answers</div>
+                  <div className="text-xl font-semibold text-green-600">+{formatPoints(correctPoints)}</div>
+                </div>
+                
+                {negativePoints > 0 && (
+                  <div className="p-3 bg-white rounded border border-red-200">
+                    <div className="text-sm text-gray-500 mb-1">Negative Marking</div>
+                    <div className="text-xl font-semibold text-red-600">-{formatPoints(negativePoints)}</div>
+                  </div>
+                )}
+                
+                <div className="p-3 bg-white rounded border border-blue-200">
+                  <div className="text-sm text-gray-500 mb-1">Total Points</div>
+                  <div className="text-xl font-semibold text-blue-600">{formatPoints(totalPoints)}</div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
@@ -173,7 +218,13 @@ export default function TestResult() {
             <div className="space-y-6">
               {questions.map((question: any, index: number) => {
                 const userAnswer = currentAttempt.answers?.[question.id];
-                const isCorrect = currentAttempt.results?.[question.id]?.correct;
+                const result = currentAttempt.results?.[question.id];
+                const isCorrect = result?.correct;
+                const pointsValue = result?.points || 0;
+                
+                // Get the points for display
+                const pointsFloat = question.pointsFloat ? parseFloat(question.pointsFloat) : question.points;
+                const negPointsFloat = question.negativePointsFloat ? parseFloat(question.negativePointsFloat) : (question.negativePoints || 0);
                 
                 return (
                   <div key={question.id} className="border rounded-lg p-4">
@@ -185,9 +236,38 @@ export default function TestResult() {
                         }
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium mb-2">
-                          {index + 1}. {question.question}
-                        </h3>
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="font-medium">
+                            {index + 1}. {question.question}
+                          </h3>
+                          <div className="flex gap-2 items-center">
+                            {pointsValue > 0 ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                +{pointsValue.toFixed(2)} points
+                              </Badge>
+                            ) : pointsValue < 0 ? (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                {pointsValue.toFixed(2)} points
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                                0 points
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs text-gray-500 mb-3">
+                          {isCorrect 
+                            ? <span>Worth {pointsFloat.toFixed(2)} points</span>
+                            : negPointsFloat > 0 
+                              ? <span className="flex items-center">
+                                  <AlertTriangle className="h-3 w-3 mr-1 text-amber-500" />
+                                  Incorrect (-{negPointsFloat.toFixed(2)} points)
+                                </span>
+                              : <span>Worth {pointsFloat.toFixed(2)} points</span>
+                          }
+                        </div>
                         
                         {/* Multiple Choice */}
                         {question.type === 'mcq' && (
