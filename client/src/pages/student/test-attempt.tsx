@@ -80,11 +80,17 @@ export default function StudentTestAttempt() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/test-attempts'] });
+      
+      // First notify user with toast
       toast({
         title: 'Test Submitted',
         description: `You've completed the test with a score of ${data.score}%.`,
       });
-      navigate(`/student/tests/result/${testId}`);
+      
+      // Use setTimeout to ensure the navigation happens after React has updated the DOM
+      setTimeout(() => {
+        navigate(`/student/tests/result/${testId}`);
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -171,20 +177,32 @@ export default function StudentTestAttempt() {
   // Handle test submission
   const handleSubmitTest = () => {
     if (attemptId) {
-      submitAttemptMutation.mutate({
-        id: attemptId,
-        data: { answers }
-      });
+      // Close the confirmation dialog first
+      setShowConfirmSubmit(false);
+      
+      // Then submit the test with a small delay to ensure UI updates first
+      setTimeout(() => {
+        submitAttemptMutation.mutate({
+          id: attemptId,
+          data: { answers }
+        });
+      }, 100);
     }
   };
   
   // Handle time out
   const handleTimeOut = () => {
     if (attemptId) {
-      submitAttemptMutation.mutate({
-        id: attemptId,
-        data: { answers }
-      });
+      // Close the timeout dialog first
+      setShowTimeoutAlert(false);
+      
+      // Then submit the test with a small delay to ensure UI updates first
+      setTimeout(() => {
+        submitAttemptMutation.mutate({
+          id: attemptId,
+          data: { answers }
+        });
+      }, 100);
     }
   };
   
@@ -393,23 +411,23 @@ export default function StudentTestAttempt() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to submit?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogDescription className="space-y-4">
                 {allQuestionsAnswered ? (
-                  <div className="flex items-center gap-2 text-green-600 mb-2">
+                  <span className="flex items-center gap-2 text-green-600">
                     <CheckCircle className="h-5 w-5" />
                     <span>All questions have been answered.</span>
-                  </div>
+                  </span>
                 ) : (
-                  <div className="flex items-center gap-2 text-amber-600 mb-2">
+                  <span className="flex items-center gap-2 text-amber-600">
                     <AlertCircle className="h-5 w-5" />
                     <span>
                       You have answered {Object.keys(answers).length} out of {questions.length} questions.
                     </span>
-                  </div>
+                  </span>
                 )}
-                <p className="mt-2">
+                <span className="block">
                   Once submitted, you won't be able to change your answers.
-                </p>
+                </span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -426,14 +444,14 @@ export default function StudentTestAttempt() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Time's Up!</AlertDialogTitle>
-              <AlertDialogDescription>
-                <div className="flex items-center gap-2 text-amber-600 mb-2">
+              <AlertDialogDescription className="space-y-4">
+                <span className="flex items-center gap-2 text-amber-600">
                   <Clock className="h-5 w-5" />
                   <span>Your allocated time for this test has expired.</span>
-                </div>
-                <p className="mt-2">
+                </span>
+                <span className="block">
                   Your answers will be automatically submitted. Click 'Continue' to see your results.
-                </p>
+                </span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
