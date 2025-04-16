@@ -58,13 +58,14 @@ const completedTestsColumns = [
     id: 'actions',
     header: 'Actions',
     cell: ({ row }: any) => {
+      const [, navigate] = useLocation();
       return (
-        <a 
-          href={`/student/tests/result/${row.original.testId}`}
-          className="text-primary hover:underline"
+        <button
+          onClick={() => navigate(`/student/tests/result/${row.original.testId}`)}
+          className="text-primary hover:underline focus:outline-none"
         >
           View Details
-        </a>
+        </button>
       );
     },
   },
