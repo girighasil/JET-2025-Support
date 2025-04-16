@@ -50,6 +50,7 @@ const testSchema = z.object({
   passingScore: z.number().min(1, 'Passing score must be at least 1%').max(100, 'Passing score cannot exceed 100%'),
   isActive: z.boolean().default(true),
   hasNegativeMarking: z.boolean().default(false),
+  defaultNegativeMarking: z.string().default('0'),
   scheduledFor: z.string().optional().nullable(),
 });
 
@@ -136,6 +137,7 @@ export default function TestCreator() {
       passingScore: 70,
       isActive: true,
       hasNegativeMarking: false,
+      defaultNegativeMarking: '0',
       scheduledFor: null,
     },
   });
@@ -151,6 +153,7 @@ export default function TestCreator() {
         passingScore: test.passingScore || 70,
         isActive: test.isActive !== undefined ? test.isActive : true,
         hasNegativeMarking: test.hasNegativeMarking !== undefined ? test.hasNegativeMarking : false,
+        defaultNegativeMarking: test.defaultNegativeMarking || '0',
         scheduledFor: test.scheduledFor || null,
       });
     }
