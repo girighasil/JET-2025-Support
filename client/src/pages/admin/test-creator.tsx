@@ -798,16 +798,29 @@ export default function TestCreator() {
                             <FormItem>
                               <FormLabel>Question Type</FormLabel>
                               <Select
-                                defaultValue={field.value}
+                                value={field.value}
                                 onValueChange={(value) => {
-                                  // Set form value
+                                  // Update form value
                                   field.onChange(value);
                                   
-                                  // Update the local state
-                                  setQuestionType(value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective');
+                                  // Update the question type state
+                                  const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
+                                  setQuestionType(typedValue);
                                   
-                                  // Reset answer states based on new type
-                                  resetAnswerStates();
+                                  // Reset answer states
+                                  setSelectedMcqAnswers([]);
+                                  setTrueFalseAnswer(null);
+                                  setFillBlankAnswer('');
+                                  setSubjectiveKeywords([]);
+                                  
+                                  // Reset the correct answer in the form
+                                  questionForm.setValue('correctAnswer', 
+                                    typedValue === 'mcq' ? [] : 
+                                    typedValue === 'truefalse' ? null : 
+                                    typedValue === 'fillblank' ? '' : 
+                                    [], 
+                                    { shouldValidate: true }
+                                  );
                                 }}
                               >
                                 <FormControl>
