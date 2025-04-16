@@ -784,14 +784,31 @@ export class MemStorage implements IStorage {
 }
 
 // Password utility functions for hashing
+// Password utility functions using Node.js crypto
+const scryptAsync = promisify(scrypt);
+
 export async function hash(password: string): Promise<string> {
-  // In a real application, use bcrypt or similar
-  // This is just a simple mock for the in-memory storage
-  return `hashed_${password}`;
+  const salt = randomBytes(16).toString('hex');
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString('hex')}.${salt}`;
 }
 
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return hashedPassword === `hashed_${password}`;
+  try {
+    // If the hash doesn't include a salt (the older format), use the old comparison
+    if (!hashedPassword.includes('.')) {
+      return hashedPassword === `hashed_${password}`;
+    }
+    
+    // Otherwise use the secure comparison
+    const [hashed, salt] = hashedPassword.split('.');
+    const hashedBuf = Buffer.from(hashed, 'hex');
+    const suppliedBuf = (await scryptAsync(password, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Password verification error:', error);
+    return false;
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -811,9 +828,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    // Hash the password before storing
+    const hashedPassword = await hash(insertUser.password);
+    
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        password: hashedPassword,
+      })
       .returning();
     return user;
   }
