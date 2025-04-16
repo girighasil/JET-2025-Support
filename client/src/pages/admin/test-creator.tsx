@@ -803,11 +803,11 @@ export default function TestCreator() {
                             <FormItem>
                               <FormLabel>Question Type</FormLabel>
                               <Select
-                                value={field.value}
-                                onValueChange={(value) => {
+                                value={questionType}
+                                onValueChange={(value: any) => {
                                   const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
                                   setQuestionType(typedValue);
-                                  field.onChange(value);
+                                  field.onChange(typedValue);
                                   
                                   // Reset all relevant answer state when switching types
                                   setSelectedMcqAnswers([]);
@@ -847,7 +847,14 @@ export default function TestCreator() {
                           <textarea
                             placeholder="Enter the question..."
                             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            {...questionForm.register('question')}
+                            value={questionForm.getValues('question')}
+                            onChange={(e) => {
+                              questionForm.setValue('question', e.target.value, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                                shouldTouch: true
+                              });
+                            }}
                           />
                           {questionForm.formState.errors.question && (
                             <p className="text-sm font-medium text-destructive">
@@ -892,8 +899,18 @@ export default function TestCreator() {
                                     <input
                                       type="text"
                                       placeholder={`Enter option ${option.id}`}
-                                      value={option.text}
-                                      onChange={(e) => handleMcqOptionChange(option.id, e.target.value)}
+                                      defaultValue={option.text}
+                                      onChange={(e) => {
+                                        const updatedOptions = mcqOptions.map(opt => 
+                                          opt.id === option.id ? { ...opt, text: e.target.value } : opt
+                                        );
+                                        setMcqOptions(updatedOptions);
+                                        questionForm.setValue('options', updatedOptions, {
+                                          shouldValidate: true,
+                                          shouldDirty: true,
+                                          shouldTouch: true
+                                        });
+                                      }}
                                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                   </div>
