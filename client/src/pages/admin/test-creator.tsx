@@ -842,26 +842,23 @@ export default function TestCreator() {
                           )}
                         />
                         
-                        <div className="space-y-2">
-                          <div className="font-medium text-sm">Question Text</div>
-                          <textarea
-                            placeholder="Enter the question..."
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={questionForm.getValues('question')}
-                            onChange={(e) => {
-                              questionForm.setValue('question', e.target.value, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                                shouldTouch: true
-                              });
-                            }}
-                          />
-                          {questionForm.formState.errors.question && (
-                            <p className="text-sm font-medium text-destructive">
-                              {questionForm.formState.errors.question.message}
-                            </p>
+                        <FormField
+                          control={questionForm.control}
+                          name="question"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Question Text</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Enter the question..." 
+                                  className="min-h-[80px]"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </div>
+                        />
                         
                         {/* Question Type Specific Inputs */}
                         <div className="border rounded-md p-4">
