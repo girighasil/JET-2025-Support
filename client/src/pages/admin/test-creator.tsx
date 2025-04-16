@@ -822,7 +822,11 @@ export default function TestCreator() {
                                 <Textarea 
                                   placeholder="Enter the question..." 
                                   className="min-h-[80px]"
-                                  {...field} 
+                                  value={field.value || ''}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1010,7 +1014,11 @@ export default function TestCreator() {
                                 <Textarea 
                                   placeholder="Explain the correct answer..." 
                                   className="min-h-[80px]"
-                                  {...field} 
+                                  value={field.value || ''}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
                                 />
                               </FormControl>
                               <FormMessage />
