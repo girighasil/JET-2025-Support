@@ -518,8 +518,11 @@ export default function TestCreator() {
     if (keywordInput.trim() && !subjectiveKeywords.includes(keywordInput.trim())) {
       const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
       setSubjectiveKeywords(updatedKeywords);
-      questionForm.setValue('correctAnswer', updatedKeywords);
-      questionForm.trigger('correctAnswer');
+      questionForm.setValue('correctAnswer', updatedKeywords, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
       setKeywordInput('');
     }
   };
@@ -865,28 +868,47 @@ export default function TestCreator() {
                           {questionType === 'mcq' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Define options and select correct answer(s)</p>
-                              {mcqOptions.map((option) => (
-                                <div key={option.id} className="flex items-start gap-3">
+                              {mcqOptions.map((option, index) => (
+                                <div key={`mcq-option-row-${option.id}-${index}`} className="flex items-start gap-3">
                                   <Checkbox 
-                                    id={`option-${option.id}`}
+                                    id={`option-${option.id}-${index}`}
                                     checked={selectedMcqAnswers.includes(option.id)}
-                                    onCheckedChange={() => handleMcqAnswerChange(option.id)}
+                                    onCheckedChange={() => {
+                                      const updatedAnswers = selectedMcqAnswers.includes(option.id)
+                                        ? selectedMcqAnswers.filter(a => a !== option.id)
+                                        : [...selectedMcqAnswers, option.id];
+                                      
+                                      setSelectedMcqAnswers(updatedAnswers);
+                                      questionForm.setValue('correctAnswer', updatedAnswers, {
+                                        shouldValidate: true,
+                                        shouldDirty: true,
+                                        shouldTouch: true
+                                      });
+                                    }}
                                   />
                                   <div className="flex-1">
                                     <Label 
-                                      htmlFor={`option-${option.id}`} 
+                                      htmlFor={`option-${option.id}-${index}`} 
                                       className="mb-1 block font-medium"
                                     >
                                       Option {option.id.toUpperCase()}
                                     </Label>
-                                    <Input
+                                    <input
                                       type="text"
                                       placeholder={`Enter option ${option.id}`}
                                       defaultValue={option.text}
-                                      onChange={(e) => handleMcqOptionChange(option.id, e.target.value)}
-                                      onBlur={(e) => handleMcqOptionChange(option.id, e.target.value)}
-                                      className="w-full"
-                                      key={`mcq-option-${option.id}-${new Date().getTime()}`}
+                                      onChange={(e) => {
+                                        const updatedOptions = mcqOptions.map(opt => 
+                                          opt.id === option.id ? { ...opt, text: e.target.value } : opt
+                                        );
+                                        setMcqOptions(updatedOptions);
+                                        questionForm.setValue('options', updatedOptions, {
+                                          shouldValidate: true,
+                                          shouldDirty: true,
+                                          shouldTouch: true
+                                        });
+                                      }}
+                                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                   </div>
                                 </div>
@@ -903,25 +925,44 @@ export default function TestCreator() {
                           {questionType === 'truefalse' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Select the correct answer</p>
-                              <RadioGroup
-                                value={trueFalseAnswer === null ? undefined : trueFalseAnswer.toString()}
-                                onValueChange={(value) => {
-                                  const boolValue = value === 'true';
-                                  setTrueFalseAnswer(boolValue);
-                                  questionForm.setValue('correctAnswer', boolValue);
-                                  // Make sure the form is aware of this field update
-                                  questionForm.trigger('correctAnswer');
-                                }}
-                              >
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="true" id="true" />
-                                  <Label htmlFor="true">True</Label>
+                              <div className="flex flex-col space-y-3">
+                                <div 
+                                  className={`flex items-center space-x-2 p-3 rounded border ${
+                                    trueFalseAnswer === true ? 'border-primary bg-primary/5' : 'border-input'
+                                  }`}
+                                  onClick={() => {
+                                    setTrueFalseAnswer(true);
+                                    questionForm.setValue('correctAnswer', true, {
+                                      shouldValidate: true,
+                                      shouldDirty: true,
+                                      shouldTouch: true
+                                    });
+                                  }}
+                                >
+                                  <div className={`h-4 w-4 rounded-full ${
+                                    trueFalseAnswer === true ? 'bg-primary' : 'border border-input'
+                                  }`} />
+                                  <Label className="cursor-pointer">True</Label>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="false" id="false" />
-                                  <Label htmlFor="false">False</Label>
+                                <div 
+                                  className={`flex items-center space-x-2 p-3 rounded border ${
+                                    trueFalseAnswer === false ? 'border-primary bg-primary/5' : 'border-input'
+                                  }`}
+                                  onClick={() => {
+                                    setTrueFalseAnswer(false);
+                                    questionForm.setValue('correctAnswer', false, {
+                                      shouldValidate: true,
+                                      shouldDirty: true,
+                                      shouldTouch: true
+                                    });
+                                  }}
+                                >
+                                  <div className={`h-4 w-4 rounded-full ${
+                                    trueFalseAnswer === false ? 'bg-primary' : 'border border-input'
+                                  }`} />
+                                  <Label className="cursor-pointer">False</Label>
                                 </div>
-                              </RadioGroup>
+                              </div>
                               {trueFalseAnswer === null && (
                                 <p className="text-sm text-red-500">
                                   Please select the correct answer
@@ -934,26 +975,20 @@ export default function TestCreator() {
                           {questionType === 'fillblank' && (
                             <div className="space-y-4">
                               <p className="text-sm text-muted-foreground mb-2">Enter the correct answer</p>
-                              <Input
+                              <input
                                 type="text"
                                 placeholder="Correct answer"
                                 defaultValue={fillBlankAnswer}
                                 onChange={(e) => {
-                                  setFillBlankAnswer(e.target.value);
-                                  questionForm.setValue('correctAnswer', e.target.value, { 
+                                  const newValue = e.target.value;
+                                  setFillBlankAnswer(newValue);
+                                  questionForm.setValue('correctAnswer', newValue, { 
                                     shouldValidate: true,
                                     shouldDirty: true,
                                     shouldTouch: true
                                   });
                                 }}
-                                onBlur={(e) => {
-                                  setFillBlankAnswer(e.target.value);
-                                  questionForm.setValue('correctAnswer', e.target.value, { 
-                                    shouldValidate: true
-                                  });
-                                }}
-                                className="w-full"
-                                key={`fill-blank-answer-${new Date().getTime()}`}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               />
                               {!fillBlankAnswer && (
                                 <p className="text-sm text-red-500">
@@ -970,7 +1005,7 @@ export default function TestCreator() {
                                 Add keywords that should be present in a good answer (for auto-grading)
                               </p>
                               <div className="flex gap-2">
-                                <Input
+                                <input
                                   type="text"
                                   placeholder="Enter keyword"
                                   value={keywordInput}
@@ -981,27 +1016,45 @@ export default function TestCreator() {
                                       addKeyword();
                                     }
                                   }}
-                                  className="w-full"
-                                  key="keyword-input"
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 />
                                 <Button 
                                   type="button" 
-                                  onClick={addKeyword}
+                                  onClick={() => {
+                                    if (keywordInput.trim()) {
+                                      const newKeywords = [...subjectiveKeywords, keywordInput.trim()];
+                                      setSubjectiveKeywords(newKeywords);
+                                      questionForm.setValue('correctAnswer', newKeywords, {
+                                        shouldValidate: true,
+                                        shouldDirty: true,
+                                        shouldTouch: true
+                                      });
+                                      setKeywordInput('');
+                                    }
+                                  }}
                                   disabled={!keywordInput.trim()}
                                 >
                                   Add
                                 </Button>
                               </div>
-                              <div className="flex flex-wrap gap-2 mt-2">
+                              <div className="flex flex-wrap gap-2 mt-2 border rounded-md p-3">
                                 {subjectiveKeywords.map((keyword, index) => (
                                   <div 
-                                    key={index} 
+                                    key={`keyword-${index}-${keyword}`} 
                                     className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center gap-1"
                                   >
                                     {keyword}
                                     <button
                                       type="button"
-                                      onClick={() => removeKeyword(keyword)}
+                                      onClick={() => {
+                                        const newKeywords = subjectiveKeywords.filter(k => k !== keyword);
+                                        setSubjectiveKeywords(newKeywords);
+                                        questionForm.setValue('correctAnswer', newKeywords, {
+                                          shouldValidate: true,
+                                          shouldDirty: true,
+                                          shouldTouch: true
+                                        });
+                                      }}
                                       className="text-primary hover:text-primary/70 h-4 w-4 rounded-full flex items-center justify-center"
                                     >
                                       ×
