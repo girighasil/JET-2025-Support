@@ -9,7 +9,10 @@ import {
   doubtSessions, DoubtSession, InsertDoubtSession,
   studyTimes, StudyTime, InsertStudyTime
 } from "@shared/schema";
-import { hash, compare } from "./utils";
+import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
 
 export interface IStorage {
   // User Methods
