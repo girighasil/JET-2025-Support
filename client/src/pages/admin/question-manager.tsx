@@ -100,6 +100,7 @@ export default function QuestionManager() {
       options: mcqOptions,
       correctAnswer: [],
       points: 1,
+      negativePoints: 0,
       explanation: '',
       sortOrder: 0,
     }
@@ -222,6 +223,7 @@ export default function QuestionManager() {
         options: currentQuestion.options || mcqOptions,
         correctAnswer: currentQuestion.correctAnswer || [],
         points: currentQuestion.points,
+        negativePoints: currentQuestion.negativePoints || 0,
         explanation: currentQuestion.explanation || '',
         sortOrder: currentQuestion.sortOrder,
       });
@@ -262,6 +264,7 @@ export default function QuestionManager() {
         options: initialOptions,
         correctAnswer: [],
         points: 1,
+        negativePoints: 0,
         explanation: '',
         sortOrder: questions.length,
       });
@@ -344,6 +347,7 @@ export default function QuestionManager() {
       options: initialOptions,
       correctAnswer: [],
       points: 1,
+      negativePoints: 0,
       explanation: '',
       sortOrder: questions.length,
     });
@@ -699,7 +703,7 @@ export default function QuestionManager() {
                         name="points"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Points</FormLabel>
+                            <FormLabel>Points for Correct Answer</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
@@ -710,6 +714,29 @@ export default function QuestionManager() {
                               />
                             </FormControl>
                             <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={questionForm.control}
+                        name="negativePoints"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Points to Deduct for Wrong Answer</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={0} 
+                                {...field}
+                                value={field.value}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-muted-foreground">
+                              Set to 0 if no points should be deducted
+                            </p>
                           </FormItem>
                         )}
                       />
@@ -823,6 +850,7 @@ export default function QuestionManager() {
                                       </span>
                                       <span className="text-xs text-muted-foreground">
                                         {question.points} {question.points === 1 ? 'point' : 'points'}
+                                        {question.negativePoints > 0 && ` (${question.negativePoints} neg.)`}
                                       </span>
                                     </div>
                                   </div>
@@ -878,6 +906,7 @@ export default function QuestionManager() {
               </span>
               <span className="text-xs text-muted-foreground">
                 {deleteConfirmQuestion?.points} {deleteConfirmQuestion?.points === 1 ? 'point' : 'points'}
+                {deleteConfirmQuestion?.negativePoints > 0 && ` (${deleteConfirmQuestion.negativePoints} neg.)`}
               </span>
             </div>
           </div>
