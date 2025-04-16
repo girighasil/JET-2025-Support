@@ -354,16 +354,39 @@ export default function TestCreator() {
   // Set form values when editing a question
   useEffect(() => {
     if (currentQuestion) {
+      // Reset the form with current question values
       questionForm.reset({
         testId: currentQuestion.testId,
         type: currentQuestion.type,
-        question: currentQuestion.question,
+        question: currentQuestion.question || '',
         options: currentQuestion.options || mcqOptions,
         correctAnswer: currentQuestion.correctAnswer || [],
-        points: currentQuestion.points,
+        points: currentQuestion.points || 1,
         explanation: currentQuestion.explanation || '',
-        sortOrder: currentQuestion.sortOrder,
+        sortOrder: currentQuestion.sortOrder || 0,
       });
+      
+      // Force an update of our direct form fields
+      setTimeout(() => {
+        // This ensures the DOM has updated with the form reset values
+        const questionValue = questionForm.getValues().question || '';
+        const explanationValue = questionForm.getValues().explanation || '';
+        
+        // Force re-render of our direct-manipulation fields
+        const questionEvent = new Event('change', { bubbles: true });
+        const explanationEvent = new Event('change', { bubbles: true });
+        
+        const questionField = document.getElementById('question-text');
+        const explanationField = document.getElementById('explanation-text');
+        
+        if (questionField) {
+          (questionField as HTMLTextAreaElement).value = questionValue;
+        }
+        
+        if (explanationField) {
+          (explanationField as HTMLTextAreaElement).value = explanationValue;
+        }
+      }, 0);
       
       setQuestionType(currentQuestion.type);
       
@@ -396,6 +419,20 @@ export default function TestCreator() {
         explanation: '',
         sortOrder: questions.length,
       });
+      
+      // Clear our direct form fields
+      setTimeout(() => {
+        const questionField = document.getElementById('question-text');
+        const explanationField = document.getElementById('explanation-text');
+        
+        if (questionField) {
+          (questionField as HTMLTextAreaElement).value = '';
+        }
+        
+        if (explanationField) {
+          (explanationField as HTMLTextAreaElement).value = '';
+        }
+      }, 0);
       
       // Reset answer states
       resetAnswerStates();
@@ -462,6 +499,21 @@ export default function TestCreator() {
       explanation: '',
       sortOrder: questions.length,
     });
+    
+    // Clear our direct form fields 
+    setTimeout(() => {
+      const questionField = document.getElementById('question-text');
+      const explanationField = document.getElementById('explanation-text');
+      
+      if (questionField) {
+        (questionField as HTMLTextAreaElement).value = '';
+      }
+      
+      if (explanationField) {
+        (explanationField as HTMLTextAreaElement).value = '';
+      }
+    }, 0);
+    
     resetAnswerStates();
   };
   
@@ -1106,7 +1158,9 @@ export default function TestCreator() {
                                             type="button"
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => setCurrentQuestion(question)}
+                                            onClick={() => {
+                                              setCurrentQuestion(question);
+                                            }}
                                             className="h-8 px-2 text-xs"
                                           >
                                             Edit
