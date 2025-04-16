@@ -1093,21 +1093,23 @@ export default function TestCreator() {
                           />
                         </div>
                         
-                        <div className="space-y-2">
-                          <div className="font-medium text-sm">Explanation (Optional)</div>
-                          <textarea
-                            placeholder="Explain the correct answer..."
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={questionForm.getValues('explanation') || ''}
-                            onChange={(e) => {
-                              questionForm.setValue('explanation', e.target.value, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                                shouldTouch: true
-                              });
-                            }}
-                          />
-                        </div>
+                        <FormField
+                          control={questionForm.control}
+                          name="explanation"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Explanation (Optional)</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Explain the correct answer..." 
+                                  className="min-h-[80px]"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         
                         <div className="flex justify-end gap-2">
                           {currentQuestion && (
