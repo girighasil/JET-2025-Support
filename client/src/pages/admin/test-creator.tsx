@@ -354,39 +354,16 @@ export default function TestCreator() {
   // Set form values when editing a question
   useEffect(() => {
     if (currentQuestion) {
-      // Reset the form with current question values
       questionForm.reset({
         testId: currentQuestion.testId,
         type: currentQuestion.type,
-        question: currentQuestion.question || '',
+        question: currentQuestion.question,
         options: currentQuestion.options || mcqOptions,
         correctAnswer: currentQuestion.correctAnswer || [],
-        points: currentQuestion.points || 1,
+        points: currentQuestion.points,
         explanation: currentQuestion.explanation || '',
-        sortOrder: currentQuestion.sortOrder || 0,
+        sortOrder: currentQuestion.sortOrder,
       });
-      
-      // Force an update of our direct form fields
-      setTimeout(() => {
-        // This ensures the DOM has updated with the form reset values
-        const questionValue = questionForm.getValues().question || '';
-        const explanationValue = questionForm.getValues().explanation || '';
-        
-        // Force re-render of our direct-manipulation fields
-        const questionEvent = new Event('change', { bubbles: true });
-        const explanationEvent = new Event('change', { bubbles: true });
-        
-        const questionField = document.getElementById('question-text');
-        const explanationField = document.getElementById('explanation-text');
-        
-        if (questionField) {
-          (questionField as HTMLTextAreaElement).value = questionValue;
-        }
-        
-        if (explanationField) {
-          (explanationField as HTMLTextAreaElement).value = explanationValue;
-        }
-      }, 0);
       
       setQuestionType(currentQuestion.type);
       
@@ -419,20 +396,6 @@ export default function TestCreator() {
         explanation: '',
         sortOrder: questions.length,
       });
-      
-      // Clear our direct form fields
-      setTimeout(() => {
-        const questionField = document.getElementById('question-text');
-        const explanationField = document.getElementById('explanation-text');
-        
-        if (questionField) {
-          (questionField as HTMLTextAreaElement).value = '';
-        }
-        
-        if (explanationField) {
-          (explanationField as HTMLTextAreaElement).value = '';
-        }
-      }, 0);
       
       // Reset answer states
       resetAnswerStates();
@@ -499,21 +462,6 @@ export default function TestCreator() {
       explanation: '',
       sortOrder: questions.length,
     });
-    
-    // Clear our direct form fields 
-    setTimeout(() => {
-      const questionField = document.getElementById('question-text');
-      const explanationField = document.getElementById('explanation-text');
-      
-      if (questionField) {
-        (questionField as HTMLTextAreaElement).value = '';
-      }
-      
-      if (explanationField) {
-        (explanationField as HTMLTextAreaElement).value = '';
-      }
-    }, 0);
-    
     resetAnswerStates();
   };
   
@@ -864,23 +812,27 @@ export default function TestCreator() {
                           )}
                         />
                         
-                        <div className="space-y-2">
-                          <div className="space-y-1">
-                            <Label htmlFor="question-text">Question Text</Label>
-                            <Textarea 
-                              id="question-text"
-                              placeholder="Enter the question..." 
-                              className="min-h-[80px] w-full"
-                              value={questionForm.getValues().question || ''}
-                              onChange={(e) => {
-                                questionForm.setValue('question', e.target.value);
-                              }}
-                            />
-                            {questionForm.formState.errors.question && (
-                              <p className="text-sm text-red-500">{questionForm.formState.errors.question.message}</p>
-                            )}
-                          </div>
-                        </div>
+                        <FormField
+                          control={questionForm.control}
+                          name="question"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Question Text</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Enter the question..." 
+                                  className="min-h-[80px]"
+                                  value={field.value || ''}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         
                         {/* Question Type Specific Inputs */}
                         <div className="border rounded-md p-4">
@@ -1052,20 +1004,27 @@ export default function TestCreator() {
                           />
                         </div>
                         
-                        <div className="space-y-2">
-                          <div className="space-y-1">
-                            <Label htmlFor="explanation-text">Explanation (Optional)</Label>
-                            <Textarea 
-                              id="explanation-text"
-                              placeholder="Explain the correct answer..." 
-                              className="min-h-[80px] w-full"
-                              value={questionForm.getValues().explanation || ''}
-                              onChange={(e) => {
-                                questionForm.setValue('explanation', e.target.value);
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <FormField
+                          control={questionForm.control}
+                          name="explanation"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Explanation (Optional)</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Explain the correct answer..." 
+                                  className="min-h-[80px]"
+                                  value={field.value || ''}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         
                         <div className="flex justify-end gap-2">
                           {currentQuestion && (
@@ -1158,9 +1117,7 @@ export default function TestCreator() {
                                             type="button"
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => {
-                                              setCurrentQuestion(question);
-                                            }}
+                                            onClick={() => setCurrentQuestion(question)}
                                             className="h-8 px-2 text-xs"
                                           >
                                             Edit
