@@ -169,13 +169,33 @@ export default function StudentTestAttempt() {
   // Handle navigation between questions
   const goToNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      // Save current answers to ensure they're preserved
+      if (attemptId) {
+        updateAttemptMutation.mutate({
+          id: attemptId,
+          data: { answers }
+        });
+      }
+      // Move to next question with a slight delay to ensure DOM reset
+      setTimeout(() => {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      }, 10);
     }
   };
   
   const goToPrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      // Save current answers to ensure they're preserved
+      if (attemptId) {
+        updateAttemptMutation.mutate({
+          id: attemptId,
+          data: { answers }
+        });
+      }
+      // Move to previous question with a slight delay to ensure DOM reset
+      setTimeout(() => {
+        setCurrentQuestionIndex(currentQuestionIndex - 1);
+      }, 10);
     }
   };
   
@@ -255,6 +275,8 @@ export default function StudentTestAttempt() {
   
   // Get current question
   const currentQuestion = questions[currentQuestionIndex];
+  // Create a unique key for components based on the current question to force re-renders
+  const currentQuestionKey = `question-${currentQuestion?.id || currentQuestionIndex}`;
 
   return (
     <Layout>
@@ -300,6 +322,7 @@ export default function StudentTestAttempt() {
             {/* Multiple Choice Question */}
             {currentQuestion.type === 'mcq' && (
               <RadioGroup
+                key={currentQuestionKey}
                 value={answers[currentQuestion.id]?.toString()}
                 onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
                 className="space-y-3"
@@ -320,6 +343,7 @@ export default function StudentTestAttempt() {
             {/* True/False Question */}
             {currentQuestion.type === 'truefalse' && (
               <RadioGroup
+                key={currentQuestionKey}
                 value={answers[currentQuestion.id]?.toString()}
                 onValueChange={(value) => handleAnswerChange(currentQuestion.id, value === 'true')}
                 className="space-y-3"
@@ -339,6 +363,7 @@ export default function StudentTestAttempt() {
             {currentQuestion.type === 'fillblank' && (
               <div className="space-y-3">
                 <Input
+                  key={currentQuestionKey}
                   placeholder="Your answer..."
                   value={answers[currentQuestion.id] || ''}
                   onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
@@ -350,6 +375,7 @@ export default function StudentTestAttempt() {
             {currentQuestion.type === 'subjective' && (
               <div className="space-y-3">
                 <Textarea
+                  key={currentQuestionKey}
                   placeholder="Write your answer here..."
                   className="min-h-[150px]"
                   value={answers[currentQuestion.id] || ''}
@@ -390,7 +416,19 @@ export default function StudentTestAttempt() {
                     ? 'bg-primary text-white'
                     : ''
                 }`}
-                onClick={() => setCurrentQuestionIndex(index)}
+                onClick={() => {
+                  // Save current answers to ensure they're preserved
+                  if (attemptId) {
+                    updateAttemptMutation.mutate({
+                      id: attemptId,
+                      data: { answers }
+                    });
+                  }
+                  // Move to selected question with a slight delay to ensure DOM reset
+                  setTimeout(() => {
+                    setCurrentQuestionIndex(index);
+                  }, 10);
+                }}
               >
                 {index + 1}
               </Button>
