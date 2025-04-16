@@ -610,26 +610,19 @@ export default function TestCreator() {
               <CardContent>
                 <Form {...testForm}>
                   <form onSubmit={testForm.handleSubmit(onTestSubmit)} className="space-y-6">
-                    <div className="space-y-2">
-                      <div className="font-medium text-sm">Test Title</div>
-                      <input
-                        placeholder="e.g. Algebra Mid-Term Exam"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={testForm.getValues('title')}
-                        onChange={(e) => {
-                          testForm.setValue('title', e.target.value, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                            shouldTouch: true
-                          });
-                        }}
-                      />
-                      {testForm.formState.errors.title && (
-                        <p className="text-sm font-medium text-destructive">
-                          {testForm.formState.errors.title.message}
-                        </p>
+                    <FormField
+                      control={testForm.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Test Title</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Algebra Mid-Term Exam" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
+                    />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
@@ -687,72 +680,65 @@ export default function TestCreator() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <div className="font-medium text-sm">Duration (minutes)</div>
-                        <input
-                          type="number"
-                          min={1}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          value={testForm.getValues('duration')}
-                          onChange={(e) => {
-                            testForm.setValue('duration', parseInt(e.target.value) || 0, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                              shouldTouch: true
-                            });
-                          }}
-                        />
-                        {testForm.formState.errors.duration && (
-                          <p className="text-sm font-medium text-destructive">
-                            {testForm.formState.errors.duration.message}
-                          </p>
+                      <FormField
+                        control={testForm.control}
+                        name="duration"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Duration (minutes)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={1} 
+                                {...field}
+                                value={field.value}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </div>
+                      />
                       
-                      <div className="space-y-2">
-                        <div className="font-medium text-sm">Passing Score (%)</div>
-                        <input
-                          type="number"
-                          min={1}
-                          max={100}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          value={testForm.getValues('passingScore')}
-                          onChange={(e) => {
-                            testForm.setValue('passingScore', parseInt(e.target.value) || 0, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                              shouldTouch: true
-                            });
-                          }}
-                        />
-                        {testForm.formState.errors.passingScore && (
-                          <p className="text-sm font-medium text-destructive">
-                            {testForm.formState.errors.passingScore.message}
-                          </p>
+                      <FormField
+                        control={testForm.control}
+                        name="passingScore"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Passing Score (%)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={1} 
+                                max={100} 
+                                {...field}
+                                value={field.value}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </div>
+                      />
                     </div>
                     
-                    <div className="space-y-2">
-                      <div className="font-medium text-sm">Description</div>
-                      <textarea
-                        placeholder="Describe what the test covers..."
-                        className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={testForm.getValues('description') || ''}
-                        onChange={(e) => {
-                          testForm.setValue('description', e.target.value, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                            shouldTouch: true
-                          });
-                        }}
-                      />
-                      {testForm.formState.errors.description && (
-                        <p className="text-sm font-medium text-destructive">
-                          {testForm.formState.errors.description.message}
-                        </p>
+                    <FormField
+                      control={testForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe what the test covers..." 
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
+                    />
                     
                     <FormField
                       control={testForm.control}
