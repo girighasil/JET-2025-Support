@@ -66,12 +66,21 @@ const testSchema = z.object({
 });
 
 // Question form schema
+// More specific schema matching database structure for better type safety
 const questionSchema = z.object({
   testId: z.number(),
-  type: z.string(),
+  type: z.enum(['mcq', 'truefalse', 'fillblank', 'subjective']),
   question: z.string().min(1, "Question text is required"),
-  options: z.any().optional(),
-  correctAnswer: z.any(),
+  options: z.array(z.object({
+    id: z.string(),
+    text: z.string()
+  })).optional().nullable(),
+  correctAnswer: z.union([
+    z.array(z.string()),  // For MCQ and subjective (array of option IDs or keywords)
+    z.boolean(),          // For true/false
+    z.string(),           // For fill in the blank
+    z.null()              // For initial state
+  ]),
   points: z.number().min(1, "Points must be at least 1"),
   explanation: z.string().optional().nullable(),
   sortOrder: z.number(),
@@ -422,11 +431,19 @@ export default function TestCreator() {
         correctAnswer = [];
     }
     
+    // Make sure options are properly formatted for database
+    const options = questionType === 'mcq' 
+      ? mcqOptions.map(opt => ({ 
+          id: opt.id, 
+          text: opt.text 
+        }))
+      : null;
+    
     const formattedValues = {
       ...values,
       type: questionType,
       correctAnswer,
-      options: questionType === 'mcq' ? mcqOptions : undefined,
+      options: options,
       testId: testId || 0,
       sortOrder: currentQuestion?.sortOrder ?? questions.length,
     };
