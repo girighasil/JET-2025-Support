@@ -571,8 +571,21 @@ export default function TestCreator() {
         <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(value) => {
             setActiveTab(value);
             // Reset form states when switching to questions tab
-            if (value === "questions" && !currentQuestion) {
-              resetQuestionForm();
+            if (value === "questions") {
+              // Explicitly reset the form with empty values to ensure the question field is properly initialized
+              if (!currentQuestion) {
+                questionForm.reset({
+                  testId: testId || 0,
+                  type: 'mcq',
+                  question: '',
+                  options: mcqOptions,
+                  correctAnswer: [],
+                  points: 1,
+                  explanation: '',
+                  sortOrder: questions.length,
+                });
+                resetAnswerStates();
+              }
             }
           }} className="w-full">
           <TabsList className="mb-6 grid w-full grid-cols-2">
