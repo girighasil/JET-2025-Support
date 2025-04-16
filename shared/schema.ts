@@ -64,6 +64,7 @@ export const tests = pgTable("tests", {
   isActive: boolean("is_active").notNull().default(true),
   scheduledFor: timestamp("scheduled_for"), // Optional scheduled time
   hasNegativeMarking: boolean("has_negative_marking").notNull().default(false), // Whether test has negative marking
+  defaultNegativeMarking: text("default_negative_marking").default("0"), // Default points to deduct for wrong answers (as text to support decimals)
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -82,6 +83,8 @@ export const questions = pgTable("questions", {
   correctAnswer: jsonb("correct_answer"), // Depends on type (string or array)
   points: integer("points").notNull().default(1),
   negativePoints: integer("negative_points").default(0), // Points deducted for wrong answers
+  pointsFloat: text("points_float"), // For decimal points (new)
+  negativePointsFloat: text("negative_points_float"), // For decimal negative points (new)
   explanation: text("explanation"),
   sortOrder: integer("sort_order").notNull(),
   createdAt: timestamp("created_at").defaultNow()
@@ -104,6 +107,9 @@ export const testAttempts = pgTable("test_attempts", {
   totalPoints: integer("total_points"), // Total points earned (including negative)
   correctPoints: integer("correct_points"), // Points earned from correct answers
   negativePoints: integer("negative_points"), // Points deducted for incorrect answers
+  totalPointsFloat: text("total_points_float"), // For decimal values (new)
+  correctPointsFloat: text("correct_points_float"), // For decimal values (new)
+  negativePointsFloat: text("negative_points_float"), // For decimal values (new)
   answers: jsonb("answers").default({}), // {questionId: answer}
   results: jsonb("results").default({}) // Detailed results: {questionId: {correct: true/false, points: +/-, etc.}}
 });
