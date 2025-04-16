@@ -110,13 +110,13 @@ function NavItem({ title, href, icon: Icon }: NavItemProps) {
   const [isActive] = useRoute(href);
   
   return (
-    <Link href={href}>
-      <a className="flex flex-col items-center justify-center">
+    <div>
+      <Link href={href} className="flex flex-col items-center justify-center">
         <Icon className={cn("h-6 w-6", isActive ? "text-primary" : "text-gray-500")} />
         <span className={cn("text-xs mt-1", isActive ? "text-primary" : "text-gray-500")}>
           {title}
         </span>
-      </a>
-    </Link>
+      </Link>
+    </div>
   );
 }
