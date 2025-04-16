@@ -492,9 +492,12 @@ export default function TestCreator() {
     );
     setMcqOptions(updatedOptions);
     
-    // Update the form's options value
-    questionForm.setValue('options', updatedOptions);
-    questionForm.trigger('options');
+    // Update the form's options value and force a re-render
+    questionForm.setValue('options', updatedOptions, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
   };
   
   // Handle MCQ answer selection
@@ -802,6 +805,21 @@ export default function TestCreator() {
                                   const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
                                   setQuestionType(typedValue);
                                   field.onChange(typedValue);
+                                  
+                                  // Reset all relevant answer state when switching types
+                                  setSelectedMcqAnswers([]);
+                                  setTrueFalseAnswer(null);
+                                  setFillBlankAnswer('');
+                                  setSubjectiveKeywords([]);
+                                  
+                                  // Set appropriate form values based on new question type
+                                  questionForm.setValue('correctAnswer', 
+                                    typedValue === 'mcq' ? [] : 
+                                    typedValue === 'truefalse' ? null : 
+                                    typedValue === 'fillblank' ? '' : 
+                                    [], 
+                                    { shouldValidate: true }
+                                  );
                                 }}
                               >
                                 <FormControl>
@@ -864,10 +882,11 @@ export default function TestCreator() {
                                     <Input
                                       type="text"
                                       placeholder={`Enter option ${option.id}`}
-                                      value={option.text}
+                                      defaultValue={option.text}
                                       onChange={(e) => handleMcqOptionChange(option.id, e.target.value)}
+                                      onBlur={(e) => handleMcqOptionChange(option.id, e.target.value)}
                                       className="w-full"
-                                      key={`mcq-option-${option.id}`}
+                                      key={`mcq-option-${option.id}-${new Date().getTime()}`}
                                     />
                                   </div>
                                 </div>
@@ -918,14 +937,23 @@ export default function TestCreator() {
                               <Input
                                 type="text"
                                 placeholder="Correct answer"
-                                value={fillBlankAnswer}
+                                defaultValue={fillBlankAnswer}
                                 onChange={(e) => {
                                   setFillBlankAnswer(e.target.value);
-                                  questionForm.setValue('correctAnswer', e.target.value);
-                                  questionForm.trigger('correctAnswer');
+                                  questionForm.setValue('correctAnswer', e.target.value, { 
+                                    shouldValidate: true,
+                                    shouldDirty: true,
+                                    shouldTouch: true
+                                  });
+                                }}
+                                onBlur={(e) => {
+                                  setFillBlankAnswer(e.target.value);
+                                  questionForm.setValue('correctAnswer', e.target.value, { 
+                                    shouldValidate: true
+                                  });
                                 }}
                                 className="w-full"
-                                key="fill-blank-answer"
+                                key={`fill-blank-answer-${new Date().getTime()}`}
                               />
                               {!fillBlankAnswer && (
                                 <p className="text-sm text-red-500">
