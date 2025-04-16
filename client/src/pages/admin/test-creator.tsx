@@ -14,6 +14,14 @@ import {
   CardDescription,
   CardFooter
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Form, 
@@ -78,8 +86,8 @@ const questionSchema = z.object({
 });
 
 export default function TestCreator() {
-  const [params] = useParams();
-  const testId = params?.id ? parseInt(params.id) : undefined;
+  const [matched, params] = useRoute<{id: string}>('/admin/test-creator/:id');
+  const testId = matched && params?.id ? parseInt(params.id) : undefined;
   const isEditMode = !!testId;
   
   const [, navigate] = useLocation();
@@ -88,7 +96,7 @@ export default function TestCreator() {
   const [activeTab, setActiveTab] = useState('test-details');
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<any>(null);
-  const [questionType, setQuestionType] = useState<string>('mcq');
+  const [questionType, setQuestionType] = useState<'mcq' | 'truefalse' | 'fillblank' | 'subjective'>('mcq');
   const [mcqOptions, setMcqOptions] = useState<{id: string, text: string}[]>([
     { id: 'a', text: '' },
     { id: 'b', text: '' },
@@ -438,7 +446,7 @@ export default function TestCreator() {
   
   // Reset all answer-related states
   const resetAnswerStates = () => {
-    setQuestionType('mcq');
+    setQuestionType('mcq' as const);
     setMcqOptions([
       { id: 'a', text: '' },
       { id: 'b', text: '' },
@@ -746,7 +754,7 @@ export default function TestCreator() {
                               <FormLabel>Question Type</FormLabel>
                               <Select
                                 value={questionType}
-                                onValueChange={(value) => {
+                                onValueChange={(value: 'mcq' | 'truefalse' | 'fillblank' | 'subjective') => {
                                   setQuestionType(value);
                                   field.onChange(value);
                                 }}
