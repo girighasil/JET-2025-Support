@@ -61,7 +61,7 @@ const completedTestsColumns = [
       const [, navigate] = useLocation();
       return (
         <button
-          onClick={() => navigate(`/student/tests/result/${row.original.testId}`)}
+          onClick={() => navigate(`/student/tests/result/${row.original.id}`)}
           className="text-primary hover:underline focus:outline-none"
         >
           View Details
@@ -138,7 +138,8 @@ export default function StudentTests() {
   const completedTestsData = completedTests.map((test: any) => {
     const lastAttempt = test.lastCompletedAttempt;
     return {
-      testId: test.id,
+      id: lastAttempt?.id, // attempt ID for result page link
+      testId: test.id,     // test ID for reference
       title: test.title,
       completedAt: lastAttempt?.completedAt,
       score: lastAttempt?.score,
