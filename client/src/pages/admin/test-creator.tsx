@@ -304,6 +304,7 @@ export default function TestCreator() {
       explanation: '',
       sortOrder: 0,
     },
+    mode: 'onChange',
   });
   
   // Initialize from existing test data
@@ -468,12 +469,15 @@ export default function TestCreator() {
   // Reset all answer-related states
   const resetAnswerStates = () => {
     setQuestionType('mcq' as const);
-    setMcqOptions([
+    const defaultOptions = [
       { id: 'a', text: '' },
       { id: 'b', text: '' },
       { id: 'c', text: '' },
       { id: 'd', text: '' }
-    ]);
+    ];
+    setMcqOptions(defaultOptions);
+    // Make sure to also update the form state with the default options
+    questionForm.setValue('options', defaultOptions);
     setSelectedMcqAnswers([]);
     setTrueFalseAnswer(null);
     setFillBlankAnswer('');
@@ -490,6 +494,7 @@ export default function TestCreator() {
     
     // Update the form's options value
     questionForm.setValue('options', updatedOptions);
+    questionForm.trigger('options');
   };
   
   // Handle MCQ answer selection
@@ -502,6 +507,7 @@ export default function TestCreator() {
     
     // Update the form's correctAnswer value
     questionForm.setValue('correctAnswer', updatedAnswers);
+    questionForm.trigger('correctAnswer');
   };
   
   // Add keyword to subjective question
@@ -510,6 +516,7 @@ export default function TestCreator() {
       const updatedKeywords = [...subjectiveKeywords, keywordInput.trim()];
       setSubjectiveKeywords(updatedKeywords);
       questionForm.setValue('correctAnswer', updatedKeywords);
+      questionForm.trigger('correctAnswer');
       setKeywordInput('');
     }
   };
@@ -519,6 +526,7 @@ export default function TestCreator() {
     const updatedKeywords = subjectiveKeywords.filter(k => k !== keyword);
     setSubjectiveKeywords(updatedKeywords);
     questionForm.setValue('correctAnswer', updatedKeywords);
+    questionForm.trigger('correctAnswer');
   };
   
   // Handle question deletion
@@ -790,9 +798,10 @@ export default function TestCreator() {
                               <FormLabel>Question Type</FormLabel>
                               <Select
                                 value={questionType}
-                                onValueChange={(value: 'mcq' | 'truefalse' | 'fillblank' | 'subjective') => {
-                                  setQuestionType(value);
-                                  field.onChange(value);
+                                onValueChange={(value: any) => {
+                                  const typedValue = value as 'mcq' | 'truefalse' | 'fillblank' | 'subjective';
+                                  setQuestionType(typedValue);
+                                  field.onChange(typedValue);
                                 }}
                               >
                                 <FormControl>
@@ -881,6 +890,8 @@ export default function TestCreator() {
                                   const boolValue = value === 'true';
                                   setTrueFalseAnswer(boolValue);
                                   questionForm.setValue('correctAnswer', boolValue);
+                                  // Make sure the form is aware of this field update
+                                  questionForm.trigger('correctAnswer');
                                 }}
                               >
                                 <div className="flex items-center space-x-2">
@@ -911,6 +922,7 @@ export default function TestCreator() {
                                 onChange={(e) => {
                                   setFillBlankAnswer(e.target.value);
                                   questionForm.setValue('correctAnswer', e.target.value);
+                                  questionForm.trigger('correctAnswer');
                                 }}
                                 className="w-full"
                                 key="fill-blank-answer"
