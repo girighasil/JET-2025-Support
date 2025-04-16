@@ -348,7 +348,7 @@ export default function QuestionManager() {
     });
   };
   
-  // Handle MCQ option change
+  // Handle MCQ option text changes
   const handleMcqOptionChange = (id: string, text: string) => {
     const updatedOptions = mcqOptions.map(opt => 
       opt.id === id ? { ...opt, text } : opt
@@ -359,7 +359,7 @@ export default function QuestionManager() {
     questionForm.setValue('options', updatedOptions);
   };
   
-  // Handle MCQ answer selection
+  // Handle MCQ answer selection changes
   const handleMcqAnswerChange = (id: string) => {
     const updatedAnswers = selectedMcqAnswers.includes(id)
       ? selectedMcqAnswers.filter(a => a !== id)
@@ -370,6 +370,8 @@ export default function QuestionManager() {
     // Update the form's correctAnswer value
     questionForm.setValue('correctAnswer', updatedAnswers);
   };
+  
+
   
   // Add keyword to subjective question
   const addKeyword = () => {
