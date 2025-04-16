@@ -540,6 +540,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Reorder questions endpoint
+  app.put("/api/questions/reorder", isAuthenticated, hasRole(["admin", "teacher"]), async (req, res) => {
+    try {
+      const { updates } = req.body;
+      
+      if (!Array.isArray(updates) || updates.length === 0) {
+        return res.status(400).json({ message: "Invalid updates format" });
+      }
+      
+      // Check if all questions exist and user is authorized
+      let testId: number | null = null;
+      
+      for (const update of updates) {
+        if (!update.id || typeof update.sortOrder !== 'number') {
+          return res.status(400).json({ message: "Each update must include id and sortOrder" });
+        }
+        
+        const question = await storage.getQuestion(update.id);
+        if (!question) {
+          return res.status(404).json({ message: `Question with ID ${update.id} not found` });
+        }
+        
+        // Store testId for authorization check
+        if (testId === null) {
+          testId = question.testId;
+        } else if (testId !== question.testId) {
+          return res.status(400).json({ message: "All questions must belong to the same test" });
+        }
+      }
+      
+      // Check if user is authorized to update questions for this test
+      if (testId !== null) {
+        const test = await storage.getTest(testId);
+        if (!test || (req.user.role === "teacher" && test.createdBy !== req.user.id)) {
+          return res.status(403).json({ message: "Unauthorized to update questions for this test" });
+        }
+      }
+      
+      // Update each question's sort order
+      for (const update of updates) {
+        await storage.updateQuestion(update.id, { sortOrder: update.sortOrder });
+      }
+      
+      res.json({ message: "Questions reordered successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Error reordering questions", error: (error as Error).message });
+    }
+  });
+  
   // Test Attempt Routes
   app.get("/api/test-attempts", isAuthenticated, async (req, res) => {
     try {
