@@ -335,6 +335,10 @@ export default function TestCreator() {
     if (activeTab === 'questions' && isEditMode) {
       // Reset question form when switching to questions tab
       if (!currentQuestion) {
+        // First set the type
+        setQuestionType('mcq');
+        
+        // Then reset the form with the correct values
         questionForm.reset({
           testId: testId || 0,
           type: 'mcq',
@@ -467,18 +471,27 @@ export default function TestCreator() {
   
   // Reset all answer-related states
   const resetAnswerStates = () => {
-    setQuestionType('mcq' as const);
-    setMcqOptions([
+    const initialType = 'mcq' as const;
+    const initialOptions = [
       { id: 'a', text: '' },
       { id: 'b', text: '' },
       { id: 'c', text: '' },
       { id: 'd', text: '' }
-    ]);
+    ];
+    
+    // Update state variables
+    setQuestionType(initialType);
+    setMcqOptions(initialOptions);
     setSelectedMcqAnswers([]);
     setTrueFalseAnswer(null);
     setFillBlankAnswer('');
     setSubjectiveKeywords([]);
     setKeywordInput('');
+    
+    // Also make sure form fields are updated
+    questionForm.setValue('type', initialType);
+    questionForm.setValue('options', initialOptions);
+    questionForm.setValue('correctAnswer', []);
   };
   
   // Handle MCQ option change
@@ -802,7 +815,7 @@ export default function TestCreator() {
                             <FormItem>
                               <FormLabel>Question Type</FormLabel>
                               <Select
-                                value={questionType}
+                                value={field.value}
                                 onValueChange={(value: 'mcq' | 'truefalse' | 'fillblank' | 'subjective') => {
                                   setQuestionType(value);
                                   field.onChange(value);
