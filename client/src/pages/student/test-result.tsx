@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/ui/layout";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 
 export default function TestResult() {
   const [match, params] = useRoute("/student/tests/result/:attemptId");
+  const [, navigate] = useLocation();
   const attemptId = match ? parseInt(params?.attemptId as string) : null;
 
   // Get the specific test attempt by ID
@@ -114,12 +115,7 @@ export default function TestResult() {
           <p className="text-gray-600 mb-6">
             We couldn't find any test results for this test.
           </p>
-          <Button
-            variant="outline"
-            className="mr-4 flex items-center"
-            onClick={() => navigate("/student/tests")}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+          <Button onClick={() => navigate("/student/tests")}>
             Back to Tests
           </Button>
         </div>
@@ -146,11 +142,13 @@ export default function TestResult() {
     <Layout>
       <div className="mx-auto max-w-3xl">
         <div className="mb-6 flex items-center">
-          <Button variant="outline" asChild className="mr-4">
-            <a href="/student/tests" className="flex items-center">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Tests
-            </a>
+          <Button 
+            variant="outline" 
+            className="mr-4 flex items-center"
+            onClick={() => navigate("/student/tests")}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Tests
           </Button>
           <h1 className="text-2xl font-bold">Test Results</h1>
         </div>
