@@ -271,8 +271,8 @@ export default function StudentTestAttempt() {
           <p className="text-gray-600 mb-6">
             The test you're looking for doesn't exist or has no questions.
           </p>
-          <Button asChild>
-            <a href="/student/tests">Back to Tests</a>
+          <Button onClick={() => navigate("/student/tests")}>
+            Back to Tests
           </Button>
         </div>
       </Layout>

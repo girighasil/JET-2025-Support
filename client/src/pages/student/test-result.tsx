@@ -515,8 +515,11 @@ export default function TestResult() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button asChild className="w-full">
-              <a href="/student/tests">Back to Tests</a>
+            <Button 
+              className="w-full"
+              onClick={() => navigate("/student/tests")}
+            >
+              Back to Tests
             </Button>
           </CardFooter>
         </Card>
