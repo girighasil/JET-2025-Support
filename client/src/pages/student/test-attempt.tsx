@@ -81,6 +81,7 @@ export default function StudentTestAttempt() {
     onSuccess: (data) => {
       // First invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/test-attempts'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/test-attempts/${attemptId}`] });
       
       // Notify user with toast
       toast({
@@ -88,14 +89,19 @@ export default function StudentTestAttempt() {
         description: `You've completed the test with a score of ${data.score}%.`,
       });
       
-      // Use window.history.pushState to avoid the 404 flash
-      // This directly manipulates the browser history without triggering a navigation event
-      window.history.pushState({}, "", `/student/tests/result/${attemptId}`);
-      
-      // Then force a navigation event after a small delay to ensure React router catches up
-      setTimeout(() => {
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }, 200);
+      // Explicitly prefetch the updated test attempt data to ensure it's in the cache
+      // and fully processed before navigating
+      queryClient.prefetchQuery({
+        queryKey: [`/api/test-attempts/${attemptId}`],
+        queryFn: async () => {
+          const res = await fetch(`/api/test-attempts/${attemptId}`);
+          if (!res.ok) throw new Error('Failed to fetch test attempt');
+          return res.json();
+        }
+      }).then(() => {
+        // Only navigate once we have the latest data
+        navigate(`/student/tests/result/${attemptId}`);
+      });
     },
     onError: (error: Error) => {
       toast({
