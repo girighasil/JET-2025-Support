@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MobileSidebarNav } from "@/components/ui/mobile-sidebar-nav"
 import {
   Tooltip,
   TooltipContent,
@@ -197,17 +198,12 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
+            className="w-80 bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
             side={side}
           >
             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
             <SheetDescription className="sr-only">Navigation links for the application</SheetDescription>
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <MobileSidebarNav onItemClick={() => setOpenMobile(false)} />
           </SheetContent>
         </Sheet>
       )

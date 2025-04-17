@@ -1,5 +1,6 @@
 import { SidebarNav } from "@/components/ui/sidebar-nav";
 import { MobileNav } from "@/components/ui/mobile-nav";
+import { MobileSidebarNav } from "@/components/ui/mobile-sidebar-nav";
 import { cn } from "@/lib/utils";
 import { ReactNode, useState } from "react";
 import { UserAvatar } from "./user-avatar";
@@ -46,10 +47,10 @@ export function Layout({
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
+            <SheetContent side="left" className="w-80 p-0">
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <SheetDescription className="sr-only">Navigation links for the application</SheetDescription>
-              <SidebarNav className="w-full border-none" />
+              <MobileSidebarNav onItemClick={() => setOpen(false)} />
             </SheetContent>
           </Sheet>
           
