@@ -6,7 +6,13 @@ import { UserAvatar } from "./user-avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "./button";
 import { Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "./sheet";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetTrigger, 
+  SheetTitle, 
+  SheetDescription 
+} from "./sheet";
 
 interface LayoutProps {
   children: ReactNode;
@@ -41,6 +47,8 @@ export function Layout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              <SheetDescription className="sr-only">Navigation links for the application</SheetDescription>
               <SidebarNav className="w-full border-none" />
             </SheetContent>
           </Sheet>
