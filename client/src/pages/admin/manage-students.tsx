@@ -25,7 +25,8 @@ import {
   BarChart2,
   Loader2,
   BookOpen,
-  Check
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLocation } from 'wouter';
@@ -54,6 +55,21 @@ export default function ManageStudents() {
   const { data: courses = [], isLoading: isCoursesLoading } = useQuery({
     queryKey: ['/api/courses'],
   });
+  
+  // Fetch enrollments when a student is selected for enrollment
+  const { data: studentEnrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
+    queryKey: ['/api/enrollments', enrollmentUser?.id],
+    enabled: !!enrollmentUser,
+    select: (data) => {
+      // Filter enrollments for the selected student
+      return Array.isArray(data) 
+        ? data.filter((enrollment: any) => enrollment.userId === enrollmentUser?.id)
+        : [];
+    }
+  });
+  
+  // Extract enrolled course IDs
+  const enrolledCourseIds = studentEnrollments.map((enrollment: any) => enrollment.courseId);
   
   // Filter to get only students
   const students = users.filter((user: any) => user.role === 'student');
@@ -255,6 +271,11 @@ export default function ManageStudents() {
   
   // Toggle course selection
   const toggleCourseSelection = (courseId: number) => {
+    // Check if the course is already enrolled, and if so, don't allow toggling
+    if (enrolledCourseIds.includes(courseId)) {
+      return;
+    }
+    
     setSelectedCourses(prev => 
       prev.includes(courseId)
         ? prev.filter(id => id !== courseId)
@@ -265,7 +286,11 @@ export default function ManageStudents() {
   // Toggle all courses
   const toggleAllCourses = (checked: boolean) => {
     if (checked) {
-      setSelectedCourses(courses.map((course: any) => course.id));
+      // Only select courses that the student is not already enrolled in
+      const availableCourseIds = courses
+        .filter((course: any) => !enrolledCourseIds.includes(course.id))
+        .map((course: any) => course.id);
+      setSelectedCourses(availableCourseIds);
     } else {
       setSelectedCourses([]);
     }
@@ -367,14 +392,19 @@ export default function ManageStudents() {
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="select-all" 
-                    checked={selectedCourses.length === courses.length && courses.length > 0}
+                    checked={
+                      courses.length > 0 &&
+                      selectedCourses.length === 
+                        courses.filter((course: any) => !enrolledCourseIds.includes(course.id)).length &&
+                      selectedCourses.length > 0
+                    }
                     onCheckedChange={toggleAllCourses}
                   />
                   <label 
                     htmlFor="select-all" 
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Select All Courses
+                    Select All Available Courses
                   </label>
                 </div>
               </div>
@@ -382,27 +412,44 @@ export default function ManageStudents() {
               {/* Course List */}
               <ScrollArea className="h-[250px] pr-4">
                 <div className="space-y-3">
-                  {courses.map((course: any) => (
-                    <div key={course.id} className="flex items-center space-x-3 py-1">
-                      <Checkbox 
-                        id={`course-${course.id}`} 
-                        checked={selectedCourses.includes(course.id)}
-                        onCheckedChange={() => toggleCourseSelection(course.id)}
-                      />
-                      <div className="grid gap-1">
-                        <label 
-                          htmlFor={`course-${course.id}`} 
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {course.title}
-                        </label>
-                        <p className="text-xs text-muted-foreground">
-                          {course.description?.substring(0, 100)}
-                          {course.description?.length > 100 ? '...' : ''}
-                        </p>
+                  {courses.map((course: any) => {
+                    const isEnrolled = enrolledCourseIds.includes(course.id);
+                    return (
+                      <div 
+                        key={course.id} 
+                        className={`flex items-center space-x-3 border rounded-md p-3 ${
+                          isEnrolled ? 'bg-muted' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <Checkbox 
+                          id={`course-${course.id}`} 
+                          checked={isEnrolled ? true : selectedCourses.includes(course.id)}
+                          onCheckedChange={() => toggleCourseSelection(course.id)}
+                          disabled={isEnrolled}
+                        />
+                        <div className="grid gap-1">
+                          <label 
+                            htmlFor={`course-${course.id}`} 
+                            className={`text-sm font-medium leading-none ${
+                              isEnrolled ? 'cursor-not-allowed text-muted-foreground' : 'cursor-pointer'
+                            }`}
+                          >
+                            {course.title}
+                          </label>
+                          <p className="text-xs text-muted-foreground">
+                            {course.description?.substring(0, 100)}
+                            {course.description?.length > 100 ? '...' : ''}
+                          </p>
+                          {isEnrolled && (
+                            <p className="text-xs text-green-600 mt-1">
+                              <CheckCircle2 className="h-3 w-3 inline-block mr-1" />
+                              Already enrolled
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </>
