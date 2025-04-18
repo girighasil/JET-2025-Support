@@ -71,7 +71,11 @@ const courseSchema = z.object({
   thumbnail: z.string().optional(),
   isActive: z.boolean().default(true),
   richContent: z.string().optional(),
-  videoUrl: z.string().optional(),
+  videoUrl: z.string()
+    .url('Please enter a valid URL, including http:// or https://')
+    .or(z.literal(''))
+    .optional()
+    .transform(val => val === '' ? undefined : val),
   attachments: z.array(
     z.object({
       id: z.string(),
@@ -83,6 +87,10 @@ const courseSchema = z.object({
   ).optional(),
 });
 
+import { useFormError } from '@/hooks/use-form-error';
+import FormSubmitError from '@/components/ui/form-submit-error';
+import { EnhancedFormField } from '@/components/ui/enhanced-form-field';
+
 export default function ManageCourses() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -90,6 +98,7 @@ export default function ManageCourses() {
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(null);
+  const { formError, handleError, clearFormError } = useFormError();
 
   // Fetch courses
   const { data: courses = [], isLoading } = useQuery<Course[]>({
@@ -99,6 +108,7 @@ export default function ManageCourses() {
   // Create course mutation
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: z.infer<typeof courseSchema>) => {
+      clearFormError();
       const res = await apiRequest('POST', '/api/courses', courseData);
       return res.json();
     },
@@ -112,17 +122,14 @@ export default function ManageCourses() {
       form.reset();
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to Create Course',
-        description: error.message || 'There was an error creating the course.',
-        variant: 'destructive',
-      });
+      handleError(error);
     }
   });
   
   // Update course mutation
   const updateCourseMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof courseSchema> }) => {
+      clearFormError();
       const res = await apiRequest('PUT', `/api/courses/${id}`, data);
       return res.json();
     },
@@ -137,11 +144,7 @@ export default function ManageCourses() {
       form.reset();
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to Update Course',
-        description: error.message || 'There was an error updating the course.',
-        variant: 'destructive',
-      });
+      handleError(error);
     }
   });
   
