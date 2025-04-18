@@ -129,6 +129,21 @@ export default function ManageCourses() {
   
   // Filter to get only students
   const students = users.filter((user: any) => user.role === 'student');
+  
+  // Fetch enrollments when a course is selected for enrollment
+  const { data: courseEnrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
+    queryKey: ['/api/enrollments', enrollmentCourse?.id],
+    enabled: !!enrollmentCourse,
+    select: (data) => {
+      // Filter enrollments for the selected course
+      return Array.isArray(data) 
+        ? data.filter((enrollment: any) => enrollment.courseId === enrollmentCourse?.id)
+        : [];
+    }
+  });
+  
+  // Extract enrolled student IDs
+  const enrolledStudentIds = courseEnrollments.map((enrollment: any) => enrollment.userId);
 
   // Create course mutation
   const createCourseMutation = useMutation({
@@ -421,7 +436,11 @@ export default function ManageCourses() {
   // Toggle all students
   const toggleAllStudents = (checked: boolean) => {
     if (checked) {
-      setSelectedStudentIds(students.map((student: any) => student.id));
+      // Only select students who are not already enrolled
+      const availableStudentIds = students
+        .filter((student: any) => !enrolledStudentIds.includes(student.id))
+        .map((student: any) => student.id);
+      setSelectedStudentIds(availableStudentIds);
     } else {
       setSelectedStudentIds([]);
     }
@@ -811,7 +830,12 @@ export default function ManageCourses() {
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="select-all"
-                    checked={selectedStudentIds.length === students.length && students.length > 0}
+                    checked={
+                      students.length > 0 &&
+                      selectedStudentIds.length === 
+                        students.filter((student: any) => !enrolledStudentIds.includes(student.id)).length &&
+                      selectedStudentIds.length > 0
+                    }
                     onCheckedChange={toggleAllStudents}
                   />
                   <label
@@ -826,27 +850,41 @@ export default function ManageCourses() {
               {/* Student List */}
               <ScrollArea className="h-[300px] pr-4">
                 <div className="space-y-3">
-                  {students.map((student: any) => (
-                    <div 
-                      key={student.id} 
-                      className="flex items-center space-x-3 border rounded-md p-3 hover:bg-gray-50"
-                    >
-                      <Checkbox 
-                        id={`student-${student.id}`}
-                        checked={selectedStudentIds.includes(student.id)}
-                        onCheckedChange={() => toggleStudentSelection(student.id)}
-                      />
-                      <div className="flex-1">
-                        <label
-                          htmlFor={`student-${student.id}`}
-                          className="text-sm font-medium leading-none cursor-pointer"
-                        >
-                          {student.fullName}
-                        </label>
-                        <p className="text-sm text-muted-foreground">{student.email}</p>
+                  {students.map((student: any) => {
+                    const isEnrolled = enrolledStudentIds.includes(student.id);
+                    return (
+                      <div 
+                        key={student.id} 
+                        className={`flex items-center space-x-3 border rounded-md p-3 ${
+                          isEnrolled ? 'bg-muted' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <Checkbox 
+                          id={`student-${student.id}`}
+                          checked={isEnrolled ? true : selectedStudentIds.includes(student.id)}
+                          onCheckedChange={() => toggleStudentSelection(student.id)}
+                          disabled={isEnrolled}
+                        />
+                        <div className="flex-1">
+                          <label
+                            htmlFor={`student-${student.id}`}
+                            className={`text-sm font-medium leading-none ${
+                              isEnrolled ? 'cursor-not-allowed text-muted-foreground' : 'cursor-pointer'
+                            }`}
+                          >
+                            {student.fullName}
+                          </label>
+                          <p className="text-sm text-muted-foreground">{student.email}</p>
+                          {isEnrolled && (
+                            <p className="text-xs text-green-600 mt-1">
+                              <CheckCircle2 className="h-3 w-3 inline-block mr-1" />
+                              Already enrolled
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </ScrollArea>
             </>
