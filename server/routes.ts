@@ -169,6 +169,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Course not found" });
       }
       
+      // Send notifications to enrolled students about course update
+      const updateType = "course_update";
+      let message = "Course information has been updated.";
+      
+      // Add more specific messaging based on what was updated
+      if (courseData.richContent) {
+        message = "Course content has been updated with new materials.";
+      } else if (courseData.videoUrl) {
+        message = "New video content has been added to the course.";
+      } else if (courseData.attachments) {
+        message = "New course resources have been attached to the course.";
+      }
+      
+      // Notify enrolled students about the update
+      await storage.notifyCourseUpdate(courseId, updateType, message);
+      
       res.json(updatedCourse);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -271,6 +287,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedModule) {
         return res.status(404).json({ message: "Module not found" });
       }
+      
+      // Send notifications to enrolled students about module update
+      const updateType = "course_update";
+      let message = `Module "${updatedModule.title}" has been updated.`;
+      
+      if (moduleData.content) {
+        message = `Module "${updatedModule.title}" content has been updated with new information.`;
+      }
+      
+      // Notify enrolled students about the module update
+      await storage.notifyCourseUpdate(updatedModule.courseId, updateType, message);
       
       res.json(updatedModule);
     } catch (error) {
@@ -405,6 +432,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedTest = await storage.updateTest(testId, testData);
       if (!updatedTest) {
         return res.status(404).json({ message: "Test not found" });
+      }
+      
+      // If the test is associated with a course, send notifications
+      if (updatedTest.courseId) {
+        // Send notifications to enrolled students about test update
+        const updateType = "test_update";
+        let message = `Test "${updatedTest.title}" has been updated.`;
+        
+        if (testData.description) {
+          message = `Test "${updatedTest.title}" has been updated with new information.`;
+        } else if (testData.isActive === true) {
+          message = `Test "${updatedTest.title}" is now available.`;
+        } else if (testData.scheduledFor) {
+          const date = new Date(updatedTest.scheduledFor).toLocaleDateString();
+          message = `Test "${updatedTest.title}" has been scheduled for ${date}.`;
+        }
+        
+        // Notify enrolled students about the test update
+        await storage.notifyCourseUpdate(updatedTest.courseId, updateType, message);
       }
       
       res.json(updatedTest);
