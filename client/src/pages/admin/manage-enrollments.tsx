@@ -171,12 +171,29 @@ export default function ManageEnrollments() {
       accessorKey: 'courseName',
       header: 'Course',
       cell: ({ row }: any) => {
+        const enrollment = row.original;
+        const courseData = {
+          id: enrollment.courseId,
+          title: enrollment.courseName
+        };
+        
         return (
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-md bg-blue-50 flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-md bg-blue-50 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+              <span>{row.getValue('courseName')}</span>
             </div>
-            <span>{row.getValue('courseName')}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openBatchEnrollDialog(courseData)}
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>Enroll Students</span>
+            </Button>
           </div>
         );
       }
@@ -217,19 +234,26 @@ export default function ManageEnrollments() {
       id: 'actions',
       cell: ({ row }: any) => {
         const enrollment = row.original;
-        const course = courses.find((c: any) => c.id === enrollment.courseId);
+        // Get course information for the current enrollment
+        const courseId = enrollment.courseId;
+        const courseName = enrollment.courseName;
+        const courseData = {
+          id: courseId,
+          title: courseName
+        };
         
         return (
           <div className="flex items-center gap-2">
-            {/* Add "Manage Students" button for the course */}
+            {/* Enroll Students button for the course */}
             <Button
               variant="ghost"
-              size="icon"
-              onClick={() => openBatchEnrollDialog(course)}
-              title="Enroll Students"
-              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+              size="sm"
+              onClick={() => openBatchEnrollDialog(courseData)}
+              title="Enroll Students in this Course"
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
             >
               <UserPlus className="h-4 w-4" />
+              <span>Enroll</span>
             </Button>
             <Button
               variant="ghost"
@@ -441,10 +465,22 @@ export default function ManageEnrollments() {
             <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
               Enroll students in courses to track their progress and provide access to course materials.
             </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create First Enrollment
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create Single Enrollment
+              </Button>
+              {courses.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => openBatchEnrollDialog(courses[0])}
+                  className="flex items-center gap-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Batch Enroll Students
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
