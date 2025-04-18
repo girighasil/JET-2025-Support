@@ -393,6 +393,9 @@ export default function ManageCourses() {
   const handleOpenEnrollDialog = (course: Course) => {
     setEnrollmentCourse(course);
     setSelectedStudentIds([]);
+    
+    // Force refresh enrollments data for this course
+    queryClient.invalidateQueries({ queryKey: ['/api/enrollments', course.id] });
   };
   
   // Handle enrollment submission

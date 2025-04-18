@@ -79,6 +79,13 @@ export default function ManageEnrollments() {
     queryKey: ['/api/enrollments'],
   });
   
+  // Get already enrolled student IDs for the selected course
+  const enrolledStudentIds = selectedCourse 
+    ? enrollments
+        .filter((enrollment: any) => enrollment.courseId === selectedCourse.id)
+        .map((enrollment: any) => enrollment.userId)
+    : [];
+  
   // Fetch students for the select input
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
     queryKey: ['/api/users'],
@@ -308,6 +315,9 @@ export default function ManageEnrollments() {
     setSelectedCourse(course);
     setSelectedStudentIds([]);
     setIsBatchEnrollDialogOpen(true);
+    
+    // Force refresh enrollments data for this course
+    queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
   };
   
   // Handle batch enrollment of multiple students in a course

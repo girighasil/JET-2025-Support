@@ -238,6 +238,9 @@ export default function ManageStudents() {
   const handleOpenEnrollDialog = (student: any) => {
     setEnrollmentUser(student);
     setSelectedCourses([]);
+    
+    // Force refresh enrollments data for this student
+    queryClient.invalidateQueries({ queryKey: ['/api/enrollments', student.id] });
   };
   
   // Handle enrollment submission
