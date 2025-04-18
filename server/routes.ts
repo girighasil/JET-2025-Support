@@ -1063,11 +1063,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const enrollment = await storage.createEnrollment(enrollmentData);
+      
+      // Create enrollment notification for the user
+      try {
+        // If this is a student being enrolled (either self-enrollment or admin enrolling a student)
+        const user = await storage.getUser(enrollmentData.userId);
+        if (user) {
+          // Create notification for course enrollment
+          await storage.createNotification({
+            userId: enrollmentData.userId,
+            title: `Enrolled in "${course.title}"`,
+            message: `You have been successfully enrolled in the course "${course.title}".`,
+            type: "enrollment",
+            resourceId: course.id,
+            resourceType: "course"
+          });
+          
+          console.log(`Created enrollment notification for user ${enrollmentData.userId} in course ${course.title}`);
+        }
+      } catch (notificationError) {
+        // Log error but don't fail the enrollment request
+        console.error("Error creating enrollment notification:", notificationError);
+      }
+      
       res.status(201).json(enrollment);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: error.errors });
       } else {
+        console.error("Error in enrollment creation:", error);
         res.status(500).json({ message: "Server error" });
       }
     }
