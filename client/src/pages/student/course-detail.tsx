@@ -52,11 +52,22 @@ export default function StudentCourseDetail() {
     enabled: courseId > 0,
   });
   
+  // Define the Module type
+  type Module = {
+    id: number;
+    title: string;
+    description: string;
+    courseId: number;
+    sortOrder: number;
+    lessonCount?: number;
+    createdAt: string;
+  };
+
   // Fetch modules for this course
   const {
-    data: modules = [],
+    data: modules = [] as Module[],
     isLoading: isModulesLoading
-  } = useQuery({
+  } = useQuery<Module[]>({
     queryKey: ['/api/modules', { courseId }],
     enabled: courseId > 0,
   });
@@ -124,7 +135,7 @@ export default function StudentCourseDetail() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary">{course.category}</Badge>
-                <Badge variant={course.isActive ? "success" : "outline"}>
+                <Badge variant={course.isActive ? "secondary" : "outline"} className={course.isActive ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}>
                   {course.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
@@ -329,7 +340,7 @@ export default function StudentCourseDetail() {
                 </div>
               ) : modules.length > 0 ? (
                 <div className="space-y-4">
-                  {modules.map((module: any) => (
+                  {modules.map((module) => (
                     <div 
                       key={module.id} 
                       className="p-4 border rounded-lg hover:shadow-md transition-shadow"

@@ -47,6 +47,9 @@ function App() {
         <Route path="/student/courses">
           <ProtectedRoute path="/student/courses" component={StudentCourses} roles={["student"]} />
         </Route>
+        <Route path="/student/courses/:id">
+          <ProtectedRoute path="/student/courses/:id" component={StudentCourseDetail} roles={["student"]} />
+        </Route>
         <Route path="/student/tests">
           <ProtectedRoute path="/student/tests" component={StudentTests} roles={["student"]} />
         </Route>
