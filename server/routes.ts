@@ -1,5 +1,7 @@
 import type { Express, Request, Response } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { z } from "zod";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
@@ -14,6 +16,10 @@ import {
   insertDoubtSessionSchema,
   insertStudyTimeSchema
 } from "@shared/schema";
+
+// Import route modules
+import filesRoutes from "./routes/files";
+import importExportRoutes from "./routes/import-export";
 
 declare global {
   namespace Express {
@@ -1342,6 +1348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
+
+  // File uploads route
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  
+  // Register routes for file handling
+  app.use('/api/files', isAuthenticated, filesRoutes);
+  
+  // Register routes for import/export
+  app.use('/api/import-export', isAuthenticated, hasRole(["admin", "teacher"]), importExportRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
