@@ -604,25 +604,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Course Update Notification Methods
-  async notifyCourseUpdate(courseId: number, updateType: string, message: string): Promise<void> {
-    const [course] = await this.db.select().from(courses).where(eq(courses.id, courseId));
-    if (!course) return;
-    
-    // Find all students enrolled in this course
-    const enrolledUsers = await this.db.select().from(enrollments).where(eq(enrollments.courseId, courseId));
-    
-    // Create a notification for each enrolled student
-    for (const enrollment of enrolledUsers) {
-      await this.createNotification({
-        userId: enrollment.userId,
-        title: `Course Update: ${course.title}`,
-        message,
-        type: 'course_update',
-        resourceId: courseId,
-        resourceType: 'course'
-      });
-    }
-  }
+  // This implementation has been removed to fix notification duplication issue
+  // The correct implementation is at the beginning of this class
 
   // Analytics Methods
   async getStudentProgress(userId: number): Promise<{courseProgress: number, testPerformance: number, studyTimeThisWeek: number}> {
