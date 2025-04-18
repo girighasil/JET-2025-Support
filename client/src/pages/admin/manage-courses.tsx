@@ -46,6 +46,22 @@ import RichTextEditor from '@/components/ui/rich-text-editor';
 import FileUpload, { FileItem } from '@/components/ui/file-upload';
 import VideoEmbed from '@/components/ui/video-embed';
 import ImportExport from '@/components/ui/import-export';
+import MediaGallery from '@/components/ui/media-gallery';
+
+// Define the Course type
+type Course = {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  thumbnail?: string;
+  isActive: boolean;
+  richContent?: string;
+  videoUrl?: string;
+  attachments?: FileItem[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 // Form schema for a course
 const courseSchema = z.object({
@@ -72,11 +88,11 @@ export default function ManageCourses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCourseDialog, setShowCourseDialog] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<any>(null);
-  const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<any>(null);
-  
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(null);
+
   // Fetch courses
-  const { data: courses = [], isLoading } = useQuery({
+  const { data: courses = [], isLoading } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
   });
   
@@ -168,7 +184,7 @@ export default function ManageCourses() {
   });
   
   // Table columns for courses
-  const courseColumns = [
+  const courseColumns: any[] = [
     {
       accessorKey: 'title',
       header: 'Course Title',
@@ -269,7 +285,7 @@ export default function ManageCourses() {
   };
   
   // Handle editing a course
-  const handleEditCourse = (course: any) => {
+  const handleEditCourse = (course: Course) => {
     setEditingCourse(course);
     form.reset({
       title: course.title,
@@ -569,6 +585,19 @@ export default function ManageCourses() {
                           />
                         </FormControl>
                         <FormMessage />
+                        
+                        {/* Display Media Gallery when files exist */}
+                        {field.value && field.value.length > 0 && (
+                          <div className="mt-6">
+                            <MediaGallery 
+                              files={field.value} 
+                              onRemove={(file) => {
+                                const currentFiles = field.value || [];
+                                field.onChange(currentFiles.filter(f => f.id !== file.id));
+                              }}
+                            />
+                          </div>
+                        )}
                       </FormItem>
                     )}
                   />
