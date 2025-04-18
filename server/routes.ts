@@ -20,6 +20,7 @@ import {
 // Import route modules
 import filesRoutes from "./routes/files";
 import importExportRoutes from "./routes/import-export";
+import notificationRoutes from "./routes/notifications";
 
 declare global {
   namespace Express {
@@ -1404,6 +1405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register routes for import/export
   app.use('/api/import-export', isAuthenticated, hasRole(["admin", "teacher"]), importExportRoutes);
+  
+  // Register routes for notifications
+  app.use('/api/notifications', isAuthenticated, notificationRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
