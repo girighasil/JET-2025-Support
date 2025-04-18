@@ -32,7 +32,7 @@ export async function apiRequest(
   try {
     // Convert PATCH requests to PUT
     const useMethod = method === "PATCH" ? "PUT" : method;
-    
+
     // Determine if we should handle as form data
     const isFormData = options?.isFormData || false;
 
@@ -45,9 +45,11 @@ export async function apiRequest(
     const res = await fetch(url, {
       method: useMethod,
       headers,
-      body: isFormData 
-        ? data as FormData 
-        : data ? JSON.stringify(data) : undefined,
+      body: isFormData
+        ? (data as FormData)
+        : data
+          ? JSON.stringify(data)
+          : undefined,
       credentials: "include",
     });
 
@@ -94,6 +96,12 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
+      onError: (error) => {
+        // Don't show errors for 401 Unauthorized - likely after logout
+        if (!(error instanceof Error && error.message.includes("401"))) {
+          handleApiError(error);
+        }
+      },
     },
     mutations: {
       retry: false,

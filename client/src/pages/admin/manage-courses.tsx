@@ -1,52 +1,52 @@
-import { useState } from 'react';
-import { Layout } from '@/components/ui/layout';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import { useState } from "react";
+import { Layout } from "@/components/ui/layout";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { 
-  BookOpen, 
-  Edit, 
-  Trash, 
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  BookOpen,
+  Edit,
+  Trash,
   Plus,
   Loader2,
   PlusCircle,
   FileText,
-  Video
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
-import RichTextEditor from '@/components/ui/rich-text-editor';
-import FileUpload, { FileItem } from '@/components/ui/file-upload';
-import VideoEmbed from '@/components/ui/video-embed';
-import ImportExport from '@/components/ui/import-export';
-import MediaGallery from '@/components/ui/media-gallery';
+  Video,
+} from "lucide-react";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import RichTextEditor from "@/components/ui/rich-text-editor";
+import FileUpload, { FileItem } from "@/components/ui/file-upload";
+import VideoEmbed from "@/components/ui/video-embed";
+import ImportExport from "@/components/ui/import-export";
+import MediaGallery from "@/components/ui/media-gallery";
 
 // Define the Course type
 type Course = {
@@ -65,31 +65,34 @@ type Course = {
 
 // Form schema for a course
 const courseSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  category: z.string().min(1, 'Category is required'),
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  category: z.string().min(1, "Category is required"),
   thumbnail: z.string().optional(),
   isActive: z.boolean().default(true),
   richContent: z.string().optional(),
-  videoUrl: z.string()
-    .url('Please enter a valid URL, including http:// or https://')
-    .or(z.literal(''))
+  videoUrl: z
+    .string()
+    .url("Please enter a valid URL, including http:// or https://")
+    .or(z.literal(""))
     .optional()
-    .transform(val => val === '' ? undefined : val),
-  attachments: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      type: z.string(),
-      url: z.string(),
-      size: z.number().optional()
-    })
-  ).optional(),
+    .transform((val) => (val === "" ? undefined : val)),
+  attachments: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        type: z.string(),
+        url: z.string(),
+        size: z.number().optional(),
+      }),
+    )
+    .optional(),
 });
 
-import { useFormError } from '@/hooks/use-form-error';
-import FormSubmitError from '@/components/ui/form-submit-error';
-import { EnhancedFormField } from '@/components/ui/enhanced-form-field';
+import { useFormError } from "@/hooks/use-form-error";
+import FormSubmitError from "@/components/ui/form-submit-error";
+import { EnhancedFormField } from "@/components/ui/enhanced-form-field";
 
 export default function ManageCourses() {
   const { user } = useAuth();
@@ -97,119 +100,133 @@ export default function ManageCourses() {
   const queryClient = useQueryClient();
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(null);
-  const { formError, handleError, clearFormError, showSuccess } = useFormError();
+  const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(
+    null,
+  );
+  const {
+    error: formError,
+    handleApiError: handleError,
+    clearError /* remove showSuccess */,
+  } = useFormError();
 
   // Fetch courses
   const { data: courses = [], isLoading } = useQuery<Course[]>({
-    queryKey: ['/api/courses'],
+    queryKey: ["/api/courses"],
   });
-  
+
   // Create course mutation
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: z.infer<typeof courseSchema>) => {
-      const res = await apiRequest('POST', '/api/courses', courseData);
+      const res = await apiRequest("POST", "/api/courses", courseData);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
-      showSuccess('The course has been created successfully');
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      toast({
+        title: "Success",
+        description: "The course has been created successfully",
+      });
       setShowCourseDialog(false);
       form.reset();
     },
     onError: (error: Error) => {
       handleError(error);
-    }
+    },
   });
-  
+
   // Update course mutation
   const updateCourseMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof courseSchema> }) => {
-      const res = await apiRequest('PUT', `/api/courses/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: z.infer<typeof courseSchema>;
+    }) => {
+      const res = await apiRequest("PUT", `/api/courses/${id}`, data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
-      showSuccess('The course has been updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      toast({
+        title: "Success",
+        description: "The course has been updated successfully",
+      });
       setShowCourseDialog(false);
       setEditingCourse(null);
       form.reset();
     },
     onError: (error: Error) => {
       handleError(error);
-    }
+    },
   });
-  
+
   // Delete course mutation
   const deleteCourseMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest('DELETE', `/api/courses/${id}`, {});
+      const res = await apiRequest("DELETE", `/api/courses/${id}`, {});
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
-      showSuccess('The course has been deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      showSuccess("The course has been deleted successfully");
       setDeleteConfirmCourse(null);
     },
     onError: (error: Error) => {
       handleError(error);
-    }
+    },
   });
-  
+
   // Form handling
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      category: '',
-      thumbnail: '',
+      title: "",
+      description: "",
+      category: "",
+      thumbnail: "",
       isActive: true,
-      richContent: '',
-      videoUrl: '',
+      richContent: "",
+      videoUrl: "",
       attachments: [],
     },
   });
-  
+
   // Table columns for courses
   const courseColumns: any[] = [
     {
-      accessorKey: 'title',
-      header: 'Course Title',
+      accessorKey: "title",
+      header: "Course Title",
       cell: ({ row }: any) => {
         return (
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
               <BookOpen className="h-5 w-5 text-gray-500" />
             </div>
-            <div className="font-medium">{row.getValue('title')}</div>
+            <div className="font-medium">{row.getValue("title")}</div>
           </div>
         );
-      }
+      },
     },
     {
-      accessorKey: 'category',
-      header: 'Category',
+      accessorKey: "category",
+      header: "Category",
       cell: ({ row }: any) => {
-        return (
-          <Badge variant="outline">
-            {row.getValue('category')}
-          </Badge>
-        );
-      }
+        return <Badge variant="outline">{row.getValue("category")}</Badge>;
+      },
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Created',
+      accessorKey: "createdAt",
+      header: "Created",
       cell: ({ row }: any) => {
-        return format(new Date(row.getValue('createdAt')), 'MMM d, yyyy');
-      }
+        return format(new Date(row.getValue("createdAt")), "MMM d, yyyy");
+      },
     },
     {
-      accessorKey: 'isActive',
-      header: 'Status',
+      accessorKey: "isActive",
+      header: "Status",
       cell: ({ row }: any) => {
-        return row.getValue('isActive') ? (
+        return row.getValue("isActive") ? (
           <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
             Active
           </Badge>
@@ -218,13 +235,13 @@ export default function ManageCourses() {
             Inactive
           </Badge>
         );
-      }
+      },
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }: any) => {
         const course = row.original;
-        
+
         return (
           <div className="flex items-center gap-2">
             <Button
@@ -244,7 +261,7 @@ export default function ManageCourses() {
             >
               <Trash className="h-4 w-4" />
             </Button>
-            <a 
+            <a
               href={`/admin/manage-enrollments?courseId=${course.id}`}
               className="text-primary hover:underline text-sm"
             >
@@ -252,26 +269,26 @@ export default function ManageCourses() {
             </a>
           </div>
         );
-      }
+      },
     },
   ];
-  
+
   // Handle creating a new course
   const handleCreateCourse = () => {
     setEditingCourse(null);
     form.reset({
-      title: '',
-      description: '',
-      category: '',
-      thumbnail: '',
+      title: "",
+      description: "",
+      category: "",
+      thumbnail: "",
       isActive: true,
-      richContent: '',
-      videoUrl: '',
+      richContent: "",
+      videoUrl: "",
       attachments: [],
     });
     setShowCourseDialog(true);
   };
-  
+
   // Handle editing a course
   const handleEditCourse = (course: Course) => {
     setEditingCourse(course);
@@ -279,48 +296,51 @@ export default function ManageCourses() {
       title: course.title,
       description: course.description,
       category: course.category,
-      thumbnail: course.thumbnail || '',
+      thumbnail: course.thumbnail || "",
       isActive: course.isActive,
-      richContent: course.richContent || '',
-      videoUrl: course.videoUrl || '',
+      richContent: course.richContent || "",
+      videoUrl: course.videoUrl || "",
       attachments: course.attachments || [],
     });
     setShowCourseDialog(true);
   };
-  
+
   // Handle form submission
   function onSubmit(values: z.infer<typeof courseSchema>) {
-    clearFormError();
-    
+    clearError();
+
     if (editingCourse) {
       updateCourseMutation.mutate({ id: editingCourse.id, data: values });
     } else {
       createCourseMutation.mutate(values);
     }
   }
-  
+
   // Handle course deletion
   const handleDeleteCourse = () => {
     if (deleteConfirmCourse) {
       deleteCourseMutation.mutate(deleteConfirmCourse.id);
     }
   };
-  
+
   // Handle import success
   const handleImportSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
+    queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
     toast({
-      title: 'Courses Imported',
-      description: 'Courses have been successfully imported.',
+      title: "Courses Imported",
+      description: "Courses have been successfully imported.",
     });
   };
-  
+
   return (
-    <Layout 
-      title="Manage Courses" 
+    <Layout
+      title="Manage Courses"
       description="Create, edit, and manage courses for students"
       rightContent={
-        <Button onClick={handleCreateCourse} className="flex items-center gap-2">
+        <Button
+          onClick={handleCreateCourse}
+          className="flex items-center gap-2"
+        >
           <Plus className="h-4 w-4" />
           Add New Course
         </Button>
@@ -332,61 +352,66 @@ export default function ManageCourses() {
           <div>
             <h3 className="text-lg font-medium">Course Import & Export</h3>
             <p className="text-sm text-muted-foreground">
-              Import courses from CSV/Excel or export existing courses for backup or editing.
+              Import courses from CSV/Excel or export existing courses for
+              backup or editing.
             </p>
           </div>
-          
-          <ImportExport 
+
+          <ImportExport
             resourceType="Course"
             onImportSuccess={handleImportSuccess}
           />
         </div>
       </div>
-      
+
       {isLoading ? (
         <Skeleton className="h-[600px] w-full" />
       ) : (
-        <DataTable 
-          columns={courseColumns} 
-          data={courses} 
+        <DataTable
+          columns={courseColumns}
+          data={courses}
           searchable={true}
           searchPlaceholder="Search courses..."
         />
       )}
-      
+
       {/* Course Dialog (Create/Edit) */}
       <Dialog open={showCourseDialog} onOpenChange={setShowCourseDialog}>
         <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingCourse ? 'Edit Course' : 'Create New Course'}
+              {editingCourse ? "Edit Course" : "Create New Course"}
             </DialogTitle>
             <DialogDescription>
-              {editingCourse 
-                ? 'Update the details of the existing course.' 
-                : 'Fill in the details to create a new course.'}
+              {editingCourse
+                ? "Update the details of the existing course."
+                : "Fill in the details to create a new course."}
             </DialogDescription>
           </DialogHeader>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Display form-level errors */}
               {formError && (
-                <FormSubmitError 
-                  error={formError} 
-                  title={editingCourse ? "Failed to Update Course" : "Failed to Create Course"}
-                  className="mt-4" 
-                  data-form-error 
+                <FormSubmitError
+                  error={formError}
+                  title={
+                    editingCourse
+                      ? "Failed to Update Course"
+                      : "Failed to Create Course"
+                  }
+                  className="mt-4"
+                  data-form-error
                 />
               )}
-            
+
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="basic">Basic Info</TabsTrigger>
                   <TabsTrigger value="content">Rich Content</TabsTrigger>
                   <TabsTrigger value="media">Media & Files</TabsTrigger>
                 </TabsList>
-                
+
                 {/* Basic Info Tab */}
                 <TabsContent value="basic" className="space-y-4 pt-4">
                   <EnhancedFormField
@@ -396,7 +421,7 @@ export default function ManageCourses() {
                   >
                     <Input placeholder="e.g. Algebra Fundamentals" />
                   </EnhancedFormField>
-                  
+
                   <EnhancedFormField
                     name="category"
                     label="Category"
@@ -404,25 +429,25 @@ export default function ManageCourses() {
                   >
                     <Input placeholder="e.g. Algebra, Geometry, Calculus" />
                   </EnhancedFormField>
-                  
+
                   <EnhancedFormField
                     name="description"
                     label="Description"
                     required={true}
                   >
-                    <Textarea 
-                      placeholder="Describe what students will learn in this course" 
+                    <Textarea
+                      placeholder="Describe what students will learn in this course"
                       className="min-h-[100px]"
                     />
                   </EnhancedFormField>
-                  
+
                   <EnhancedFormField
                     name="thumbnail"
                     label="Thumbnail URL (Optional)"
                   >
                     <Input placeholder="https://example.com/image.jpg" />
                   </EnhancedFormField>
-                  
+
                   <EnhancedFormField
                     name="isActive"
                     className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"
@@ -438,7 +463,7 @@ export default function ManageCourses() {
                     </div>
                   </EnhancedFormField>
                 </TabsContent>
-                
+
                 {/* Rich Content Tab */}
                 <TabsContent value="content" className="space-y-4 pt-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -446,27 +471,29 @@ export default function ManageCourses() {
                     <h3 className="text-lg font-medium">Course Content</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Use the rich text editor below to create detailed course content with formatting, lists, links, and more.
+                    Use the rich text editor below to create detailed course
+                    content with formatting, lists, links, and more.
                   </p>
-                  
+
                   <EnhancedFormField
                     name="richContent"
                     label="Course Content"
                     render={({ field }) => (
-                      <RichTextEditor 
-                        content={field.value || ''}
+                      <RichTextEditor
+                        content={field.value || ""}
                         onChange={field.onChange}
                         placeholder="Create rich content for your course here..."
                       />
                     )}
                   />
-                  
+
                   <div className="flex justify-end gap-2 mt-6">
-                    <Button 
+                    <Button
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        const tabTriggers = document.querySelectorAll('[role="tab"]');
+                        const tabTriggers =
+                          document.querySelectorAll('[role="tab"]');
                         if (tabTriggers[0]) {
                           (tabTriggers[0] as HTMLElement).click();
                         }
@@ -474,10 +501,11 @@ export default function ManageCourses() {
                     >
                       Previous
                     </Button>
-                    <Button 
+                    <Button
                       type="button"
                       onClick={() => {
-                        const tabTriggers = document.querySelectorAll('[role="tab"]');
+                        const tabTriggers =
+                          document.querySelectorAll('[role="tab"]');
                         if (tabTriggers[2]) {
                           (tabTriggers[2] as HTMLElement).click();
                         }
@@ -487,28 +515,31 @@ export default function ManageCourses() {
                     </Button>
                   </div>
                 </TabsContent>
-                
+
                 {/* Media & Files Tab */}
                 <TabsContent value="media" className="space-y-4 pt-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Video className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Video & File Attachments</h3>
+                    <h3 className="text-lg font-medium">
+                      Video & File Attachments
+                    </h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Add supplementary materials to enhance your course, including videos and downloadable resources.
+                    Add supplementary materials to enhance your course,
+                    including videos and downloadable resources.
                   </p>
-                  
+
                   <EnhancedFormField
                     name="videoUrl"
                     label="Video Content (Optional)"
                     render={({ field }) => (
-                      <VideoEmbed 
-                        value={field.value || ''}
+                      <VideoEmbed
+                        value={field.value || ""}
                         onChange={field.onChange}
                       />
                     )}
                   />
-                  
+
                   <EnhancedFormField
                     name="attachments"
                     label="File Attachments (Optional)"
@@ -522,30 +553,41 @@ export default function ManageCourses() {
                           }}
                           onRemove={(file) => {
                             const currentFiles = field.value || [];
-                            field.onChange(currentFiles.filter((f: {id: string}) => f.id !== file.id));
+                            field.onChange(
+                              currentFiles.filter(
+                                (f: { id: string }) => f.id !== file.id,
+                              ),
+                            );
                           }}
                           accept={{
-                            'application/pdf': ['.pdf'],
-                            'application/msword': ['.doc'],
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                            'application/vnd.ms-excel': ['.xls'],
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-                            'application/vnd.ms-powerpoint': ['.ppt'],
-                            'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-                            'image/jpeg': ['.jpg', '.jpeg'],
-                            'image/png': ['.png']
+                            "application/pdf": [".pdf"],
+                            "application/msword": [".doc"],
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                              [".docx"],
+                            "application/vnd.ms-excel": [".xls"],
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                              [".xlsx"],
+                            "application/vnd.ms-powerpoint": [".ppt"],
+                            "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+                              [".pptx"],
+                            "image/jpeg": [".jpg", ".jpeg"],
+                            "image/png": [".png"],
                           }}
                           maxFiles={5}
                         />
-                        
+
                         {/* Display Media Gallery when files exist */}
                         {field.value && field.value.length > 0 && (
                           <div className="mt-6">
-                            <MediaGallery 
-                              files={field.value} 
+                            <MediaGallery
+                              files={field.value}
                               onRemove={(file) => {
                                 const currentFiles = field.value || [];
-                                field.onChange(currentFiles.filter((f: {id: string}) => f.id !== file.id));
+                                field.onChange(
+                                  currentFiles.filter(
+                                    (f: { id: string }) => f.id !== file.id,
+                                  ),
+                                );
                               }}
                             />
                           </div>
@@ -553,13 +595,14 @@ export default function ManageCourses() {
                       </>
                     )}
                   />
-                  
+
                   <div className="flex justify-end gap-2 mt-6">
-                    <Button 
+                    <Button
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        const tabTriggers = document.querySelectorAll('[role="tab"]');
+                        const tabTriggers =
+                          document.querySelectorAll('[role="tab"]');
                         if (tabTriggers[1]) {
                           (tabTriggers[1] as HTMLElement).click();
                         }
@@ -570,49 +613,59 @@ export default function ManageCourses() {
                   </div>
                 </TabsContent>
               </Tabs>
-              
+
               <DialogFooter className="pt-4 border-t mt-6">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setShowCourseDialog(false)}
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   type="submit"
-                  disabled={createCourseMutation.isPending || updateCourseMutation.isPending}
+                  disabled={
+                    createCourseMutation.isPending ||
+                    updateCourseMutation.isPending
+                  }
                 >
-                  {(createCourseMutation.isPending || updateCourseMutation.isPending) && (
+                  {(createCourseMutation.isPending ||
+                    updateCourseMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {editingCourse ? 'Update Course' : 'Create Course'}
+                  {editingCourse ? "Update Course" : "Create Course"}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteConfirmCourse} onOpenChange={(open) => !open && setDeleteConfirmCourse(null)}>
+      <Dialog
+        open={!!deleteConfirmCourse}
+        onOpenChange={(open) => !open && setDeleteConfirmCourse(null)}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the course 
-              <span className="font-medium"> "{deleteConfirmCourse?.title}"</span>?
-              This action cannot be undone.
+              Are you sure you want to delete the course
+              <span className="font-medium">
+                {" "}
+                "{deleteConfirmCourse?.title}"
+              </span>
+              ? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setDeleteConfirmCourse(null)}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="destructive"
               onClick={handleDeleteCourse}
               disabled={deleteCourseMutation.isPending}
