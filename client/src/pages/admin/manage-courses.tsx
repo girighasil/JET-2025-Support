@@ -134,11 +134,12 @@ export default function ManageCourses() {
   const { data: courseEnrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
     queryKey: ['/api/enrollments', enrollmentCourse?.id],
     enabled: !!enrollmentCourse,
-    select: (data) => {
-      // Filter enrollments for the selected course
-      return Array.isArray(data) 
-        ? data.filter((enrollment: any) => enrollment.courseId === enrollmentCourse?.id)
-        : [];
+    queryFn: async () => {
+      if (!enrollmentCourse) return [];
+      // Explicitly request enrollments for this course by ID
+      const res = await fetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
+      if (!res.ok) return [];
+      return res.json();
     }
   });
   
