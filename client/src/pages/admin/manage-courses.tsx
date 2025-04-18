@@ -377,9 +377,14 @@ export default function ManageCourses() {
       });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate all enrollment-related queries
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
+      
+      // Specifically invalidate course enrollments for this course
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments', variables.courseId] });
     },
     onError: (error: Error) => {
       toast({
@@ -396,6 +401,9 @@ export default function ManageCourses() {
     setSelectedStudentIds([]);
     
     // Force refresh enrollments data for this course
+    queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
+    
+    // This ensures we reload the correct enrollments for the specific course
     queryClient.invalidateQueries({ queryKey: ['/api/enrollments', course.id] });
   };
   
