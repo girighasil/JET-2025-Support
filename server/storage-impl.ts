@@ -205,29 +205,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async notifyCourseUpdate(courseId: number, updateType: string, message: string): Promise<void> {
-    // Get all users enrolled in this course
-    const enrolledUsers = await this.listEnrollmentsByCourse(courseId);
-    
-    // Get the course details
-    const course = await this.getCourse(courseId);
-    if (!course) return;
-    
-    const title = updateType === 'course_update' 
-                 ? `Course "${course.title}" Updated` 
-                 : updateType === 'test_update' 
-                 ? `Test Updated for "${course.title}"`
-                 : `Update for "${course.title}"`;
-    
-    // Create a notification for each enrolled user
-    for (const enrollment of enrolledUsers) {
-      await this.createNotification({
-        userId: enrollment.userId,
-        title,
-        message,
-        type: updateType,
-        resourceId: courseId,
-        resourceType: 'course'
-      });
+    try {
+      console.log("Starting notifyCourseUpdate for courseId:", courseId);
+      
+      // Get all users enrolled in this course
+      const enrolledUsers = await this.listEnrollmentsByCourse(courseId);
+      console.log("Found enrolled users:", enrolledUsers.length);
+      
+      // Get the course details
+      const course = await this.getCourse(courseId);
+      if (!course) {
+        console.log("Course not found, cannot send notifications");
+        return;
+      }
+      
+      console.log("Generating notification for course:", course.title);
+      
+      const title = updateType === 'course_update' 
+                  ? `Course "${course.title}" Updated` 
+                  : updateType === 'test_update' 
+                  ? `Test Updated for "${course.title}"`
+                  : `Update for "${course.title}"`;
+      
+      // Create a notification for each enrolled user
+      for (const enrollment of enrolledUsers) {
+        console.log("Creating notification for user:", enrollment.userId);
+        
+        // Insert directly using db
+        const [created] = await this.db.insert(notifications).values({
+          userId: enrollment.userId,
+          title,
+          message,
+          type: updateType,
+          resourceId: courseId,
+          resourceType: 'course',
+          isRead: false,
+          createdAt: new Date()
+        }).returning();
+        
+        console.log("Created notification:", created.id);
+      }
+      
+      console.log("All notifications created successfully");
+    } catch (error) {
+      console.error("Error in notifyCourseUpdate:", error);
     }
   }
 
