@@ -2,7 +2,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Bell, BookOpen, AlertCircle, Info, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useLocation } from 'wouter';
+import { useNavigation } from '@/lib/navigation';
 
 type NotificationItemProps = {
   id: number;
@@ -28,7 +28,7 @@ export function NotificationItem({
   onMarkAsRead
 }: NotificationItemProps) {
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const { navigate } = useNavigation();
   
   const formattedDate = typeof createdAt === 'string' 
     ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
@@ -43,13 +43,13 @@ export function NotificationItem({
       // Navigate based on resource type
       switch(resourceType) {
         case 'course':
-          setLocation(`/student/courses/${resourceId}`);
+          navigate(`/student/courses/${resourceId}`);
           break;
         case 'test':
-          setLocation(`/student/tests/${resourceId}`);
+          navigate(`/student/tests/${resourceId}`);
           break;
         case 'module':
-          setLocation(`/student/modules/${resourceId}`);
+          navigate(`/student/modules/${resourceId}`);
           break;
         default:
           // Just mark as read, no navigation

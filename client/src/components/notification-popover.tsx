@@ -26,7 +26,9 @@ export function NotificationPopover() {
   // Get unread notifications count
   const { data: unreadCount = 0 } = useQuery<{ count: number }>({
     queryKey: ['/api/notifications/unread/count'],
-    select: (data) => data.count,
+    select: (data: { count: number }) => {
+      return data?.count || 0;
+    },
   });
   
   // Mutation to mark notification as read

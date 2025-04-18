@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import { useLocation } from 'wouter';
+import { useNavigation } from '@/lib/navigation';
 
 interface TestCardProps {
   id: number;
@@ -27,7 +27,7 @@ export function TestCard({
   score,
   onStartTest,
 }: TestCardProps) {
-  const [, navigate] = useLocation();
+  const { navigate } = useNavigation();
 
   // Status badge styling
   const statusConfig: Record<string, { label: string; color: string }> = {

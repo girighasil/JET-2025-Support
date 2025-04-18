@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useLocation } from 'wouter';
+import { useNavigation } from '@/lib/navigation';
 
 export interface CourseCardProps {
   id: number;
@@ -25,7 +25,7 @@ export function CourseCard({
   isEnrolled = true,
   onEnroll,
 }: CourseCardProps) {
-  const [, navigate] = useLocation();
+  const { navigate } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
 
   // Handle course enrollment
