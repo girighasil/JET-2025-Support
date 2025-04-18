@@ -8,6 +8,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 // Student Pages
 import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
+import StudentCourseDetail from "@/pages/student/course-detail";
 import StudentTests from "@/pages/student/tests";
 import StudentTestAttempt from "@/pages/student/test-attempt";
 import StudentTestResult from "@/pages/student/test-result";
