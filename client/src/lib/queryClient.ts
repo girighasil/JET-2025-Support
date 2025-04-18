@@ -12,8 +12,11 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Convert PATCH requests to PUT
+  const useMethod = method === "PATCH" ? "PUT" : method;
+
   const res = await fetch(url, {
-    method,
+    method: useMethod,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
