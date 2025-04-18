@@ -48,7 +48,11 @@ export function TestCard({
       if (onStartTest) {
         onStartTest(id);
       } else {
-        navigate(`/student/test-attempt?testId=${id}`);
+        // Use our navigation utility
+        import('@/lib/navigation').then(({ navigateToTest }) => {
+          // For test attempts, we'll still use direct navigation since it has a query parameter
+          navigate(`/student/test-attempt?testId=${id}`);
+        });
       }
     } else if (status === 'completed') {
       navigate(`/student/tests/result/${id}`);

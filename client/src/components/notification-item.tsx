@@ -40,24 +40,10 @@ export function NotificationItem({
     
     // Navigate to resource if applicable
     if (resourceId && resourceType) {
-      // Navigate based on resource type
-      switch(resourceType) {
-        case 'course':
-          navigate(`/student/courses/${resourceId}`);
-          break;
-        case 'test':
-          navigate(`/student/tests/${resourceId}`);
-          break;
-        case 'module':
-          navigate(`/student/modules/${resourceId}`);
-          break;
-        default:
-          // Just mark as read, no navigation
-          toast({
-            title: "Notification marked as read",
-            description: "The notification has been marked as read.",
-          });
-      }
+      // Use the centralized navigation utility
+      import('@/lib/navigation').then(({ navigateToResource }) => {
+        navigateToResource(resourceType, resourceId, navigate);
+      });
     } else {
       // Just mark as read
       toast({

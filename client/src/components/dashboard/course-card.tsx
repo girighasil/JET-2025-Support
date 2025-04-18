@@ -42,7 +42,10 @@ export function CourseCard({
 
   // Handle continue learning
   const handleContinue = () => {
-    navigate(`/student/courses/${id}`);
+    // Use our navigation utility
+    import('@/lib/navigation').then(({ navigateToCourse }) => {
+      navigateToCourse(id, navigate);
+    });
   };
 
   // Default thumbnail image if none provided
