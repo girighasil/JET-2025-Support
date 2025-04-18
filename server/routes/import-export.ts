@@ -1,158 +1,189 @@
-import { Router, Request, Response } from 'express';
-import { z } from 'zod';
-import upload from '../middlewares/upload';
-import { insertCourseSchema } from '../../shared/schema';
+import express, { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { storage } from '../storage';
+import { uploadSingle, handleMulterError } from '../middlewares/upload';
 import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
+import papaparse from 'papaparse';
+import { db } from '../db';
+import { courses, users, tests, modules } from '../../shared/schema';
+import { eq } from 'drizzle-orm';
 
-const router = Router();
+const router = express.Router();
 
-// Import courses from CSV/Excel
-router.post('/import/courses', upload.single('file'), async (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
+// Middleware to check if user is authenticated and admin/teacher
+const isAuthorized = (req: Request, res: Response, next: Function) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'You must be logged in to access this resource' });
+  }
+  
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'teacher') {
+    return res.status(403).json({ error: 'You do not have permission to perform this action' });
+  }
+  
+  next();
+};
 
-    // Get file extension to determine type
-    const fileExt = path.extname(req.file.originalname).toLowerCase();
-    const filePath = req.file.path;
-    
-    let coursesData: any[] = [];
-    
-    // Parse file based on type
-    if (fileExt === '.csv') {
-      // Parse CSV file
-      const csvContent = fs.readFileSync(filePath, 'utf8');
-      const result = Papa.parse(csvContent, { header: true });
-      coursesData = result.data as any[];
-    } else if (['.xlsx', '.xls'].includes(fileExt)) {
-      // Parse Excel file
-      const workbook = XLSX.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      coursesData = XLSX.utils.sheet_to_json(worksheet);
-    } else {
-      // Clean up the temporary file
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-      return res.status(400).json({ message: 'Unsupported file format. Use CSV or Excel (.xlsx/.xls)' });
-    }
-    
-    // Clean up the temporary file
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-    
-    // Validate and process course data
-    const createdCourses = [];
-    const errors = [];
-    
-    for (let i = 0; i < coursesData.length; i++) {
-      const courseData = coursesData[i];
-      
-      try {
-        // Add required properties and normalize data
-        const course = {
-          title: courseData.title,
-          description: courseData.description || '',
-          category: courseData.category || 'General',
-          isActive: courseData.isActive === 'true' || courseData.isActive === true,
-          createdBy: req.user?.id || 1, // Default to admin if not authenticated
-          thumbnail: courseData.thumbnail || '',
-          richContent: courseData.richContent || '',
-          videoUrl: courseData.videoUrl || '',
-          attachments: []
-        };
-        
-        // Validate course data
-        const validCourse = insertCourseSchema.parse(course);
-        
-        // Store course in database
-        const createdCourse = await storage.createCourse(validCourse);
-        createdCourses.push(createdCourse);
-      } catch (error) {
-        // Track errors for reporting
-        if (error instanceof z.ZodError) {
-          errors.push({ row: i + 1, error: error.errors });
-        } else {
-          errors.push({ row: i + 1, error: 'Invalid course data' });
-        }
-      }
-    }
-    
-    // Return results
-    res.status(201).json({
-      imported: createdCourses.length,
-      total: coursesData.length,
-      courses: createdCourses,
-      errors: errors.length > 0 ? errors : undefined
+// Helper to convert file to JSON data
+const fileToJson = async (filePath: string): Promise<any[]> => {
+  const extension = path.extname(filePath).toLowerCase();
+  
+  if (extension === '.csv') {
+    // Parse CSV
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    const results = papaparse.parse(fileContent, {
+      header: true,
+      skipEmptyLines: true
     });
-  } catch (error) {
+    
+    const data = results.data;
+    const errors = results.errors;
+    
+    if (errors.length > 0) {
+      throw new Error(`CSV parsing error: ${errors[0].message}`);
+    }
+    
+    return data as any[];
+  } else if (['.xlsx', '.xls'].includes(extension)) {
+    // Parse Excel
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(worksheet);
+  } else {
+    throw new Error('Unsupported file format');
+  }
+};
+
+// Route to import courses
+router.post('/courses/import', isAuthorized, uploadSingle('file'), handleMulterError, async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  
+  try {
+    const data = await fileToJson(req.file.path);
+    
+    if (!data || data.length === 0) {
+      return res.status(400).json({ error: 'No data found in the imported file' });
+    }
+    
+    const results = {
+      created: 0,
+      errors: [] as string[]
+    };
+    
+    // Process each course in the data
+    for (const item of data) {
+      try {
+        // Validate required fields
+        if (!item.title || !item.category || !item.description) {
+          results.errors.push(`Skipped row with missing required fields: ${JSON.stringify(item)}`);
+          continue;
+        }
+        
+        // Create the course
+        await db.insert(courses).values({
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          thumbnail: item.thumbnail || null,
+          richContent: item.richContent || null,
+          videoUrl: item.videoUrl || null,
+          isActive: item.isActive === 'true' || item.isActive === true || false,
+          createdBy: req.user!.id, // The authenticated user is the creator
+          attachments: item.attachments ? JSON.parse(item.attachments) : null
+        });
+        
+        results.created++;
+      } catch (error: any) {
+        results.errors.push(`Error importing row: ${error.message}`);
+      }
+    }
+    
+    // Clean up the uploaded file
+    fs.unlinkSync(req.file.path);
+    
+    res.status(201).json({
+      message: `Successfully imported ${results.created} courses`,
+      results
+    });
+  } catch (error: any) {
     console.error('Import error:', error);
-    res.status(500).json({ message: 'Import failed' });
+    return res.status(500).json({ error: `Failed to import courses: ${error.message}` });
   }
 });
 
-// Export courses to CSV
-router.get('/export/courses', async (req: Request, res: Response) => {
+// Route to export courses
+router.get('/courses/export', isAuthorized, async (req: Request, res: Response) => {
+  const format = req.query.format as string || 'csv';
+  
+  if (!['csv', 'xlsx'].includes(format)) {
+    return res.status(400).json({ error: 'Unsupported export format. Use csv or xlsx.' });
+  }
+  
   try {
-    const format = (req.query.format || 'csv').toString().toLowerCase();
-    
     // Get all courses
-    const courses = await storage.listCourses();
+    const allCourses = await db.select().from(courses).orderBy(courses.title);
     
-    // Prepare the courses for export (remove sensitive or complex fields)
-    const exportData = courses.map(course => ({
+    // Transform data for export
+    const exportData = allCourses.map(course => ({
       id: course.id,
       title: course.title,
       description: course.description,
       category: course.category,
-      isActive: course.isActive,
-      createdAt: course.createdAt,
       thumbnail: course.thumbnail || '',
+      isActive: course.isActive ? 'true' : 'false',
+      createdBy: course.createdBy,
+      createdAt: course.createdAt ? new Date(course.createdAt).toISOString() : '',
+      // Convert complex fields to JSON strings
       richContent: course.richContent || '',
-      videoUrl: course.videoUrl || ''
-      // Exclude attachments which are complex objects
+      videoUrl: course.videoUrl || '',
+      attachments: course.attachments ? JSON.stringify(course.attachments) : ''
     }));
     
-    if (format === 'json') {
-      // Send as JSON
-      res.json(exportData);
-    } else if (format === 'excel' || format === 'xlsx') {
-      // Create Excel file
+    const fileName = `courses_export_${Date.now()}`;
+    
+    if (format === 'csv') {
+      // Create CSV content
+      const csvData = papaparse.unparse(exportData);
+      
+      // Set headers for CSV download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=${fileName}.csv`);
+      
+      return res.send(csvData);
+    } else {
+      // Create Excel workbook
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Courses');
       
-      // Generate buffer
-      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      // Create a buffer for the Excel file
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
       
-      // Set headers
-      res.setHeader('Content-Disposition', 'attachment; filename=courses.xlsx');
+      // Set headers for Excel download
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=${fileName}.xlsx`);
       
-      // Send file
-      res.send(buffer);
-    } else {
-      // Default to CSV
-      const csv = Papa.unparse(exportData);
-      
-      // Set headers
-      res.setHeader('Content-Disposition', 'attachment; filename=courses.csv');
-      res.setHeader('Content-Type', 'text/csv');
-      
-      // Send CSV data
-      res.send(csv);
+      return res.send(excelBuffer);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Export error:', error);
-    res.status(500).json({ message: 'Export failed' });
+    return res.status(500).json({ error: `Failed to export courses: ${error.message}` });
   }
+});
+
+// Add similar routes for tests, modules, etc.
+// Tests import/export
+router.post('/tests/import', isAuthorized, uploadSingle('file'), handleMulterError, async (req: Request, res: Response) => {
+  // Similar implementation as courses import
+  res.status(501).json({ message: 'Tests import not implemented yet' });
+});
+
+router.get('/tests/export', isAuthorized, async (req: Request, res: Response) => {
+  // Similar implementation as courses export
+  res.status(501).json({ message: 'Tests export not implemented yet' });
 });
 
 export default router;

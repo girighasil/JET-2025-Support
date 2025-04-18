@@ -1,100 +1,126 @@
-import { Router, Request, Response } from 'express';
-import upload from '../middlewares/upload';
-import path from 'path';
+import express, { Request, Response } from 'express';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
+import { 
+  uploadSingle, 
+  uploadMultiple, 
+  getFileObject, 
+  handleMulterError 
+} from '../middlewares/upload';
 
-const router = Router();
+const router = express.Router();
+const uploadsDir = path.join(process.cwd(), 'uploads');
+
+// Middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: Function) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'You must be logged in to access this resource' });
+  }
+  next();
+};
 
 // Upload a single file
-router.post('/upload', upload.single('file'), (req: Request, res: Response) => {
+router.post('/upload', isAuthenticated, uploadSingle(), handleMulterError, (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    
-    const file = req.file;
-    const fileType = file.mimetype.split('/')[0];
-    
-    // Create response with file metadata
-    const fileData = {
-      id: uuidv4(),
-      name: file.originalname,
-      type: file.mimetype,
-      url: `/uploads/${getFileType(file.mimetype)}/${file.filename}`,
-      size: file.size
-    };
-    
-    res.status(201).json(fileData);
+    const fileObject = getFileObject(req.file);
+    res.status(201).json(fileObject);
   } catch (error) {
     console.error('File upload error:', error);
-    res.status(500).json({ message: 'File upload failed' });
+    res.status(500).json({ error: 'Failed to process uploaded file' });
   }
 });
 
 // Upload multiple files
-router.post('/uploads', upload.array('files', 10), (req: Request, res: Response) => {
+router.post('/uploads', isAuthenticated, uploadMultiple('files', 10), handleMulterError, (req: Request, res: Response) => {
+  if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
+  }
+  
   try {
-    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      return res.status(400).json({ message: 'No files uploaded' });
-    }
-    
-    const files = req.files;
-    const fileData = files.map(file => ({
-      id: uuidv4(),
-      name: file.originalname,
-      type: file.mimetype,
-      url: `/uploads/${getFileType(file.mimetype)}/${file.filename}`,
-      size: file.size
-    }));
-    
-    res.status(201).json(fileData);
+    const fileObjects = req.files.map(file => getFileObject(file));
+    res.status(201).json(fileObjects);
   } catch (error) {
     console.error('Files upload error:', error);
-    res.status(500).json({ message: 'Files upload failed' });
+    res.status(500).json({ error: 'Failed to process uploaded files' });
   }
 });
 
 // Delete a file
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', isAuthenticated, (req: Request, res: Response) => {
+  const fileId = req.params.id;
+  const filePath = req.body.path;
+  
+  if (!filePath) {
+    return res.status(400).json({ error: 'File path is required' });
+  }
+  
+  // Make sure the path is within our uploads directory
+  const absolutePath = path.join(process.cwd(), filePath.startsWith('/') ? filePath.slice(1) : filePath);
+  const relativePath = path.relative(uploadsDir, absolutePath);
+  
+  if (relativePath.startsWith('..')) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  
   try {
-    const filePath = req.query.path as string;
-    
-    if (!filePath) {
-      return res.status(400).json({ message: 'File path is required' });
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+      return res.status(200).json({ success: true, message: 'File deleted successfully' });
+    } else {
+      // File doesn't exist but we'll consider it a success since it's gone
+      return res.status(200).json({ success: true, message: 'File not found but marked as deleted' });
     }
-    
-    // Ensure path is safe (prevent directory traversal attacks)
-    const fullPath = path.join(process.cwd(), filePath.replace(/^\//, ''));
-    const relativePath = path.relative(process.cwd(), fullPath);
-    
-    if (relativePath.startsWith('..')) {
-      return res.status(403).json({ message: 'Invalid file path' });
-    }
-    
-    // Check if file exists
-    if (!fs.existsSync(fullPath)) {
-      return res.status(404).json({ message: 'File not found' });
-    }
-    
-    // Delete the file
-    fs.unlinkSync(fullPath);
-    
-    res.json({ message: 'File deleted successfully' });
   } catch (error) {
     console.error('File deletion error:', error);
-    res.status(500).json({ message: 'File deletion failed' });
+    return res.status(500).json({ error: 'Failed to delete file' });
   }
 });
 
-// Helper function to categorize file types
-function getFileType(mimetype: string): string {
-  if (mimetype.startsWith('image/')) return 'images';
-  if (mimetype.startsWith('video/')) return 'videos';
-  if (mimetype.startsWith('audio/')) return 'audio';
-  if (mimetype.startsWith('application/pdf')) return 'documents';
-  if (mimetype.startsWith('application/') || mimetype.startsWith('text/')) return 'documents';
-  return 'others';
-}
+// Get all uploaded files (admin only)
+router.get('/', isAuthenticated, (req: Request, res: Response) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  
+  try {
+    // Get all files recursively (this is a simplified version)
+    const files: any[] = [];
+    
+    // This is a simplified approach - in a real app you might want to use a database
+    // to track uploads rather than scanning the directory
+    const scanDir = (dir: string) => {
+      const items = fs.readdirSync(dir);
+      
+      items.forEach(item => {
+        const itemPath = path.join(dir, item);
+        const stats = fs.statSync(itemPath);
+        
+        if (stats.isDirectory()) {
+          scanDir(itemPath);
+        } else {
+          const relativePath = path.relative(uploadsDir, itemPath).replace(/\\/g, '/');
+          files.push({
+            id: path.basename(itemPath, path.extname(itemPath)),
+            name: item,
+            url: `/uploads/${relativePath}`,
+            size: stats.size,
+            // Mime type isn't easily available without additional libraries
+            type: path.extname(itemPath).toLowerCase()
+          });
+        }
+      });
+    };
+    
+    scanDir(uploadsDir);
+    res.json(files);
+  } catch (error) {
+    console.error('Error listing files:', error);
+    res.status(500).json({ error: 'Failed to retrieve files list' });
+  }
+});
 
 export default router;

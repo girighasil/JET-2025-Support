@@ -1,350 +1,277 @@
 import React, { useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Button } from '@/components/ui/button';
-import { apiRequest } from '@/lib/queryClient';
+import { 
+  DownloadCloud, 
+  UploadCloud, 
+  FileSpreadsheet,
+  AlertCircle,
+  Loader2,
+  CheckCircle2
+} from 'lucide-react';
+import { Button } from './button';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
-import { 
-  FileSpreadsheet, 
-  Download, 
-  Upload,
-  FileUp,
-  Loader2,
-  Check,
-  AlertCircle
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+  DialogFooter,
+} from './dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './select';
+import { Label } from './label';
+import { Alert, AlertDescription, AlertTitle } from './alert';
 
 interface ImportExportProps {
   resourceType: string;
-  onImportSuccess?: (data: any) => void;
+  onImportSuccess?: () => void;
   className?: string;
 }
 
-export const ImportExport: React.FC<ImportExportProps> = ({
-  resourceType,
+const ImportExport: React.FC<ImportExportProps> = ({ 
+  resourceType, 
   onImportSuccess,
-  className
+  className 
 }) => {
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [importState, setImportState] = useState<'idle' | 'uploading' | 'processing' | 'success' | 'error'>('idle');
-  const [importResult, setImportResult] = useState<any>(null);
   const { toast } = useToast();
-
-  const onDrop = async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
-    
-    setImportState('uploading');
-    setUploadProgress(0);
-    
-    try {
-      const file = acceptedFiles[0];
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + 10;
-        });
-      }, 300);
-      
-      // File upload complete - now processing
-      setUploadProgress(100);
-      setImportState('processing');
-      
-      // Import the data
-      const response = await apiRequest(
-        'POST',
-        `/api/import-export/import/${resourceType.toLowerCase()}s`,
-        formData,
-        { isFormData: true }
-      );
-      
-      clearInterval(progressInterval);
-      
-      const result = await response.json();
-      setImportResult(result);
-      setImportState('success');
-      
-      if (onImportSuccess) {
-        onImportSuccess(result);
-      }
-      
-      toast({
-        title: 'Import Successful',
-        description: `Imported ${result.imported} of ${result.total} ${resourceType.toLowerCase()}s.`,
-      });
-    } catch (error) {
-      console.error('Import error:', error);
-      setImportState('error');
-      setImportResult(error);
-      
-      toast({
-        title: 'Import Failed',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive'
-      });
-    }
-  };
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<string>('csv');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{
+    success: boolean;
+    message?: string;
+    errors?: string[];
+  } | null>(null);
   
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/csv': ['.csv'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls']
-    },
-    maxFiles: 1,
-    disabled: importState === 'uploading' || importState === 'processing'
-  });
-  
-  const handleExport = async (format: 'csv' | 'excel' | 'json') => {
+  const handleExport = async () => {
     try {
-      const response = await apiRequest(
-        'GET',
-        `/api/import-export/export/${resourceType.toLowerCase()}s?format=${format}`,
-        undefined
-      );
-      
-      // Get filename from Content-Disposition header if available
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = `${resourceType.toLowerCase()}s.${format === 'excel' ? 'xlsx' : format}`;
-      
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?([^"]*)"?/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1];
-        }
-      }
-      
-      // Handle different export formats
-      if (format === 'json') {
-        const data = await response.json();
-        const jsonString = JSON.stringify(data, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        // Create download link and trigger download
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        // For CSV and Excel, get blob from response
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        
-        // Create download link and trigger download
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
+      // Create hidden link to trigger download
+      const link = document.createElement('a');
+      link.href = `/api/import-export/${resourceType.toLowerCase()}s/export?format=${exportFormat}`;
+      link.download = `${resourceType.toLowerCase()}s_export.${exportFormat}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       toast({
-        title: 'Export Successful',
-        description: `${resourceType} data has been exported to ${format.toUpperCase()} format.`,
+        title: 'Export Started',
+        description: `Your ${resourceType.toLowerCase()}s are being exported as ${exportFormat.toUpperCase()}.`,
       });
     } catch (error) {
       console.error('Export error:', error);
-      
       toast({
         title: 'Export Failed',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive'
+        description: 'There was an error exporting your data. Please try again.',
+        variant: 'destructive',
       });
     }
   };
   
-  const resetImport = () => {
-    setImportState('idle');
-    setUploadProgress(0);
-    setImportResult(null);
+  const handleImportSubmit = async () => {
+    if (!importFile) {
+      toast({
+        title: 'No File Selected',
+        description: 'Please select a file to import.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadResult(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      
+      const response = await fetch(`/api/import-export/${resourceType.toLowerCase()}s/import`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        setUploadResult({
+          success: true,
+          message: result.message,
+          errors: result.results?.errors,
+        });
+        
+        if (onImportSuccess) {
+          onImportSuccess();
+        }
+      } else {
+        setUploadResult({
+          success: false,
+          message: result.error || 'Import failed',
+        });
+      }
+    } catch (error: any) {
+      console.error('Import error:', error);
+      setUploadResult({
+        success: false,
+        message: error.message || 'Import failed unexpectedly',
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   
-  const closeImportDialog = () => {
-    setIsImportDialogOpen(false);
-    setTimeout(resetImport, 300); // Reset after animation completes
+  const handleCloseImportDialog = () => {
+    setImportDialogOpen(false);
+    // Reset state when dialog closes
+    setTimeout(() => {
+      setImportFile(null);
+      setUploadResult(null);
+    }, 300);
   };
   
   return (
-    <div className={cn("space-y-4", className)}>
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          onClick={() => handleExport('csv')}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1"
+    <div className={className}>
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant="outline" 
+          onClick={() => setImportDialogOpen(true)}
+          className="flex items-center gap-2"
         >
-          <Download className="h-4 w-4 mr-1" />
-          Export CSV
-        </Button>
-        
-        <Button
-          onClick={() => handleExport('excel')}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1"
-        >
-          <FileSpreadsheet className="h-4 w-4 mr-1" />
-          Export Excel
-        </Button>
-        
-        <Button
-          onClick={() => handleExport('json')}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1"
-        >
-          <Download className="h-4 w-4 mr-1" />
-          Export JSON
-        </Button>
-        
-        <Button
-          onClick={() => setIsImportDialogOpen(true)}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1"
-        >
-          <Upload className="h-4 w-4 mr-1" />
+          <UploadCloud className="h-4 w-4" />
           Import
         </Button>
+        
+        <div className="flex gap-2">
+          <Select
+            defaultValue={exportFormat}
+            onValueChange={setExportFormat}
+          >
+            <SelectTrigger className="w-[90px]">
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="csv">CSV</SelectItem>
+              <SelectItem value="xlsx">Excel</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            variant="outline"
+            onClick={handleExport}
+            className="flex items-center gap-2"
+          >
+            <DownloadCloud className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </div>
       
-      {/* Import Dialog */}
-      <Dialog open={isImportDialogOpen} onOpenChange={closeImportDialog}>
-        <DialogContent className="sm:max-w-[550px]">
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Import {resourceType}</DialogTitle>
+            <DialogTitle>Import {resourceType}s</DialogTitle>
             <DialogDescription>
-              Upload a CSV or Excel file to import {resourceType.toLowerCase()} data.
-              Make sure the file has the correct format with required fields.
+              Upload a CSV or Excel file to import {resourceType.toLowerCase()}s. 
+              The file should have the correct columns as in the exported format.
             </DialogDescription>
           </DialogHeader>
           
-          {importState === 'idle' && (
-            <div
-              {...getRootProps()}
-              className={cn(
-                "border-2 border-dashed rounded-md p-10 text-center cursor-pointer mt-4",
-                isDragActive 
-                  ? "border-primary bg-primary/5" 
-                  : "border-muted-foreground/25 hover:border-primary/50"
-              )}
-            >
-              <input {...getInputProps()} />
-              <FileUp className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-              <p className="text-sm font-medium mb-1">
-                {isDragActive ? "Drop the file here" : "Drag & drop a file here"}
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">
-                or click to browse
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Supports CSV, Excel (.xlsx, .xls)
-              </p>
-            </div>
-          )}
-          
-          {(importState === 'uploading' || importState === 'processing') && (
-            <div className="py-8">
-              <div className="text-center mb-6">
-                <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-1">
-                  {importState === 'uploading' ? 'Uploading...' : 'Processing file...'}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {importState === 'uploading' 
-                    ? 'Please wait while we upload your file' 
-                    : 'Importing data into the system'}
-                </p>
-              </div>
-              <Progress value={uploadProgress} className="h-2 w-full" />
-            </div>
-          )}
-          
-          {importState === 'success' && importResult && (
-            <div className="py-8">
-              <div className="text-center mb-6">
-                <div className="bg-green-100 p-3 rounded-full inline-block mb-4">
-                  <Check className="h-8 w-8 text-green-600" />
+          {!uploadResult ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="import-file" className="w-24">File</Label>
+                <div className="flex-1">
+                  <input
+                    id="import-file"
+                    type="file"
+                    className="hidden"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  />
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => document.getElementById('import-file')?.click()}
+                      className="flex items-center gap-2"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                      {importFile ? 'Change File' : 'Select File'}
+                    </Button>
+                    {importFile && (
+                      <span className="text-sm text-muted-foreground truncate max-w-[220px]">
+                        {importFile.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Accepted formats: CSV, Excel (.xlsx, .xls)
+                  </p>
                 </div>
-                <h3 className="text-lg font-medium mb-1">Import Successful</h3>
-                <p className="text-sm">
-                  Successfully imported {importResult.imported} of {importResult.total} {resourceType.toLowerCase()}s
-                </p>
               </div>
-              
-              {importResult.errors && importResult.errors.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
-                  <div className="flex">
-                    <AlertCircle className="h-5 w-5 text-yellow-500 mr-2" />
-                    <div>
-                      <p className="text-sm font-medium text-yellow-800">
-                        {importResult.errors.length} errors encountered
-                      </p>
-                      <ul className="list-disc pl-5 mt-2 text-xs text-yellow-700">
-                        {importResult.errors.slice(0, 3).map((error: any, i: number) => (
-                          <li key={i}>
-                            Row {error.row}: {
-                              typeof error.error === 'string' 
-                                ? error.error 
-                                : 'Validation error'
-                            }
-                          </li>
-                        ))}
-                        {importResult.errors.length > 3 && (
-                          <li>...and {importResult.errors.length - 3} more errors</li>
-                        )}
-                      </ul>
-                    </div>
+            </div>
+          ) : (
+            <div className="py-4">
+              <Alert variant={uploadResult.success ? "default" : "destructive"}>
+                <div className="flex items-start gap-3">
+                  {uploadResult.success ? (
+                    <CheckCircle2 className="h-5 w-5 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 mt-0.5" />
+                  )}
+                  <div className="space-y-2">
+                    <AlertTitle>
+                      {uploadResult.success ? 'Import Successful' : 'Import Failed'}
+                    </AlertTitle>
+                    <AlertDescription>
+                      {uploadResult.message}
+                      {uploadResult.errors && uploadResult.errors.length > 0 && (
+                        <div className="mt-2">
+                          <p className="font-medium">Warnings/Errors:</p>
+                          <ul className="list-disc pl-5 text-sm space-y-1 mt-1">
+                            {uploadResult.errors.slice(0, 5).map((error, i) => (
+                              <li key={i}>{error}</li>
+                            ))}
+                            {uploadResult.errors.length > 5 && (
+                              <li>...and {uploadResult.errors.length - 5} more</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </AlertDescription>
                   </div>
                 </div>
-              )}
+              </Alert>
             </div>
           )}
           
-          {importState === 'error' && (
-            <div className="py-8 text-center">
-              <div className="bg-red-100 p-3 rounded-full inline-block mb-4">
-                <AlertCircle className="h-8 w-8 text-red-600" />
-              </div>
-              <h3 className="text-lg font-medium mb-1">Import Failed</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {importResult instanceof Error 
-                  ? importResult.message 
-                  : 'An error occurred during import. Please try again.'}
-              </p>
-              <Button onClick={resetImport}>Try Again</Button>
-            </div>
-          )}
-          
-          <DialogFooter className="mt-6">
-            {importState === 'idle' && (
-              <Button variant="outline" onClick={closeImportDialog}>Cancel</Button>
-            )}
-            {importState === 'success' && (
-              <Button onClick={closeImportDialog}>Done</Button>
-            )}
-            {importState === 'error' && (
-              <Button variant="outline" onClick={closeImportDialog}>Close</Button>
+          <DialogFooter>
+            {!uploadResult ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={handleCloseImportDialog}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleImportSubmit}
+                  disabled={!importFile || isUploading}
+                >
+                  {isUploading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isUploading ? 'Importing...' : 'Import'}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleCloseImportDialog}>
+                Close
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>

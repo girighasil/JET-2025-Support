@@ -1,175 +1,162 @@
 import React, { useState } from 'react';
+import { Input } from './input';
+import { Button } from './button';
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { XCircle, Video, PlayCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Youtube, Video as VideoIcon } from 'lucide-react';
 
 interface VideoEmbedProps {
   value: string;
-  onChange: (url: string) => void;
+  onChange: (value: string) => void;
   className?: string;
 }
 
-export const VideoEmbed: React.FC<VideoEmbedProps> = ({ value, onChange, className }) => {
-  const [inputUrl, setInputUrl] = useState(value || '');
+// Helper functions to handle different video URLs
+const getYoutubeEmbedUrl = (url: string): string | null => {
+  // Match YouTube URLs
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
+};
+
+const getVimeoEmbedUrl = (url: string): string | null => {
+  // Match Vimeo URLs
+  const regExp = /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|)(\d+)(?:|\/\?)/;
+  const match = url.match(regExp);
+  return match ? `https://player.vimeo.com/video/${match[1]}` : null;
+};
+
+const getEmbedUrl = (url: string): string | null => {
+  if (!url) return null;
+  
+  // Try to determine the video platform
+  const youtubeUrl = getYoutubeEmbedUrl(url);
+  if (youtubeUrl) return youtubeUrl;
+  
+  const vimeoUrl = getVimeoEmbedUrl(url);
+  if (vimeoUrl) return vimeoUrl;
+  
+  // If it already looks like an embed URL, return it as is
+  if (url.includes('/embed/') || url.includes('player.')) {
+    return url;
+  }
+  
+  // If URL ends with common video extensions, it might be a direct video file
+  if (/\.(mp4|webm|ogv)$/.test(url)) {
+    return url;
+  }
+  
+  return null;
+};
+
+const VideoEmbed: React.FC<VideoEmbedProps> = ({ value, onChange, className }) => {
+  const [inputValue, setInputValue] = useState(value);
   const [isValidating, setIsValidating] = useState(false);
   const { toast } = useToast();
-
-  // Parse video ID from different formats of YouTube URLs
-  const getYouTubeVideoId = (url: string): string | null => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
-
-  // Parse video ID from Vimeo URLs
-  const getVimeoVideoId = (url: string): string | null => {
-    const regExp = /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
-    const match = url.match(regExp);
-    return match ? match[5] : null;
-  };
-
-  // Check if URL is a valid video URL
-  const validateUrl = (url: string): { isValid: boolean; type?: 'youtube' | 'vimeo' | 'direct'; id?: string } => {
-    // Check if YouTube
-    const youtubeId = getYouTubeVideoId(url);
-    if (youtubeId) {
-      return { isValid: true, type: 'youtube', id: youtubeId };
-    }
-
-    // Check if Vimeo
-    const vimeoId = getVimeoVideoId(url);
-    if (vimeoId) {
-      return { isValid: true, type: 'vimeo', id: vimeoId };
-    }
-
-    // Check if direct video URL
-    if (/\.(mp4|webm|ogg)$/i.test(url)) {
-      return { isValid: true, type: 'direct' };
-    }
-
-    return { isValid: false };
-  };
-
-  const handleApply = () => {
+  
+  const embedUrl = getEmbedUrl(value);
+  const hasVideo = !!embedUrl;
+  
+  const handleAdd = () => {
     setIsValidating(true);
     
-    try {
-      const result = validateUrl(inputUrl);
-      
-      if (result.isValid) {
-        let finalUrl = inputUrl;
-        
-        // Convert to embed URL if needed
-        if (result.type === 'youtube' && result.id) {
-          finalUrl = `https://www.youtube.com/embed/${result.id}`;
-        } else if (result.type === 'vimeo' && result.id) {
-          finalUrl = `https://player.vimeo.com/video/${result.id}`;
-        }
-        
-        onChange(finalUrl);
-        toast({
-          title: 'Video URL saved',
-          description: 'The video will now be embedded in the course.'
-        });
-      } else {
-        toast({
-          title: 'Invalid video URL',
-          description: 'Please enter a valid YouTube, Vimeo, or direct video URL.',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
-      console.error('Error processing video URL:', error);
+    const newEmbedUrl = getEmbedUrl(inputValue);
+    
+    if (newEmbedUrl) {
+      onChange(inputValue);
       toast({
-        title: 'Error',
-        description: 'An error occurred while processing the video URL.',
-        variant: 'destructive'
+        title: 'Video Added',
+        description: 'The video has been successfully added.',
       });
-    } finally {
-      setIsValidating(false);
+    } else {
+      toast({
+        title: 'Invalid Video URL',
+        description: 'Please enter a valid YouTube, Vimeo, or direct video file URL.',
+        variant: 'destructive',
+      });
     }
+    
+    setIsValidating(false);
   };
-
-  const handleClear = () => {
-    setInputUrl('');
+  
+  const handleRemove = () => {
     onChange('');
+    setInputValue('');
+    toast({
+      title: 'Video Removed',
+      description: 'The video has been removed.',
+    });
   };
-
-  const renderVideoPreview = () => {
-    if (!value) return null;
-    
-    const result = validateUrl(value);
-    
-    if (result.isValid) {
-      if (result.type === 'youtube' || result.type === 'vimeo' || value.includes('embed')) {
-        return (
-          <div className="relative aspect-video w-full rounded-md overflow-hidden border">
-            <iframe
-              src={value}
-              className="absolute inset-0 w-full h-full"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        );
-      } else if (result.type === 'direct') {
-        return (
-          <div className="relative aspect-video w-full rounded-md overflow-hidden border">
-            <video
-              src={value}
-              controls
-              className="absolute inset-0 w-full h-full"
-            />
-          </div>
-        );
-      }
-    }
-    
-    return null;
-  };
-
+  
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="flex gap-2">
-        <Input
-          value={inputUrl}
-          onChange={(e) => setInputUrl(e.target.value)}
-          placeholder="Enter YouTube, Vimeo, or direct video URL"
-          className="flex-1"
-        />
-        <Button
-          type="button"
-          onClick={handleApply}
-          disabled={isValidating || !inputUrl}
-        >
-          {isValidating ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-1" />
-          ) : (
-            <VideoIcon className="h-4 w-4 mr-1" />
-          )}
-          Apply
-        </Button>
-        {value && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClear}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-      
-      {renderVideoPreview()}
-      
-      {!value && (
-        <div className="p-8 border border-dashed rounded-md flex items-center justify-center flex-col text-muted-foreground">
-          <Youtube className="h-8 w-8 mb-2" />
-          <p className="text-sm text-center">Add a video to enhance your course</p>
-          <p className="text-xs text-center mt-1">YouTube, Vimeo, or direct video URLs supported</p>
+    <div className={cn('space-y-4', className)}>
+      {!hasVideo ? (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input 
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Enter YouTube, Vimeo, or direct video URL"
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAdd();
+                }
+              }}
+            />
+            <Button 
+              onClick={handleAdd}
+              disabled={isValidating || !inputValue}
+              type="button"
+            >
+              Add Video
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ or https://vimeo.com/123456789
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="rounded-md overflow-hidden border">
+            {embedUrl && embedUrl.endsWith('.mp4') ? (
+              // Direct video file
+              <video 
+                src={embedUrl} 
+                controls 
+                className="w-full aspect-video"
+                poster="/placeholder-video.jpg"
+              >
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              // Embed iframe
+              <div className="relative aspect-video w-full">
+                <iframe
+                  src={embedUrl}
+                  className="absolute top-0 left-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Embedded video"
+                />
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <p className="text-sm truncate flex-1 overflow-hidden">{value}</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRemove}
+              className="gap-1 text-destructive hover:text-destructive hover:border-destructive"
+              type="button"
+            >
+              <XCircle className="h-4 w-4" />
+              Remove Video
+            </Button>
+          </div>
         </div>
       )}
     </div>

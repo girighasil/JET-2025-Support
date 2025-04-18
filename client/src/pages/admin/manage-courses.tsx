@@ -300,6 +300,15 @@ export default function ManageCourses() {
     }
   };
   
+  // Handle import success
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
+    toast({
+      title: 'Courses Imported',
+      description: 'Courses have been successfully imported.',
+    });
+  };
+  
   return (
     <Layout 
       title="Manage Courses" 
@@ -311,6 +320,23 @@ export default function ManageCourses() {
         </Button>
       }
     >
+      {/* Import/Export Section */}
+      <div className="mb-6 p-4 border rounded-md bg-muted/20">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div>
+            <h3 className="text-lg font-medium">Course Import & Export</h3>
+            <p className="text-sm text-muted-foreground">
+              Import courses from CSV/Excel or export existing courses for backup or editing.
+            </p>
+          </div>
+          
+          <ImportExport 
+            resourceType="Course"
+            onImportSuccess={handleImportSuccess}
+          />
+        </div>
+      </div>
+      
       {isLoading ? (
         <Skeleton className="h-[600px] w-full" />
       ) : (
@@ -324,7 +350,7 @@ export default function ManageCourses() {
       
       {/* Course Dialog (Create/Edit) */}
       <Dialog open={showCourseDialog} onOpenChange={setShowCourseDialog}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingCourse ? 'Edit Course' : 'Create New Course'}
@@ -337,89 +363,234 @@ export default function ManageCourses() {
           </DialogHeader>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Algebra Fundamentals" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                  <TabsTrigger value="content">Rich Content</TabsTrigger>
+                  <TabsTrigger value="media">Media & Files</TabsTrigger>
+                </TabsList>
+                
+                {/* Basic Info Tab */}
+                <TabsContent value="basic" className="space-y-4 pt-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Algebra Fundamentals" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Algebra, Geometry, Calculus" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe what students will learn in this course" 
+                            className="min-h-[100px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="thumbnail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Thumbnail URL (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://example.com/image.jpg" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                          <FormLabel>Active Status</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            Determine if this course is visible to students
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+                
+                {/* Rich Content Tab */}
+                <TabsContent value="content" className="space-y-4 pt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="text-lg font-medium">Course Content</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Use the rich text editor below to create detailed course content with formatting, lists, links, and more.
+                  </p>
+                  
+                  <FormField
+                    control={form.control}
+                    name="richContent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course Content</FormLabel>
+                        <FormControl>
+                          <RichTextEditor 
+                            content={field.value || ''} 
+                            onChange={field.onChange}
+                            placeholder="Create rich content for your course here..."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const tabTriggers = document.querySelectorAll('[role="tab"]');
+                        if (tabTriggers[0]) {
+                          (tabTriggers[0] as HTMLElement).click();
+                        }
+                      }}
+                    >
+                      Previous
+                    </Button>
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        const tabTriggers = document.querySelectorAll('[role="tab"]');
+                        if (tabTriggers[2]) {
+                          (tabTriggers[2] as HTMLElement).click();
+                        }
+                      }}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </TabsContent>
+                
+                {/* Media & Files Tab */}
+                <TabsContent value="media" className="space-y-4 pt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Video className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="text-lg font-medium">Video & File Attachments</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add supplementary materials to enhance your course, including videos and downloadable resources.
+                  </p>
+                  
+                  <FormField
+                    control={form.control}
+                    name="videoUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Video Content (Optional)</FormLabel>
+                        <FormControl>
+                          <VideoEmbed 
+                            value={field.value || ''} 
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="attachments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>File Attachments (Optional)</FormLabel>
+                        <FormControl>
+                          <FileUpload
+                            existingFiles={field.value || []}
+                            onUpload={(files) => {
+                              const currentFiles = field.value || [];
+                              field.onChange([...currentFiles, ...files]);
+                            }}
+                            onRemove={(file) => {
+                              const currentFiles = field.value || [];
+                              field.onChange(currentFiles.filter(f => f.id !== file.id));
+                            }}
+                            accept={{
+                              'application/pdf': ['.pdf'],
+                              'application/msword': ['.doc'],
+                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                              'application/vnd.ms-excel': ['.xls'],
+                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                              'application/vnd.ms-powerpoint': ['.ppt'],
+                              'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+                              'image/jpeg': ['.jpg', '.jpeg'],
+                              'image/png': ['.png']
+                            }}
+                            maxFiles={5}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const tabTriggers = document.querySelectorAll('[role="tab"]');
+                        if (tabTriggers[1]) {
+                          (tabTriggers[1] as HTMLElement).click();
+                        }
+                      }}
+                    >
+                      Previous
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
               
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Algebra, Geometry, Calculus" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe what students will learn in this course" 
-                        className="min-h-[100px]"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="thumbnail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Thumbnail URL (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Active Status</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        Determine if this course is visible to students
-                      </p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter className="pt-4">
+              <DialogFooter className="pt-4 border-t mt-6">
                 <Button 
                   type="button" 
                   variant="outline" 
