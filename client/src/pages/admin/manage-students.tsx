@@ -23,7 +23,9 @@ import {
   Mail,
   GraduationCap,
   BarChart2,
-  Loader2
+  Loader2,
+  BookOpen,
+  Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLocation } from 'wouter';
@@ -31,16 +33,26 @@ import {
   Card,
   CardContent
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function ManageStudents() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<any>(null);
+  const [enrollmentUser, setEnrollmentUser] = useState<any>(null);
+  const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   
   // Fetch students
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
     queryKey: ['/api/users'],
+  });
+  
+  // Fetch all courses for enrollment dialog
+  const { data: courses = [], isLoading: isCoursesLoading } = useQuery({
+    queryKey: ['/api/courses'],
   });
   
   // Filter to get only students
@@ -136,6 +148,18 @@ export default function ManageStudents() {
             >
               <Edit className="h-4 w-4" />
             </Button>
+            
+            {/* Enroll Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleOpenEnrollDialog(student)}
+              title="Enroll in Courses"
+              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+            >
+              <BookOpen className="h-4 w-4" />
+            </Button>
+            
             <Button
               variant="ghost"
               size="icon"
@@ -145,6 +169,7 @@ export default function ManageStudents() {
             >
               <Trash className="h-4 w-4" />
             </Button>
+            
             <Button
               variant="ghost"
               size="icon"
@@ -168,6 +193,81 @@ export default function ManageStudents() {
   const handleDeleteStudent = () => {
     if (deleteConfirmUser) {
       deleteUserMutation.mutate(deleteConfirmUser.id);
+    }
+  };
+  
+  // Enroll student mutation
+  const enrollStudentMutation = useMutation({
+    mutationFn: async ({ userId, courseId }: { userId: number, courseId: number }) => {
+      const res = await apiRequest('POST', '/api/enrollments', {
+        userId,
+        courseId
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to Enroll Student',
+        description: error.message || 'There was an error enrolling the student.',
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Open enrollment dialog
+  const handleOpenEnrollDialog = (student: any) => {
+    setEnrollmentUser(student);
+    setSelectedCourses([]);
+  };
+  
+  // Handle enrollment submission
+  const handleEnrollStudent = async () => {
+    if (!enrollmentUser || selectedCourses.length === 0) return;
+    
+    setEnrollmentLoading(true);
+    
+    try {
+      // Process each enrollment sequentially
+      for (const courseId of selectedCourses) {
+        await enrollStudentMutation.mutateAsync({ 
+          userId: enrollmentUser.id, 
+          courseId 
+        });
+      }
+      
+      toast({
+        title: 'Enrollment Successful',
+        description: `${enrollmentUser.fullName} has been enrolled in ${selectedCourses.length} ${selectedCourses.length === 1 ? 'course' : 'courses'}.`,
+      });
+      
+      setEnrollmentUser(null);
+      setSelectedCourses([]);
+    } catch (error) {
+      // Error is handled by the mutation
+    } finally {
+      setEnrollmentLoading(false);
+    }
+  };
+  
+  // Toggle course selection
+  const toggleCourseSelection = (courseId: number) => {
+    setSelectedCourses(prev => 
+      prev.includes(courseId)
+        ? prev.filter(id => id !== courseId)
+        : [...prev, courseId]
+    );
+  };
+  
+  // Toggle all courses
+  const toggleAllCourses = (checked: boolean) => {
+    if (checked) {
+      setSelectedCourses(courses.map((course: any) => course.id));
+    } else {
+      setSelectedCourses([]);
     }
   };
 
@@ -236,6 +336,99 @@ export default function ManageStudents() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Delete Student
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Enrollment Dialog */}
+      <Dialog open={!!enrollmentUser} onOpenChange={(open) => !open && setEnrollmentUser(null)}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Enroll Student in Courses</DialogTitle>
+            <DialogDescription>
+              Select courses to enroll <span className="font-medium">{enrollmentUser?.fullName}</span> in.
+              You can select multiple courses.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isCoursesLoading ? (
+            <div className="py-6">
+              <Skeleton className="h-[200px] w-full" />
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="py-6 text-center">
+              <p className="text-muted-foreground">No courses available. Please create a course first.</p>
+            </div>
+          ) : (
+            <>
+              {/* Select All Checkbox */}
+              <div className="border-b pb-2 mb-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="select-all" 
+                    checked={selectedCourses.length === courses.length && courses.length > 0}
+                    onCheckedChange={toggleAllCourses}
+                  />
+                  <label 
+                    htmlFor="select-all" 
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Select All Courses
+                  </label>
+                </div>
+              </div>
+              
+              {/* Course List */}
+              <ScrollArea className="h-[250px] pr-4">
+                <div className="space-y-3">
+                  {courses.map((course: any) => (
+                    <div key={course.id} className="flex items-center space-x-3 py-1">
+                      <Checkbox 
+                        id={`course-${course.id}`} 
+                        checked={selectedCourses.includes(course.id)}
+                        onCheckedChange={() => toggleCourseSelection(course.id)}
+                      />
+                      <div className="grid gap-1">
+                        <label 
+                          htmlFor={`course-${course.id}`} 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {course.title}
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          {course.description?.substring(0, 100)}
+                          {course.description?.length > 100 ? '...' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </>
+          )}
+          
+          <DialogFooter className="pt-4 gap-2">
+            <div className="mr-auto text-sm text-muted-foreground">
+              {selectedCourses.length} {selectedCourses.length === 1 ? 'course' : 'courses'} selected
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setEnrollmentUser(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleEnrollStudent}
+              disabled={enrollmentLoading || selectedCourses.length === 0}
+              className="gap-2"
+            >
+              {enrollmentLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              Enroll Student
             </Button>
           </DialogFooter>
         </DialogContent>
