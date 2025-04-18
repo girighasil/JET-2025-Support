@@ -1,9 +1,8 @@
-import { BellRing, Check, FileText, Book, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useNavigate } from "wouter";
 import { formatDistanceToNow } from 'date-fns';
+import { Bell, BookOpen, AlertCircle, Info, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 type NotificationItemProps = {
   id: number;
@@ -28,81 +27,86 @@ export function NotificationItem({
   resourceType,
   onMarkAsRead
 }: NotificationItemProps) {
-  const navigate = useNavigate();
-  const date = createdAt instanceof Date ? createdAt : new Date(createdAt);
-  const timeAgo = formatDistanceToNow(date, { addSuffix: true });
-
-  const getIcon = () => {
-    switch (type) {
-      case 'course_update':
-        return <Book className="h-5 w-5 text-blue-500" />;
-      case 'test_update':
-        return <FileText className="h-5 w-5 text-green-500" />;
-      case 'module_update':
-        return <Pencil className="h-5 w-5 text-purple-500" />;
-      default:
-        return <BellRing className="h-5 w-5 text-primary" />;
-    }
-  };
-
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  
+  const formattedDate = typeof createdAt === 'string' 
+    ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
+    : formatDistanceToNow(createdAt, { addSuffix: true });
+  
   const handleClick = () => {
+    // Mark as read
     onMarkAsRead(id);
     
     // Navigate to resource if applicable
     if (resourceId && resourceType) {
-      switch (resourceType) {
+      // Navigate based on resource type
+      switch(resourceType) {
         case 'course':
-          navigate(`/student/courses/${resourceId}`);
+          setLocation(`/student/courses/${resourceId}`);
           break;
         case 'test':
-          navigate(`/student/tests/${resourceId}`);
+          setLocation(`/student/tests/${resourceId}`);
+          break;
+        case 'module':
+          setLocation(`/student/modules/${resourceId}`);
           break;
         default:
-          break;
+          // Just mark as read, no navigation
+          toast({
+            title: "Notification marked as read",
+            description: "The notification has been marked as read.",
+          });
       }
+    } else {
+      // Just mark as read
+      toast({
+        title: "Notification marked as read",
+        description: "The notification has been marked as read.",
+      });
     }
   };
-
+  
+  // Choose icon based on notification type
+  const getIcon = () => {
+    switch(type) {
+      case 'course_update':
+        return <BookOpen className="h-4 w-4" />;
+      case 'test_update':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'system':
+        return <Info className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+  
   return (
     <div 
-      className={cn(
-        "flex items-start gap-4 p-4 rounded-lg transition-colors hover:bg-accent/50 cursor-pointer",
-        isRead ? "opacity-60" : "bg-accent/20"
-      )}
       onClick={handleClick}
+      className={cn(
+        "flex gap-3 p-3 cursor-pointer hover:bg-muted transition-colors",
+        !isRead && "bg-muted/50"
+      )}
     >
-      <div className="flex-shrink-0 pt-1">
+      <div className={cn(
+        "mt-1 flex h-8 w-8 items-center justify-center rounded-full",
+        type === 'course_update' && "bg-blue-100 text-blue-600",
+        type === 'test_update' && "bg-yellow-100 text-yellow-600",
+        type === 'system' && "bg-purple-100 text-purple-600",
+        type === 'enrollment' && "bg-green-100 text-green-600",
+      )}>
         {getIcon()}
       </div>
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">{title}</p>
-          
           {!isRead && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="h-6 w-6" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMarkAsRead(id);
-                    }}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Mark as read</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <span className="flex h-2 w-2 rounded-full bg-blue-600" />
           )}
         </div>
         <p className="text-sm text-muted-foreground">{message}</p>
-        <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
+        <p className="text-xs text-muted-foreground">{formattedDate}</p>
       </div>
     </div>
   );

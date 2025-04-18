@@ -1,50 +1,46 @@
+import { useState } from "react";
 import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Notification } from "@shared/schema";
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { NotificationItem } from "./notification-item";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Notification } from "@shared/schema";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function NotificationPopover() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { 
-    data: notifications = [], 
-    isLoading, 
-    error 
-  } = useQuery<Notification[]>({
+  const [open, setOpen] = useState(false);
+  
+  // Get all notifications
+  const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
-    refetchInterval: 60000, // Refetch every minute
   });
-
-  const { 
-    data: unreadCount = 0, 
-    isLoading: isLoadingUnread 
-  } = useQuery<Notification[]>({
-    queryKey: ['/api/notifications/unread'],
-    select: (data) => data.length,
-    refetchInterval: 60000, // Refetch every minute
+  
+  // Get unread notifications count
+  const { data: unreadCount = 0 } = useQuery<{ count: number }>({
+    queryKey: ['/api/notifications/unread/count'],
+    select: (data) => data.count,
   });
-
+  
+  // Mutation to mark notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('PATCH', `/api/notifications/${id}/read`);
-      return await response.json();
+      await apiRequest('PUT', `/api/notifications/${id}/read`);
     },
     onSuccess: () => {
+      // Invalidate the notification queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread/count'] });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to mark notification as read",
@@ -52,21 +48,23 @@ export function NotificationPopover() {
       });
     }
   });
-
+  
+  // Mutation to mark all notifications as read
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', `/api/notifications/mark-all-read`);
-      return await response.json();
+      await apiRequest('PUT', `/api/notifications/all/read`);
     },
     onSuccess: () => {
+      // Invalidate the notification queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread/count'] });
       toast({
         title: "Success",
         description: "All notifications marked as read",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to mark all notifications as read",
@@ -74,78 +72,65 @@ export function NotificationPopover() {
       });
     }
   });
-
+  
   const handleMarkAsRead = (id: number) => {
     markAsReadMutation.mutate(id);
   };
-
+  
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate();
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button 
-          variant="outline" 
-          size="icon"
+          variant="ghost" 
+          size="icon" 
           className="relative"
+          aria-label="Open notifications"
         >
-          <Bell className="h-[1.2rem] w-[1.2rem]" />
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[0.7rem] text-primary-foreground">
-              {unreadCount}
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
-        <div className="flex items-center justify-between border-b p-4">
-          <h4 className="text-sm font-medium">Notifications</h4>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h4 className="font-medium">Notifications</h4>
           {unreadCount > 0 && (
             <Button 
-              variant="ghost"
+              variant="ghost" 
               size="sm"
               onClick={handleMarkAllAsRead}
               disabled={markAllAsReadMutation.isPending}
             >
-              {markAllAsReadMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Mark all as read"
-              )}
+              Mark all as read
             </Button>
           )}
         </div>
-        <ScrollArea className="h-[calc(80vh-10rem)] min-h-[300px] max-h-[500px]">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
-            </div>
-          ) : error ? (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              Failed to load notifications
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              No notifications
-            </div>
+        <ScrollArea className="h-[300px]">
+          {notifications.length > 0 ? (
+            notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                id={notification.id}
+                title={notification.title}
+                message={notification.message}
+                createdAt={notification.createdAt as Date}
+                isRead={notification.isRead}
+                type={notification.type}
+                resourceId={notification.resourceId}
+                resourceType={notification.resourceType}
+                onMarkAsRead={handleMarkAsRead}
+              />
+            ))
           ) : (
-            <div className="space-y-1 py-1">
-              {notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  id={notification.id}
-                  title={notification.title}
-                  message={notification.message}
-                  createdAt={notification.createdAt}
-                  isRead={notification.isRead}
-                  type={notification.type}
-                  resourceId={notification.resourceId}
-                  resourceType={notification.resourceType}
-                  onMarkAsRead={handleMarkAsRead}
-                />
-              ))}
+            <div className="flex h-[300px] items-center justify-center">
+              <p className="text-sm text-muted-foreground">No notifications</p>
             </div>
           )}
         </ScrollArea>

@@ -1,80 +1,116 @@
-import { Notification, InsertNotification } from "@shared/schema";
+import { db } from './db';
+import { eq, desc } from 'drizzle-orm';
+import { notifications, Notification, InsertNotification } from '@shared/schema';
 
+/**
+ * Get a notification by ID
+ */
 export async function getNotification(
-  notifications: Map<number, Notification>,
   id: number
 ): Promise<Notification | undefined> {
-  return notifications.get(id);
+  const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
+  return notification;
 }
 
+/**
+ * List all notifications for a user, sorted by most recent first
+ */
 export async function listNotificationsByUser(
-  notifications: Map<number, Notification>,
   userId: number
 ): Promise<Notification[]> {
-  return Array.from(notifications.values())
-    .filter(notification => notification.userId === userId)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
+  const userNotifications = await db.select().from(notifications).where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt));
+  
+  return userNotifications;
 }
 
+/**
+ * List unread notifications for a user, sorted by most recent first
+ */
 export async function listUnreadNotificationsByUser(
-  notifications: Map<number, Notification>,
   userId: number
 ): Promise<Notification[]> {
-  return Array.from(notifications.values())
-    .filter(notification => notification.userId === userId && !notification.isRead)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
+  const unreadNotifications = await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.userId, userId))
+    .where(eq(notifications.isRead, false))
+    .orderBy(desc(notifications.createdAt));
+  
+  return unreadNotifications;
 }
 
+/**
+ * Create a new notification
+ */
 export async function createNotification(
-  notifications: Map<number, Notification>,
-  currentId: number,
   insertNotification: InsertNotification
 ): Promise<{ notification: Notification, newId: number }> {
-  const id = currentId;
-  const now = new Date();
+  // Insert the notification
+  const [result] = await db
+    .insert(notifications)
+    .values(insertNotification)
+    .returning();
   
+  const newId = result.id;
+  
+  // Now query for the complete notification to return
   const notification: Notification = {
-    ...insertNotification,
-    id,
+    id: newId,
+    userId: insertNotification.userId,
+    title: insertNotification.title,
+    message: insertNotification.message,
+    type: insertNotification.type,
+    resourceId: insertNotification.resourceId || null,
+    resourceType: insertNotification.resourceType || null,
     isRead: false,
-    createdAt: now
+    createdAt: new Date()
   };
   
-  notifications.set(id, notification);
-  return { notification, newId: currentId + 1 };
+  return { notification, newId };
 }
 
+/**
+ * Mark a notification as read
+ */
 export async function markNotificationAsRead(
-  notifications: Map<number, Notification>,
   id: number
 ): Promise<Notification | undefined> {
-  const notification = notifications.get(id);
-  if (!notification) return undefined;
+  const [updatedNotification] = await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(eq(notifications.id, id))
+    .returning();
   
-  const updatedNotification = { ...notification, isRead: true };
-  notifications.set(id, updatedNotification);
   return updatedNotification;
 }
 
+/**
+ * Mark all notifications as read for a user
+ * Returns the number of notifications marked as read
+ */
 export async function markAllNotificationsAsRead(
-  notifications: Map<number, Notification>,
   userId: number
 ): Promise<number> {
-  let count = 0;
+  const result = await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(eq(notifications.userId, userId))
+    .where(eq(notifications.isRead, false));
   
-  Array.from(notifications.entries())
-    .filter(([_, notification]) => notification.userId === userId && !notification.isRead)
-    .forEach(([id, notification]) => {
-      notifications.set(id, { ...notification, isRead: true });
-      count++;
-    });
-  
-  return count;
+  // Return the count of affected rows
+  return result.rowCount || 0;
 }
 
+/**
+ * Delete a notification
+ */
 export async function deleteNotification(
-  notifications: Map<number, Notification>,
   id: number
 ): Promise<boolean> {
-  return notifications.delete(id);
+  const result = await db
+    .delete(notifications)
+    .where(eq(notifications.id, id));
+  
+  return result.rowCount ? result.rowCount > 0 : false;
 }

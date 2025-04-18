@@ -13,7 +13,8 @@ import {
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle, eq } from 'drizzle-orm/neon-serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { eq, desc } from 'drizzle-orm';
 import * as schema from "@shared/schema";
 import connectPgSimple from "connect-pg-simple";
 import session from "express-session";
@@ -141,6 +142,93 @@ export class DatabaseStorage implements IStorage {
       pool: this.pool,
       createTableIfMissing: true
     });
+  }
+  
+  // Notification Methods
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const [notification] = await this.db.select().from(notifications).where(eq(notifications.id, id));
+    return notification;
+  }
+
+  async listNotificationsByUser(userId: number): Promise<Notification[]> {
+    const userNotifications = await this.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+    
+    return userNotifications;
+  }
+
+  async listUnreadNotificationsByUser(userId: number): Promise<Notification[]> {
+    const unreadNotifications = await this.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .where(eq(notifications.isRead, false))
+      .orderBy(desc(notifications.createdAt));
+    
+    return unreadNotifications;
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [created] = await this.db.insert(notifications).values(notification).returning();
+    return created;
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const [updated] = await this.db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<number> {
+    const result = await this.db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId))
+      .where(eq(notifications.isRead, false));
+    
+    return result.rowCount || 0;
+  }
+
+  async deleteNotification(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(notifications)
+      .where(eq(notifications.id, id));
+    
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async notifyCourseUpdate(courseId: number, updateType: string, message: string): Promise<void> {
+    // Get all users enrolled in this course
+    const enrolledUsers = await this.listEnrollmentsByCourse(courseId);
+    
+    // Get the course details
+    const course = await this.getCourse(courseId);
+    if (!course) return;
+    
+    const title = updateType === 'course_update' 
+                 ? `Course "${course.title}" Updated` 
+                 : updateType === 'test_update' 
+                 ? `Test Updated for "${course.title}"`
+                 : `Update for "${course.title}"`;
+    
+    // Create a notification for each enrolled user
+    for (const enrollment of enrolledUsers) {
+      await this.createNotification({
+        userId: enrollment.userId,
+        title,
+        message,
+        type: updateType,
+        resourceId: courseId,
+        resourceType: 'course'
+      });
+    }
   }
 
   // User Methods

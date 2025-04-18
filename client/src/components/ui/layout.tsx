@@ -14,6 +14,7 @@ import {
   SheetTitle, 
   SheetDescription 
 } from "./sheet";
+import { NotificationPopover } from "@/components/notification-popover";
 
 interface LayoutProps {
   children: ReactNode;
@@ -61,7 +62,24 @@ export function Layout({
             <h1 className="font-bold text-lg">Maths Magic Town</h1>
           </div>
           
-          <UserAvatar user={user} className="h-8 w-8 ml-auto" />
+          <div className="flex items-center gap-2 ml-auto">
+            <NotificationPopover />
+            <UserAvatar user={user} className="h-8 w-8" />
+          </div>
+        </header>
+        
+        {/* Desktop Header */}
+        <header className="hidden md:flex items-center justify-end gap-4 bg-white border-b p-4">
+          <div className="flex items-center gap-3">
+            <NotificationPopover />
+            <div className="flex items-center gap-2">
+              <UserAvatar user={user} className="h-8 w-8" />
+              <div className="hidden lg:block">
+                <p className="text-sm font-medium">{user?.fullName}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+              </div>
+            </div>
+          </div>
         </header>
         
         {/* Page header with title */}
