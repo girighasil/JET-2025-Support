@@ -50,17 +50,23 @@ export const registerNotificationRoutes = (app: Express) => {
   app.get('/api/notifications/unread/count', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const unreadCount = await db.select({ count: db.fn.count() })
-        .from(notifications)
-        .where(
-          and(
-            eq(notifications.userId, userId),
-            eq(notifications.isRead, false)
-          )
-        );
+      // Use count method which returns { value: bigint }
+      const result = await db.select({
+        count: db.fn.count(notifications.id)
+      })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      );
       
-      console.log("Unread count result:", unreadCount);
-      return res.json({ count: Number(unreadCount[0]?.count || 0) });
+      console.log("Unread count result:", result);
+      
+      // Extract count value safely
+      const count = result[0] ? Number(result[0].count) : 0;
+      return res.json({ count });
     } catch (error) {
       console.error('Error fetching unread notifications count:', error);
       return res.status(500).json({ message: 'Server error' });

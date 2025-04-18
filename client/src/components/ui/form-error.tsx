@@ -1,6 +1,6 @@
 import React from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FormErrorProps {
@@ -28,7 +28,7 @@ export function FormError({ message, className }: FormErrorProps) {
       )}
     >
       <div className="flex gap-2 items-start">
-        <ExclamationTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+        <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
         <AlertDescription className="text-sm">
           {message}
         </AlertDescription>

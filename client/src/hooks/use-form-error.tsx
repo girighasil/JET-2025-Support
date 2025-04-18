@@ -1,49 +1,55 @@
 import { useState, useCallback } from 'react';
-import { toast } from "@/hooks/use-toast";
-import { handleApiError } from '@/lib/utils';
-
-type FormErrorState = string | null;
+import { userFriendlyErrors } from '@/lib/utils';
 
 /**
- * A hook to handle form errors consistently across the application
+ * Hook for managing form error states
+ * Provides functions to set and clear error messages
+ * and helpful utilities for error handling
  * 
- * Returns:
- * - formError: The current form error state
- * - setFormError: Function to set a form error
- * - clearFormError: Function to clear the form error
- * - handleError: Function to handle various error types consistently
+ * @returns Object with error state and helper functions
  */
-export function useFormError() {
-  const [formError, setFormError] = useState<FormErrorState>(null);
-
-  const clearFormError = useCallback(() => setFormError(null), []);
+export const useFormError = () => {
+  const [error, setError] = useState<string | null>(null);
 
   /**
-   * Handles different error types consistently
+   * Clear the current error message
    */
-  const handleError = useCallback((error: any) => {
-    // Convert the error to a user-friendly message using the utility
-    const errorMessage = handleApiError(error, false);
-    setFormError(errorMessage);
-    return errorMessage;
+  const clearError = useCallback(() => {
+    setError(null);
   }, []);
 
   /**
-   * Show success toast message
+   * Set the error message with automatic formatting for user-friendly display
+   * 
+   * @param message Error message to display
    */
-  const showSuccess = useCallback((message: string) => {
-    toast({
-      title: "Success",
-      description: message,
-      variant: "default",
-    });
+  const setFormError = useCallback((message: string) => {
+    // Check if we have a user-friendly version of this error
+    const friendlyMessage = userFriendlyErrors[message] || message;
+    setError(friendlyMessage);
   }, []);
+
+  /**
+   * Utility function to handle API errors and set the form error message
+   * 
+   * @param error Error object from API call or other source
+   */
+  const handleApiError = useCallback((error: any) => {
+    if (error?.message) {
+      setFormError(error.message);
+    } else if (typeof error === 'string') {
+      setFormError(error);
+    } else {
+      setFormError('An unexpected error occurred. Please try again later.');
+    }
+  }, [setFormError]);
 
   return {
-    formError,
-    setFormError,
-    clearFormError,
-    handleError,
-    showSuccess
+    error,
+    setError: setFormError,
+    clearError,
+    handleApiError
   };
-}
+};
+
+export default useFormError;
