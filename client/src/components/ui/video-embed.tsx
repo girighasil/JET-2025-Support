@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Input } from './input';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
-import { XCircle, Video, PlayCircle } from 'lucide-react';
+import { XCircle, Video, PlayCircle, Maximize2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
 
 interface VideoEmbedProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  showPreview?: boolean;
 }
 
 // Helper functions to handle different video URLs

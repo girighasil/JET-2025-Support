@@ -10,13 +10,21 @@ import {
   Music, 
   PlusCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { Button } from './button';
 import { Progress } from './progress';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import MediaPreview from './media-preview';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from './dialog';
 
 export interface FileItem {
   id: string;
@@ -91,6 +99,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   const { toast } = useToast();
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const totalFiles = existingFiles.length + uploadingFiles.length;
   
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -267,14 +277,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a 
-                    href={file.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline text-xs"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary h-7 px-2"
+                    onClick={() => {
+                      setPreviewFile(file);
+                      setShowPreviewDialog(true);
+                    }}
                   >
-                    View
-                  </a>
+                    <Eye className="h-3 w-3 mr-1" />
+                    Preview
+                  </Button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -361,6 +375,24 @@ const FileUpload: React.FC<FileUploadProps> = ({
           Add More Files
         </Button>
       )}
+      
+      {/* Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Media Preview</DialogTitle>
+          </DialogHeader>
+          
+          {previewFile && (
+            <div className="mt-4">
+              <MediaPreview 
+                file={previewFile} 
+                className="w-full"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
