@@ -7,7 +7,8 @@ import {
   testAttempts, TestAttempt, InsertTestAttempt,
   enrollments, Enrollment, InsertEnrollment,
   doubtSessions, DoubtSession, InsertDoubtSession,
-  studyTimes, StudyTime, InsertStudyTime
+  studyTimes, StudyTime, InsertStudyTime,
+  notifications, Notification, InsertNotification
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { db } from "./db";

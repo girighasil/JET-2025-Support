@@ -245,3 +245,25 @@ export type InsertDoubtSession = z.infer<typeof insertDoubtSessionSchema>;
 
 export type StudyTime = typeof studyTimes.$inferSelect;
 export type InsertStudyTime = z.infer<typeof insertStudyTimeSchema>;
+
+// Notification model
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Reference to users.id (recipient)
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // "course_update", "test_scheduled", "enrollment", "system", etc.
+  resourceId: integer("resource_id"), // Optional reference to a course, test, etc.
+  resourceType: text("resource_type"), // "course", "test", "module", etc.
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  isRead: true
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
