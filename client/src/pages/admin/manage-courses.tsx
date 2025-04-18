@@ -452,11 +452,14 @@ export default function ManageCourses() {
                   <EnhancedFormField
                     name="richContent"
                     label="Course Content"
-                  >
-                    <RichTextEditor 
-                      placeholder="Create rich content for your course here..."
-                    />
-                  </EnhancedFormField>
+                    render={({ field }) => (
+                      <RichTextEditor 
+                        content={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="Create rich content for your course here..."
+                      />
+                    )}
+                  />
                   
                   <div className="flex justify-end gap-2 mt-6">
                     <Button 
@@ -498,9 +501,13 @@ export default function ManageCourses() {
                   <EnhancedFormField
                     name="videoUrl"
                     label="Video Content (Optional)"
-                  >
-                    <VideoEmbed />
-                  </EnhancedFormField>
+                    render={({ field }) => (
+                      <VideoEmbed 
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
                   
                   <EnhancedFormField
                     name="attachments"
@@ -515,7 +522,7 @@ export default function ManageCourses() {
                           }}
                           onRemove={(file) => {
                             const currentFiles = field.value || [];
-                            field.onChange(currentFiles.filter(f => f.id !== file.id));
+                            field.onChange(currentFiles.filter((f: {id: string}) => f.id !== file.id));
                           }}
                           accept={{
                             'application/pdf': ['.pdf'],
@@ -538,7 +545,7 @@ export default function ManageCourses() {
                               files={field.value} 
                               onRemove={(file) => {
                                 const currentFiles = field.value || [];
-                                field.onChange(currentFiles.filter(f => f.id !== file.id));
+                                field.onChange(currentFiles.filter((f: {id: string}) => f.id !== file.id));
                               }}
                             />
                           </div>
