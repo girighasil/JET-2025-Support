@@ -103,10 +103,13 @@ export default function ManageCourses() {
   const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(
     null,
   );
+  const [enrollmentCourse, setEnrollmentCourse] = useState<Course | null>(null);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
+  const [batchEnrollmentLoading, setBatchEnrollmentLoading] = useState(false);
   const {
     error: formError,
     handleApiError: handleError,
-    clearError /* remove showSuccess */,
+    clearError,
   } = useFormError();
 
   // Fetch courses
@@ -169,7 +172,10 @@ export default function ManageCourses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
-      showSuccess("The course has been deleted successfully");
+      toast({
+        title: "Success",
+        description: "The course has been deleted successfully"
+      });
       setDeleteConfirmCourse(null);
     },
     onError: (error: Error) => {
@@ -394,14 +400,13 @@ export default function ManageCourses() {
               {/* Display form-level errors */}
               {formError && (
                 <FormSubmitError
-                  error={formError}
+                  message={formError}
                   title={
                     editingCourse
                       ? "Failed to Update Course"
                       : "Failed to Create Course"
                   }
                   className="mt-4"
-                  data-form-error
                 />
               )}
 
