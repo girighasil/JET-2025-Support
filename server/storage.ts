@@ -83,6 +83,18 @@ export interface IStorage {
   getStudentProgress(userId: number): Promise<{courseProgress: number, testPerformance: number, studyTimeThisWeek: number}>;
   getOverallAnalytics(): Promise<any>;
   getTestAnalytics(testId: number): Promise<any>;
+  
+  // Notification Methods
+  getNotification(id: number): Promise<Notification | undefined>;
+  listNotificationsByUser(userId: number): Promise<Notification[]>;
+  listUnreadNotificationsByUser(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number): Promise<number>;
+  deleteNotification(id: number): Promise<boolean>;
+  
+  // Course Update Notification Methods
+  notifyCourseUpdate(courseId: number, updateType: string, message: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -96,6 +108,8 @@ export class MemStorage implements IStorage {
   private doubtSessions: Map<number, DoubtSession>;
   private studyTimes: Map<number, StudyTime>;
   
+  private notifications: Map<number, Notification>;
+  
   private currentIds: {
     users: number;
     courses: number;
@@ -105,6 +119,7 @@ export class MemStorage implements IStorage {
     testAttempts: number;
     doubtSessions: number;
     studyTimes: number;
+    notifications: number;
   };
 
   constructor() {
@@ -117,6 +132,7 @@ export class MemStorage implements IStorage {
     this.enrollments = new Map();
     this.doubtSessions = new Map();
     this.studyTimes = new Map();
+    this.notifications = new Map();
     
     this.currentIds = {
       users: 1,
@@ -126,7 +142,8 @@ export class MemStorage implements IStorage {
       questions: 1,
       testAttempts: 1,
       doubtSessions: 1,
-      studyTimes: 1
+      studyTimes: 1,
+      notifications: 1
     };
     
     // Initialize with some sample data
