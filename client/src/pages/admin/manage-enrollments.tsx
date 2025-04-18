@@ -31,6 +31,8 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Users,
   BookOpen,
@@ -39,7 +41,9 @@ import {
   Calendar,
   CheckCircle2,
   XCircle,
-  Loader2
+  Loader2,
+  UserPlus,
+  Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -65,6 +69,10 @@ export default function ManageEnrollments() {
   const queryClient = useQueryClient();
   const [deleteConfirmEnrollment, setDeleteConfirmEnrollment] = useState<any>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [isBatchEnrollDialogOpen, setIsBatchEnrollDialogOpen] = useState(false);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
+  const [batchEnrollmentLoading, setBatchEnrollmentLoading] = useState(false);
   
   // Fetch enrollments
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
@@ -209,9 +217,20 @@ export default function ManageEnrollments() {
       id: 'actions',
       cell: ({ row }: any) => {
         const enrollment = row.original;
+        const course = courses.find((c: any) => c.id === enrollment.courseId);
         
         return (
           <div className="flex items-center gap-2">
+            {/* Add "Manage Students" button for the course */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openBatchEnrollDialog(course)}
+              title="Enroll Students"
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -239,6 +258,66 @@ export default function ManageEnrollments() {
         userId: deleteConfirmEnrollment.studentId,
         courseId: deleteConfirmEnrollment.courseId
       });
+    }
+  };
+  
+  // Toggle student selection for batch enrollment
+  const toggleStudentSelection = (studentId: number) => {
+    setSelectedStudentIds(prev => 
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+  
+  // Toggle all students selection for batch enrollment
+  const toggleAllStudents = (checked: boolean) => {
+    if (checked) {
+      setSelectedStudentIds(students.map((student: any) => student.id));
+    } else {
+      setSelectedStudentIds([]);
+    }
+  };
+  
+  // Open batch enrollment dialog with selected course
+  const openBatchEnrollDialog = (course: any) => {
+    setSelectedCourse(course);
+    setSelectedStudentIds([]);
+    setIsBatchEnrollDialogOpen(true);
+  };
+  
+  // Handle batch enrollment of multiple students in a course
+  const handleBatchEnroll = async () => {
+    if (!selectedCourse || selectedStudentIds.length === 0) return;
+    
+    setBatchEnrollmentLoading(true);
+    
+    try {
+      // Process enrollments sequentially to ensure they're all created
+      for (const studentId of selectedStudentIds) {
+        await createEnrollmentMutation.mutateAsync({ 
+          userId: studentId, 
+          courseId: selectedCourse.id 
+        });
+      }
+      
+      toast({
+        title: 'Students Enrolled',
+        description: `Successfully enrolled ${selectedStudentIds.length} students in ${selectedCourse.title}.`,
+      });
+      
+      // Close dialog and reset state
+      setIsBatchEnrollDialogOpen(false);
+      setSelectedStudentIds([]);
+      setSelectedCourse(null);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to Enroll Students',
+        description: error.message || 'There was an error creating the enrollments.',
+        variant: 'destructive',
+      });
+    } finally {
+      setBatchEnrollmentLoading(false);
     }
   };
   
@@ -395,6 +474,98 @@ export default function ManageEnrollments() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Delete Enrollment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Batch Enrollment Dialog */}
+      <Dialog open={isBatchEnrollDialogOpen} onOpenChange={(open) => !open && setIsBatchEnrollDialogOpen(false)}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Enroll Students in Course</DialogTitle>
+            <DialogDescription>
+              Select students to enroll in <span className="font-medium">{selectedCourse?.title}</span>.
+              You can select multiple students at once.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isUsersLoading ? (
+            <div className="py-6">
+              <Skeleton className="h-[200px] w-full" />
+            </div>
+          ) : students.length === 0 ? (
+            <div className="py-6 text-center">
+              <p className="text-muted-foreground">No students available. Please create students first.</p>
+            </div>
+          ) : (
+            <>
+              {/* Select All Checkbox */}
+              <div className="border-b pb-2 mb-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="select-all-students" 
+                    checked={selectedStudentIds.length === students.length && students.length > 0}
+                    onCheckedChange={toggleAllStudents}
+                  />
+                  <label 
+                    htmlFor="select-all-students" 
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Select All Students
+                  </label>
+                </div>
+              </div>
+              
+              {/* Student List */}
+              <ScrollArea className="h-[250px] pr-4">
+                <div className="space-y-3">
+                  {students.map((student: any) => (
+                    <div key={student.id} className="flex items-center space-x-3 py-1">
+                      <Checkbox 
+                        id={`student-${student.id}`} 
+                        checked={selectedStudentIds.includes(student.id)}
+                        onCheckedChange={() => toggleStudentSelection(student.id)}
+                      />
+                      <div className="grid gap-1">
+                        <label 
+                          htmlFor={`student-${student.id}`} 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {student.fullName}
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          {student.email}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </>
+          )}
+          
+          <DialogFooter className="pt-4 gap-2">
+            <div className="mr-auto text-sm text-muted-foreground">
+              {selectedStudentIds.length} {selectedStudentIds.length === 1 ? 'student' : 'students'} selected
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsBatchEnrollDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBatchEnroll}
+              disabled={batchEnrollmentLoading || selectedStudentIds.length === 0}
+              className="gap-2"
+            >
+              {batchEnrollmentLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              Enroll Students
             </Button>
           </DialogFooter>
         </DialogContent>
