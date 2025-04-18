@@ -1,15 +1,14 @@
 import React from "react";
-import { FieldPath, FieldValues, useFormContext } from "react-hook-form";
+import { useFormContext, FieldValues, FieldPath } from "react-hook-form";
 import {
-  FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormControl,
+  FormDescription,
+  FormMessage
 } from "@/components/ui/form";
-import FormError from "@/components/ui/form-error";
-import { formatZodError } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface EnhancedFormFieldProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -36,41 +35,55 @@ export function EnhancedFormField<
   name,
   label,
   description,
-  required,
+  required = false,
   children,
   className,
 }: EnhancedFormFieldProps<TFieldValues, TName>) {
-  const { formState } = useFormContext<TFieldValues>();
-  const { errors } = formState;
-  
-  // Find the error for this field
-  const fieldError = errors[name];
-  
-  // Format error message to be user-friendly if it's from Zod
-  const errorMessage = fieldError?.message 
-    ? fieldError.message.toString()
-    : undefined;
+  const { control } = useFormContext<TFieldValues>();
 
+  // If render prop is provided, use it directly
+  if (props.render) {
+    return (
+      <FormField
+        control={control}
+        name={name}
+        render={({ field, fieldState }) => (
+          <FormItem className={cn(className, fieldState.error && "animate-shake")}>
+            {label && (
+              <FormLabel className={cn(required && "after:content-['*'] after:ml-0.5 after:text-red-500")}>
+                {label}
+              </FormLabel>
+            )}
+            <FormControl>
+              {props.render({ field, fieldState })}
+            </FormControl>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  // Standard render for regular form fields
   return (
     <FormField
+      control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem className={className}>
+      render={({ field, fieldState }) => (
+        <FormItem className={cn(className, fieldState.error && "animate-shake")}>
           {label && (
-            <FormLabel className={required ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""}>
+            <FormLabel className={cn(required && "after:content-['*'] after:ml-0.5 after:text-red-500")}>
               {label}
             </FormLabel>
           )}
           <FormControl>
             {React.isValidElement(children)
-              ? React.cloneElement(children as React.ReactElement, {
-                  ...field,
-                  id: name,
-                })
+              ? React.cloneElement(children, { ...field })
               : children}
           </FormControl>
           {description && <FormDescription>{description}</FormDescription>}
-          {errorMessage && <FormError message={errorMessage} />}
+          <FormMessage />
         </FormItem>
       )}
     />

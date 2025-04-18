@@ -383,6 +383,16 @@ export default function ManageCourses() {
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Display form-level errors */}
+              {formError && (
+                <FormSubmitError 
+                  error={formError} 
+                  title={editingCourse ? "Failed to Update Course" : "Failed to Create Course"}
+                  className="mt-4" 
+                  data-form-error 
+                />
+              )}
+            
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -392,86 +402,54 @@ export default function ManageCourses() {
                 
                 {/* Basic Info Tab */}
                 <TabsContent value="basic" className="space-y-4 pt-4">
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Course Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Algebra Fundamentals" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    label="Course Title"
+                    required={true}
+                  >
+                    <Input placeholder="e.g. Algebra Fundamentals" />
+                  </EnhancedFormField>
                   
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Algebra, Geometry, Calculus" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    label="Category"
+                    required={true}
+                  >
+                    <Input placeholder="e.g. Algebra, Geometry, Calculus" />
+                  </EnhancedFormField>
                   
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Describe what students will learn in this course" 
-                            className="min-h-[100px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    label="Description"
+                    required={true}
+                  >
+                    <Textarea 
+                      placeholder="Describe what students will learn in this course" 
+                      className="min-h-[100px]"
+                    />
+                  </EnhancedFormField>
                   
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="thumbnail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Thumbnail URL (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://example.com/image.jpg" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    label="Thumbnail URL (Optional)"
+                  >
+                    <Input placeholder="https://example.com/image.jpg" />
+                  </EnhancedFormField>
                   
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="isActive"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Active Status</FormLabel>
-                          <p className="text-sm text-muted-foreground">
-                            Determine if this course is visible to students
-                          </p>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                    className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"
+                  >
+                    <div className="flex w-full justify-between items-center">
+                      <div className="space-y-0.5">
+                        <FormLabel>Active Status</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Determine if this course is visible to students
+                        </p>
+                      </div>
+                      <Switch />
+                    </div>
+                  </EnhancedFormField>
                 </TabsContent>
                 
                 {/* Rich Content Tab */}
@@ -484,23 +462,14 @@ export default function ManageCourses() {
                     Use the rich text editor below to create detailed course content with formatting, lists, links, and more.
                   </p>
                   
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="richContent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Course Content</FormLabel>
-                        <FormControl>
-                          <RichTextEditor 
-                            content={field.value || ''} 
-                            onChange={field.onChange}
-                            placeholder="Create rich content for your course here..."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    label="Course Content"
+                  >
+                    <RichTextEditor 
+                      placeholder="Create rich content for your course here..."
+                    />
+                  </EnhancedFormField>
                   
                   <div className="flex justify-end gap-2 mt-6">
                     <Button 
@@ -539,55 +508,41 @@ export default function ManageCourses() {
                     Add supplementary materials to enhance your course, including videos and downloadable resources.
                   </p>
                   
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="videoUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Video Content (Optional)</FormLabel>
-                        <FormControl>
-                          <VideoEmbed 
-                            value={field.value || ''} 
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    label="Video Content (Optional)"
+                  >
+                    <VideoEmbed />
+                  </EnhancedFormField>
                   
-                  <FormField
-                    control={form.control}
+                  <EnhancedFormField
                     name="attachments"
+                    label="File Attachments (Optional)"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>File Attachments (Optional)</FormLabel>
-                        <FormControl>
-                          <FileUpload
-                            existingFiles={field.value || []}
-                            onUpload={(files) => {
-                              const currentFiles = field.value || [];
-                              field.onChange([...currentFiles, ...files]);
-                            }}
-                            onRemove={(file) => {
-                              const currentFiles = field.value || [];
-                              field.onChange(currentFiles.filter(f => f.id !== file.id));
-                            }}
-                            accept={{
-                              'application/pdf': ['.pdf'],
-                              'application/msword': ['.doc'],
-                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                              'application/vnd.ms-excel': ['.xls'],
-                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-                              'application/vnd.ms-powerpoint': ['.ppt'],
-                              'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-                              'image/jpeg': ['.jpg', '.jpeg'],
-                              'image/png': ['.png']
-                            }}
-                            maxFiles={5}
-                          />
-                        </FormControl>
-                        <FormMessage />
+                      <>
+                        <FileUpload
+                          existingFiles={field.value || []}
+                          onUpload={(files) => {
+                            const currentFiles = field.value || [];
+                            field.onChange([...currentFiles, ...files]);
+                          }}
+                          onRemove={(file) => {
+                            const currentFiles = field.value || [];
+                            field.onChange(currentFiles.filter(f => f.id !== file.id));
+                          }}
+                          accept={{
+                            'application/pdf': ['.pdf'],
+                            'application/msword': ['.doc'],
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                            'application/vnd.ms-excel': ['.xls'],
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                            'application/vnd.ms-powerpoint': ['.ppt'],
+                            'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+                            'image/jpeg': ['.jpg', '.jpeg'],
+                            'image/png': ['.png']
+                          }}
+                          maxFiles={5}
+                        />
                         
                         {/* Display Media Gallery when files exist */}
                         {field.value && field.value.length > 0 && (
@@ -601,7 +556,7 @@ export default function ManageCourses() {
                             />
                           </div>
                         )}
-                      </FormItem>
+                      </>
                     )}
                   />
                   

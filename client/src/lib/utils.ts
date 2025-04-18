@@ -70,46 +70,100 @@ function formatFieldName(fieldName: string): string {
 }
 
 /**
- * Handles API errors from various sources and shows user-friendly toast notifications
+ * Handles API errors from various sources and returns user-friendly error messages
+ * Optionally shows toast notifications
  */
-export function handleApiError(error: any) {
+export function handleApiError(error: any, showToast = true) {
   console.error("API Error:", error);
   
   let errorMessage = "Something went wrong. Please try again.";
   
-  if (error.response) {
-    // Server responded with an error
-    const data = error.response.data;
-    
-    if (data.message && typeof data.message === 'string') {
-      errorMessage = data.message;
-    } else if (data.message && Array.isArray(data.message)) {
-      // Handle Zod validation errors from server
-      if (data.message[0]?.validation && data.message[0]?.path) {
-        const field = data.message[0].path[0] || 'Input';
-        const fieldName = formatFieldName(field);
-        const errorCode = data.message[0].validation;
-        errorMessage = `${fieldName}: ${userFriendlyErrors[errorCode] || data.message[0].message || 'is invalid'}`;
-      } else {
-        errorMessage = data.message[0]?.message || errorMessage;
+  // Handle ZodError directly (client-side validation)
+  if (error instanceof z.ZodError) {
+    errorMessage = formatZodError(error);
+  }
+  // Handle server responses with error data
+  else if (error.response) {
+    try {
+      const data = error.response.data;
+      
+      // Handle string error messages
+      if (data.message && typeof data.message === 'string') {
+        errorMessage = data.message;
+      } 
+      // Handle array of error messages
+      else if (data.message && Array.isArray(data.message)) {
+        // Handle Zod validation errors from server
+        if (data.message[0]?.validation && data.message[0]?.path) {
+          const field = data.message[0].path[0] || 'Input';
+          const fieldName = formatFieldName(field);
+          const errorCode = data.message[0].validation;
+          errorMessage = `${fieldName}: ${userFriendlyErrors[errorCode] || data.message[0].message || 'is invalid'}`;
+        } else {
+          errorMessage = data.message[0]?.message || errorMessage;
+        }
       }
+      // Handle error object with error property
+      else if (data.error) {
+        errorMessage = data.error;
+      }
+      // Handle specific HTTP status codes
+      else {
+        switch (error.response.status) {
+          case 400:
+            errorMessage = "Invalid request. Please check your input.";
+            break;
+          case 401:
+            errorMessage = "You need to log in to perform this action.";
+            break;
+          case 403:
+            errorMessage = "You don't have permission to perform this action.";
+            break;
+          case 404:
+            errorMessage = "The requested resource was not found.";
+            break;
+          case 409:
+            errorMessage = "This action conflicts with the current state.";
+            break;
+          case 422:
+            errorMessage = "The data you provided couldn't be processed.";
+            break;
+          case 429:
+            errorMessage = "Too many requests. Please try again later.";
+            break;
+          case 500:
+            errorMessage = "A server error occurred. Please try again later.";
+            break;
+        }
+      }
+    } catch (parseError) {
+      errorMessage = "Error processing the server response.";
     }
-  } else if (error.message) {
-    // Client-side error with message property
-    errorMessage = error.message;
-    
+  } 
+  // Handle error with message property
+  else if (error.message) {
     // Handle network errors
-    if (errorMessage === 'Network Error') {
+    if (error.message === 'Network Error') {
       errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+    } 
+    // Handle URL validation errors from fetch API
+    else if (error.message.includes('Invalid URL')) {
+      errorMessage = 'The provided URL is invalid.';
+    }
+    // Use the error message directly
+    else {
+      errorMessage = error.message;
     }
   }
   
-  // Show the error toast
-  toast({
-    title: "Error",
-    description: errorMessage,
-    variant: "destructive",
-  });
+  // Show the error toast if requested
+  if (showToast) {
+    toast({
+      title: "Error",
+      description: errorMessage,
+      variant: "destructive",
+    });
+  }
   
   return errorMessage;
 }

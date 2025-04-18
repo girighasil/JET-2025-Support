@@ -18,11 +18,11 @@ const FormError: React.FC<FormErrorProps> = ({ message, className }) => {
 
   return (
     <div className={cn(
-      "flex items-center gap-x-2 text-sm text-destructive font-medium p-3 border border-destructive/30 rounded-md bg-destructive/10 mt-2",
+      "flex items-center gap-2 text-destructive text-sm mt-1",
       className
     )}>
       <AlertCircle className="h-4 w-4" />
-      <p>{message}</p>
+      <span>{message}</span>
     </div>
   );
 };
