@@ -51,9 +51,10 @@ const getEmbedUrl = (url: string): string | null => {
   return null;
 };
 
-const VideoEmbed: React.FC<VideoEmbedProps> = ({ value, onChange, className }) => {
+const VideoEmbed: React.FC<VideoEmbedProps> = ({ value, onChange, className, showPreview = true }) => {
   const [inputValue, setInputValue] = useState(value);
   const [isValidating, setIsValidating] = useState(false);
+  const [showFullscreenDialog, setShowFullscreenDialog] = useState(false);
   const { toast } = useToast();
   
   const embedUrl = getEmbedUrl(value);
@@ -121,7 +122,7 @@ const VideoEmbed: React.FC<VideoEmbedProps> = ({ value, onChange, className }) =
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="rounded-md overflow-hidden border">
+          <div className="rounded-md overflow-hidden border relative group">
             {embedUrl && embedUrl.endsWith('.mp4') ? (
               // Direct video file
               <video 
@@ -144,22 +145,87 @@ const VideoEmbed: React.FC<VideoEmbedProps> = ({ value, onChange, className }) =
                 />
               </div>
             )}
+            
+            {showPreview && (
+              <Button 
+                variant="secondary" 
+                size="icon"
+                onClick={() => setShowFullscreenDialog(true)} 
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 bg-background/80 backdrop-blur-sm"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           
           <div className="flex items-center justify-between">
             <p className="text-sm truncate flex-1 overflow-hidden">{value}</p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleRemove}
-              className="gap-1 text-destructive hover:text-destructive hover:border-destructive"
-              type="button"
-            >
-              <XCircle className="h-4 w-4" />
-              Remove Video
-            </Button>
+            <div className="flex items-center gap-2">
+              {showPreview && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFullscreenDialog(true)}
+                  type="button"
+                >
+                  <Maximize2 className="h-4 w-4 mr-1" />
+                  Preview
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRemove}
+                className="gap-1 text-destructive hover:text-destructive hover:border-destructive"
+                type="button"
+              >
+                <XCircle className="h-4 w-4" />
+                Remove
+              </Button>
+            </div>
           </div>
         </div>
+      )}
+      
+      {/* Fullscreen Preview Dialog */}
+      {showPreview && (
+        <Dialog open={showFullscreenDialog} onOpenChange={setShowFullscreenDialog}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Video Preview</DialogTitle>
+            </DialogHeader>
+            
+            {embedUrl && (
+              <div className="mt-2">
+                {embedUrl.endsWith('.mp4') ? (
+                  // Direct video file fullscreen
+                  <video 
+                    src={embedUrl} 
+                    controls 
+                    autoPlay
+                    className="w-full aspect-video rounded-md"
+                    poster="/placeholder-video.jpg"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  // Embed iframe fullscreen
+                  <div className="aspect-video w-full rounded-md overflow-hidden">
+                    <iframe
+                      src={embedUrl}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="Embedded video (fullscreen)"
+                    />
+                  </div>
+                )}
+                
+                <p className="mt-2 text-sm text-muted-foreground break-all">{value}</p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
