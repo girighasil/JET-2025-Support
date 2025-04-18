@@ -153,19 +153,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/courses/:id", isAuthenticated, hasRole(["admin", "teacher"]), async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
+      console.log("Updating course ID:", courseId);
+      console.log("Request body:", req.body);
+      
       const courseData = insertCourseSchema.partial().parse(req.body);
+      console.log("Parsed course data:", courseData);
       
       // Check if course exists and user is authorized to update it
       const existingCourse = await storage.getCourse(courseId);
       if (!existingCourse) {
         return res.status(404).json({ message: "Course not found" });
       }
+      console.log("Existing course:", existingCourse);
       
       if (existingCourse.createdBy !== req.user.id && req.user.role !== "admin") {
         return res.status(403).json({ message: "Forbidden" });
       }
       
+      console.log("About to update course");
       const updatedCourse = await storage.updateCourse(courseId, courseData);
+      console.log("Updated course result:", updatedCourse);
+      
       if (!updatedCourse) {
         return res.status(404).json({ message: "Course not found" });
       }
@@ -183,6 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message = "New course resources have been attached to the course.";
       }
       
+      console.log("About to notify enrolled students");
       // Notify enrolled students about the update
       await storage.notifyCourseUpdate(courseId, updateType, message);
       
@@ -191,7 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: error.errors });
       } else {
-        res.status(500).json({ message: "Server error" });
+        console.error("Error updating course:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
       }
     }
   });
