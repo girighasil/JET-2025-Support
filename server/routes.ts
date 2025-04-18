@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { z } from "zod";
-import { storage } from "./storage";
+import { storage } from "./storage-impl";
 import { setupAuth } from "./auth";
 import {
   insertUserSchema,
