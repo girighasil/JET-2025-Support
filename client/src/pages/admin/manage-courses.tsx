@@ -426,6 +426,11 @@ export default function ManageCourses() {
   
   // Toggle student selection
   const toggleStudentSelection = (studentId: number) => {
+    // Skip if already enrolled
+    if (enrolledStudentIds.includes(studentId)) {
+      return;
+    }
+    
     setSelectedStudentIds(prev => 
       prev.includes(studentId)
         ? prev.filter(id => id !== studentId)
