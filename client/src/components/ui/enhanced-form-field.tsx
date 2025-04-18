@@ -18,8 +18,9 @@ interface EnhancedFormFieldProps<
   label?: string;
   description?: string;
   required?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
+  render?: (props: { field: any; fieldState: any }) => React.ReactNode;
 }
 
 /**
@@ -31,18 +32,21 @@ interface EnhancedFormFieldProps<
 export function EnhancedFormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->({
-  name,
-  label,
-  description,
-  required = false,
-  children,
-  className,
-}: EnhancedFormFieldProps<TFieldValues, TName>) {
+>(props: EnhancedFormFieldProps<TFieldValues, TName>) {
+  const { 
+    name, 
+    label, 
+    description, 
+    required = false, 
+    children, 
+    className,
+    render 
+  } = props;
+  
   const { control } = useFormContext<TFieldValues>();
 
   // If render prop is provided, use it directly
-  if (props.render) {
+  if (render) {
     return (
       <FormField
         control={control}
@@ -55,7 +59,7 @@ export function EnhancedFormField<
               </FormLabel>
             )}
             <FormControl>
-              {props.render({ field, fieldState })}
+              {render({ field, fieldState })}
             </FormControl>
             {description && <FormDescription>{description}</FormDescription>}
             <FormMessage />

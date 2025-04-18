@@ -98,7 +98,7 @@ export default function ManageCourses() {
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(null);
-  const { formError, handleError, clearFormError } = useFormError();
+  const { formError, handleError, clearFormError, showSuccess } = useFormError();
 
   // Fetch courses
   const { data: courses = [], isLoading } = useQuery<Course[]>({
@@ -108,16 +108,12 @@ export default function ManageCourses() {
   // Create course mutation
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: z.infer<typeof courseSchema>) => {
-      clearFormError();
       const res = await apiRequest('POST', '/api/courses', courseData);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
-      toast({
-        title: 'Course Created',
-        description: 'The course has been created successfully.',
-      });
+      showSuccess('The course has been created successfully');
       setShowCourseDialog(false);
       form.reset();
     },
@@ -129,16 +125,12 @@ export default function ManageCourses() {
   // Update course mutation
   const updateCourseMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof courseSchema> }) => {
-      clearFormError();
       const res = await apiRequest('PUT', `/api/courses/${id}`, data);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
-      toast({
-        title: 'Course Updated',
-        description: 'The course has been updated successfully.',
-      });
+      showSuccess('The course has been updated successfully');
       setShowCourseDialog(false);
       setEditingCourse(null);
       form.reset();
@@ -156,18 +148,11 @@ export default function ManageCourses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
-      toast({
-        title: 'Course Deleted',
-        description: 'The course has been deleted successfully.',
-      });
+      showSuccess('The course has been deleted successfully');
       setDeleteConfirmCourse(null);
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to Delete Course',
-        description: error.message || 'There was an error deleting the course.',
-        variant: 'destructive',
-      });
+      handleError(error);
     }
   });
   
@@ -305,6 +290,8 @@ export default function ManageCourses() {
   
   // Handle form submission
   function onSubmit(values: z.infer<typeof courseSchema>) {
+    clearFormError();
+    
     if (editingCourse) {
       updateCourseMutation.mutate({ id: editingCourse.id, data: values });
     } else {

@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
+import { toast } from "@/hooks/use-toast";
 import { handleApiError } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
+
+type FormErrorState = string | null;
 
 /**
  * A hook to handle form errors consistently across the application
@@ -12,35 +14,19 @@ import { toast } from '@/hooks/use-toast';
  * - handleError: Function to handle various error types consistently
  */
 export function useFormError() {
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<FormErrorState>(null);
 
-  const clearFormError = useCallback(() => {
-    setFormError(null);
-  }, []);
+  const clearFormError = useCallback(() => setFormError(null), []);
 
   /**
    * Handles different error types consistently
    */
-  const handleError = useCallback((error: unknown) => {
-    // Clear any existing errors
-    clearFormError();
-    
-    // Handle the error and get a user-friendly message
-    const errorMessage = handleApiError(error);
-    
-    // Set the form error
+  const handleError = useCallback((error: any) => {
+    // Convert the error to a user-friendly message using the utility
+    const errorMessage = handleApiError(error, false);
     setFormError(errorMessage);
-    
-    // Scroll to the form error if it exists
-    setTimeout(() => {
-      const errorElement = document.querySelector('[data-form-error]');
-      if (errorElement) {
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 100);
-    
     return errorMessage;
-  }, [clearFormError]);
+  }, []);
 
   /**
    * Show success toast message
@@ -58,6 +44,6 @@ export function useFormError() {
     setFormError,
     clearFormError,
     handleError,
-    showSuccess,
+    showSuccess
   };
 }
