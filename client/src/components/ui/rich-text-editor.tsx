@@ -42,14 +42,14 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
         }
       })
     ],
-    content,
+    content: content || '',
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
     editorProps: {
       attributes: {
         class: 'focus:outline-none min-h-[150px] prose max-w-none dark:prose-invert',
-        placeholder,
+        placeholder: placeholder || 'Start typing...',
       },
     },
   });

@@ -26,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -35,10 +36,16 @@ import {
   Trash, 
   Plus,
   Loader2,
-  PlusCircle
+  PlusCircle,
+  FileText,
+  Video
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import RichTextEditor from '@/components/ui/rich-text-editor';
+import FileUpload, { FileItem } from '@/components/ui/file-upload';
+import VideoEmbed from '@/components/ui/video-embed';
+import ImportExport from '@/components/ui/import-export';
 
 // Form schema for a course
 const courseSchema = z.object({
@@ -47,6 +54,17 @@ const courseSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   thumbnail: z.string().optional(),
   isActive: z.boolean().default(true),
+  richContent: z.string().optional(),
+  videoUrl: z.string().optional(),
+  attachments: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.string(),
+      url: z.string(),
+      size: z.number().optional()
+    })
+  ).optional(),
 });
 
 export default function ManageCourses() {
@@ -143,6 +161,9 @@ export default function ManageCourses() {
       category: '',
       thumbnail: '',
       isActive: true,
+      richContent: '',
+      videoUrl: '',
+      attachments: [],
     },
   });
   
@@ -240,6 +261,9 @@ export default function ManageCourses() {
       category: '',
       thumbnail: '',
       isActive: true,
+      richContent: '',
+      videoUrl: '',
+      attachments: [],
     });
     setShowCourseDialog(true);
   };
@@ -253,6 +277,9 @@ export default function ManageCourses() {
       category: course.category,
       thumbnail: course.thumbnail || '',
       isActive: course.isActive,
+      richContent: course.richContent || '',
+      videoUrl: course.videoUrl || '',
+      attachments: course.attachments || [],
     });
     setShowCourseDialog(true);
   };

@@ -93,6 +93,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         
         const progressInterval = setInterval(simulateProgress, 100);
         
+        // Use isFormData option for FormData handling
         const response = await apiRequest('POST', '/api/files/upload', formData, { isFormData: true });
         clearInterval(progressInterval);
         setUploadProgress(100);

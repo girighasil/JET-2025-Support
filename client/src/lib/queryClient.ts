@@ -11,14 +11,26 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  options?: { isFormData?: boolean },
 ): Promise<Response> {
   // Convert PATCH requests to PUT
   const useMethod = method === "PATCH" ? "PUT" : method;
+  
+  // Determine if we should handle as form data
+  const isFormData = options?.isFormData || false;
+
+  // Set up headers based on content type
+  const headers: HeadersInit = {};
+  if (data && !isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const res = await fetch(url, {
     method: useMethod,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers,
+    body: isFormData 
+      ? data as FormData 
+      : data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
