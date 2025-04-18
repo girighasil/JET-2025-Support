@@ -1,7 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { storage } from '../storage-impl';
 import { notifications } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db';
 
 export const registerNotificationRoutes = (app: Express) => {
@@ -53,11 +53,14 @@ export const registerNotificationRoutes = (app: Express) => {
       const unreadCount = await db.select({ count: db.fn.count() })
         .from(notifications)
         .where(
-          eq(notifications.userId, userId) && 
-          eq(notifications.isRead, false)
+          and(
+            eq(notifications.userId, userId),
+            eq(notifications.isRead, false)
+          )
         );
       
-      return res.json({ count: Number(unreadCount[0].count) || 0 });
+      console.log("Unread count result:", unreadCount);
+      return res.json({ count: Number(unreadCount[0]?.count || 0) });
     } catch (error) {
       console.error('Error fetching unread notifications count:', error);
       return res.status(500).json({ message: 'Server error' });
@@ -100,8 +103,10 @@ export const registerNotificationRoutes = (app: Express) => {
       await db.update(notifications)
         .set({ isRead: true })
         .where(
-          eq(notifications.userId, userId) && 
-          eq(notifications.isRead, false)
+          and(
+            eq(notifications.userId, userId),
+            eq(notifications.isRead, false)
+          )
         );
       
       return res.json({ message: 'All notifications marked as read' });

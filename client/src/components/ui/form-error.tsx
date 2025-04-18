@@ -1,30 +1,40 @@
 import React from "react";
-import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 
 interface FormErrorProps {
-  message?: string;
+  message: string;
   className?: string;
 }
 
 /**
- * FormError component displays validation errors in a visually distinctive way
+ * FormError displays validation or submission errors in a subtle format
+ * This is primarily used for field-level errors that need distinct visual styling
+ * from full form submission errors.
  * 
  * Usage:
- * <FormError message="Please enter a valid email" />
+ * <FormError message="Please enter a valid email address" />
  */
-const FormError: React.FC<FormErrorProps> = ({ message, className }) => {
+export function FormError({ message, className }: FormErrorProps) {
   if (!message) return null;
 
   return (
-    <div className={cn(
-      "flex items-center gap-2 text-destructive text-sm mt-1",
-      className
-    )}>
-      <AlertCircle className="h-4 w-4" />
-      <span>{message}</span>
-    </div>
+    <Alert 
+      variant="destructive" 
+      className={cn(
+        "py-2 px-3 mt-1 bg-destructive/10 border-destructive/20 text-destructive animate-shake", 
+        className
+      )}
+    >
+      <div className="flex gap-2 items-start">
+        <ExclamationTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+        <AlertDescription className="text-sm">
+          {message}
+        </AlertDescription>
+      </div>
+    </Alert>
   );
-};
+}
 
 export default FormError;
