@@ -39,6 +39,9 @@ import {
   PlusCircle,
   FileText,
   Video,
+  UserPlus,
+  Check,
+  CheckCircle2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -93,6 +96,8 @@ const courseSchema = z.object({
 import { useFormError } from "@/hooks/use-form-error";
 import FormSubmitError from "@/components/ui/form-submit-error";
 import { EnhancedFormField } from "@/components/ui/enhanced-form-field";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function ManageCourses() {
   const { user } = useAuth();
@@ -116,6 +121,14 @@ export default function ManageCourses() {
   const { data: courses = [], isLoading } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
   });
+  
+  // Fetch all students for enrollment dialog
+  const { data: users = [], isLoading: isUsersLoading } = useQuery({
+    queryKey: ['/api/users'],
+  });
+  
+  // Filter to get only students
+  const students = users.filter((user: any) => user.role === 'student');
 
   // Create course mutation
   const createCourseMutation = useMutation({
@@ -269,10 +282,20 @@ export default function ManageCourses() {
             </Button>
             <a
               href={`/admin/manage-enrollments?courseId=${course.id}`}
-              className="text-primary hover:underline text-sm"
+              className="text-primary hover:underline text-sm mr-2"
             >
-              Enrollments
+              View Enrollments
             </a>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenEnrollDialog(course)}
+              title="Enroll Students in this Course"
+              className="text-green-600 flex items-center gap-1"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>Enroll Students</span>
+            </Button>
           </div>
         );
       },
@@ -326,6 +349,81 @@ export default function ManageCourses() {
   const handleDeleteCourse = () => {
     if (deleteConfirmCourse) {
       deleteCourseMutation.mutate(deleteConfirmCourse.id);
+    }
+  };
+
+  // Enroll student mutation
+  const enrollStudentMutation = useMutation({
+    mutationFn: async ({ userId, courseId }: { userId: number, courseId: number }) => {
+      const res = await apiRequest('POST', '/api/enrollments', {
+        userId,
+        courseId
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to Enroll Student',
+        description: error.message || 'There was an error enrolling the student.',
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Open enrollment dialog
+  const handleOpenEnrollDialog = (course: Course) => {
+    setEnrollmentCourse(course);
+    setSelectedStudentIds([]);
+  };
+  
+  // Handle enrollment submission
+  const handleEnrollStudents = async () => {
+    if (!enrollmentCourse || selectedStudentIds.length === 0) return;
+    
+    setBatchEnrollmentLoading(true);
+    
+    try {
+      // Process each enrollment sequentially
+      for (const userId of selectedStudentIds) {
+        await enrollStudentMutation.mutateAsync({ 
+          userId,
+          courseId: enrollmentCourse.id
+        });
+      }
+      
+      toast({
+        title: 'Enrollment Successful',
+        description: `${selectedStudentIds.length} ${selectedStudentIds.length === 1 ? 'student has' : 'students have'} been enrolled in ${enrollmentCourse.title}.`,
+      });
+      
+      setEnrollmentCourse(null);
+      setSelectedStudentIds([]);
+    } catch (error) {
+      // Error is handled by the mutation
+    } finally {
+      setBatchEnrollmentLoading(false);
+    }
+  };
+  
+  // Toggle student selection
+  const toggleStudentSelection = (studentId: number) => {
+    setSelectedStudentIds(prev => 
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+  
+  // Toggle all students
+  const toggleAllStudents = (checked: boolean) => {
+    if (checked) {
+      setSelectedStudentIds(students.map((student: any) => student.id));
+    } else {
+      setSelectedStudentIds([]);
     }
   };
 
@@ -680,6 +778,104 @@ export default function ManageCourses() {
               )}
               Delete Course
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enrollment Dialog */}
+      <Dialog 
+        open={!!enrollmentCourse} 
+        onOpenChange={(open) => !open && setEnrollmentCourse(null)}
+      >
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Enroll Students in Course</DialogTitle>
+            <DialogDescription>
+              Select students to enroll in <span className="font-medium">{enrollmentCourse?.title}</span>.
+              You can select multiple students.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isUsersLoading ? (
+            <div className="py-6">
+              <Skeleton className="h-[200px] w-full" />
+            </div>
+          ) : students.length === 0 ? (
+            <div className="py-6 text-center">
+              <p className="text-muted-foreground">No students available. Please add students first.</p>
+            </div>
+          ) : (
+            <>
+              {/* Select All Checkbox */}
+              <div className="border-b pb-2 mb-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="select-all"
+                    checked={selectedStudentIds.length === students.length && students.length > 0}
+                    onCheckedChange={toggleAllStudents}
+                  />
+                  <label
+                    htmlFor="select-all"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Select All Students
+                  </label>
+                </div>
+              </div>
+              
+              {/* Student List */}
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-3">
+                  {students.map((student: any) => (
+                    <div 
+                      key={student.id} 
+                      className="flex items-center space-x-3 border rounded-md p-3 hover:bg-gray-50"
+                    >
+                      <Checkbox 
+                        id={`student-${student.id}`}
+                        checked={selectedStudentIds.includes(student.id)}
+                        onCheckedChange={() => toggleStudentSelection(student.id)}
+                      />
+                      <div className="flex-1">
+                        <label
+                          htmlFor={`student-${student.id}`}
+                          className="text-sm font-medium leading-none cursor-pointer"
+                        >
+                          {student.fullName}
+                        </label>
+                        <p className="text-sm text-muted-foreground">{student.email}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </>
+          )}
+          
+          <DialogFooter className="flex items-center justify-between pt-4 border-t mt-4">
+            <div className="text-sm text-muted-foreground">
+              {selectedStudentIds.length} {selectedStudentIds.length === 1 ? 'student' : 'students'} selected
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setEnrollmentCourse(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleEnrollStudents}
+                disabled={batchEnrollmentLoading || selectedStudentIds.length === 0}
+                className="gap-2"
+              >
+                {batchEnrollmentLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Enroll Students
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
