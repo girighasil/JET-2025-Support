@@ -74,9 +74,35 @@ export default function ManageEnrollments() {
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [batchEnrollmentLoading, setBatchEnrollmentLoading] = useState(false);
   
-  // Fetch enrollments
+  // Fetch enrollments with processed data for all courses
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
     queryKey: ['/api/enrollments'],
+    queryFn: async () => {
+      const processedEnrollments = [];
+      // Fetch enrollments for each course
+      for (const course of courses || []) {
+        const res = await fetch(`/api/enrollments?courseId=${course.id}`);
+        if (res.ok) {
+          const courseEnrollments = await res.json();
+          // Add course name to each enrollment for display
+          for (const enrollment of courseEnrollments) {
+            const student = users.find((u: any) => u.id === enrollment.userId);
+            if (student) {
+              processedEnrollments.push({
+                ...enrollment,
+                courseName: course.title,
+                courseId: course.id,
+                studentName: student.fullName,
+                studentEmail: student.email,
+                studentId: student.id
+              });
+            }
+          }
+        }
+      }
+      return processedEnrollments;
+    },
+    enabled: !!(courses && courses.length > 0 && users && users.length > 0),
   });
   
   // Get already enrolled student IDs for the selected course
