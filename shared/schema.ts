@@ -28,12 +28,28 @@ export const courses = pgTable("courses", {
   thumbnail: text("thumbnail"),
   createdBy: integer("created_by").notNull(), // Reference to users.id
   isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow()
+  createdAt: timestamp("created_at").defaultNow(),
+  richContent: text("rich_content"), // Rich text content with HTML formatting
+  videoUrl: text("video_url"), // External video URL (YouTube, Vimeo, etc.)
+  attachments: jsonb("attachments") // Array of file attachments with metadata
 });
 
 export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
   createdAt: true
+}).extend({
+  // Make these fields optional with appropriate validation
+  richContent: z.string().optional(),
+  videoUrl: z.string().url().optional(),
+  attachments: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.string(),
+      url: z.string(),
+      size: z.number().optional()
+    })
+  ).optional()
 });
 
 // Module model (for course sections)
