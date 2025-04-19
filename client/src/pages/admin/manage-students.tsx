@@ -250,25 +250,21 @@ export default function ManageStudents() {
         const enrollmentCount = student.enrollmentCount || 0;
         
         return (
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="whitespace-nowrap">
+          <div className="flex items-center">
+            <Badge 
+              variant="outline" 
+              className="whitespace-nowrap cursor-pointer px-2 py-1 hover:bg-gray-100 transition-colors rounded-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (enrollmentCount > 0) {
+                  handleOpenViewEnrollmentsDialog(student);
+                } else {
+                  handleOpenEnrollDialog(student);
+                }
+              }}
+            >
               {enrollmentCount} {enrollmentCount === 1 ? 'Course' : 'Courses'}
             </Badge>
-            
-            {enrollmentCount > 0 && (
-              <Button 
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-blue-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenViewEnrollmentsDialog(student);
-                }}
-              >
-                <Edit className="h-3 w-3 mr-1" />
-                <span className="text-xs">View</span>
-              </Button>
-            )}
           </div>
         );
       }
