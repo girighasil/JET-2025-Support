@@ -43,6 +43,7 @@ import {
   XCircle,
   Loader2,
   UserPlus,
+  UserMinus,
   Check
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -228,23 +229,97 @@ export default function ManageEnrollments() {
   });
   
   // Table columns for enrollments
-  const enrollmentColumns = [
+  // Fix UserMinus import - sometimes Lucide React doesn't export this
+  // Use Trash icon with different styling as an alternative
+  const RemoveIcon = Trash;
+  
+  const enrollmentColumns = selectedCourse ? [
+    // When viewing enrollments for a specific course, don't show the course column
+    // Just show student name, enrollment date, status, and remove button
     {
       accessorKey: 'studentName',
       header: 'Student',
+      cell: ({ row }: any) => (
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
+            <Users className="h-5 w-5 text-gray-500" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-medium">{row.getValue('studentName')}</span>
+            <span className="text-xs text-gray-500">{row.original.studentEmail}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'enrolledAt',
+      header: 'Enrollment Date',
       cell: ({ row }: any) => {
+        const date = row.getValue('enrolledAt');
+        return date ? (
+          <div className="flex items-center gap-1">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>{format(new Date(date), 'MMM d, yyyy')}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">Not available</span>
+        );
+      }
+    },
+    {
+      accessorKey: 'isActive',
+      header: 'Status',
+      cell: ({ row }: any) => (
+        row.getValue('isActive') ? (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1 w-fit">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            <span>Active</span>
+          </Badge>
+        ) : (
+          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 flex items-center gap-1 w-fit">
+            <XCircle className="h-3.5 w-3.5" />
+            <span>Inactive</span>
+          </Badge>
+        )
+      )
+    },
+    {
+      id: 'actions',
+      cell: ({ row }: any) => {
+        const enrollment = row.original;
+        
         return (
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
-              <Users className="h-5 w-5 text-gray-500" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-medium">{row.getValue('studentName')}</span>
-              <span className="text-xs text-gray-500">{row.original.studentEmail}</span>
-            </div>
+          <div className="flex items-center justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteConfirmEnrollment(enrollment)}
+              title="Remove student from this course"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+            >
+              <RemoveIcon className="h-4 w-4" />
+              <span>Remove</span>
+            </Button>
           </div>
         );
       }
+    }
+  ] : [
+    // Regular view showing all enrollments
+    {
+      accessorKey: 'studentName',
+      header: 'Student',
+      cell: ({ row }: any) => (
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
+            <Users className="h-5 w-5 text-gray-500" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-medium">{row.getValue('studentName')}</span>
+            <span className="text-xs text-gray-500">{row.original.studentEmail}</span>
+          </div>
+        </div>
+      )
     },
     {
       accessorKey: 'courseName',
@@ -257,22 +332,11 @@ export default function ManageEnrollments() {
         };
         
         return (
-          <div className="flex items-center gap-3 justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-md bg-blue-50 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-primary" />
-              </div>
-              <span>{row.getValue('courseName')}</span>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-md bg-blue-50 flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-primary" />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openBatchEnrollDialog(courseData)}
-              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-            >
-              <UserPlus className="h-4 w-4" />
-              <span>Enroll Students</span>
-            </Button>
+            <span>{row.getValue('courseName')}</span>
           </div>
         );
       }
@@ -295,8 +359,8 @@ export default function ManageEnrollments() {
     {
       accessorKey: 'isActive',
       header: 'Status',
-      cell: ({ row }: any) => {
-        return row.getValue('isActive') ? (
+      cell: ({ row }: any) => (
+        row.getValue('isActive') ? (
           <Badge className="bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1 w-fit">
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span>Active</span>
@@ -306,42 +370,25 @@ export default function ManageEnrollments() {
             <XCircle className="h-3.5 w-3.5" />
             <span>Inactive</span>
           </Badge>
-        );
-      }
+        )
+      )
     },
     {
       id: 'actions',
       cell: ({ row }: any) => {
         const enrollment = row.original;
-        // Get course information for the current enrollment
-        const courseId = enrollment.courseId;
-        const courseName = enrollment.courseName;
-        const courseData = {
-          id: courseId,
-          title: courseName
-        };
         
         return (
-          <div className="flex items-center gap-2">
-            {/* Enroll Students button for the course */}
+          <div className="flex items-center justify-end">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => openBatchEnrollDialog(courseData)}
-              title="Enroll Students in this Course"
-              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-            >
-              <UserPlus className="h-4 w-4" />
-              <span>Enroll</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
               onClick={() => setDeleteConfirmEnrollment(enrollment)}
-              title="Delete Enrollment"
-              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              title="Remove student from this course"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
             >
-              <Trash className="h-4 w-4" />
+              <RemoveIcon className="h-4 w-4" />
+              <span>Remove</span>
             </Button>
           </div>
         );
