@@ -85,13 +85,13 @@ export async function apiRequest(
 
     await throwIfResNotOk(res);
     return res;
-  } catch (error) {
+  } catch (error: any) {
     // Skip error handling for 401s during logout
-    if (!(isLoggingOut && error.status === 401)) {
+    if (!(isLoggingOut && error?.status === 401)) {
       // Handle API errors with user-friendly messages
       handleApiError(error);
     } else {
-      console.log("Suppressing 401 error during logout:", error.message);
+      console.log("Suppressing 401 error during logout:", error?.message || "Unknown error");
     }
     throw error;
   }
@@ -114,12 +114,12 @@ export const getQueryFn: <T>(options: {
 
       await throwIfResNotOk(res);
       return await res.json();
-    } catch (error) {
+    } catch (error: any) {
       // Skip error handling during logout or for expected 401s
-      if (!(isLoggingOut && error.status === 401) && 
-          !(error instanceof Error && error.message.includes("401"))) {
+      if (!(isLoggingOut && error?.status === 401) && 
+          !(error instanceof Error && error.message?.includes("401"))) {
         handleApiError(error);
-      } else if (isLoggingOut && error.status === 401) {
+      } else if (isLoggingOut && error?.status === 401) {
         console.log("Suppressing 401 error in query during logout");
       }
       throw error;
@@ -134,18 +134,18 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
-      onError: (error) => {
+      onError: (error: any) => {
         // Don't show errors for 401 Unauthorized - likely after logout
-        if (!(error instanceof Error && error.message.includes("401"))) {
+        if (!(error instanceof Error && error.message?.includes("401"))) {
           handleApiError(error);
         }
       },
     },
     mutations: {
       retry: false,
-      onError: (error) => {
+      onError: (error: any) => {
         // Skip error handling for 401s during logout
-        if (!(isLoggingOut && error.status === 401)) {
+        if (!(isLoggingOut && error?.status === 401)) {
           handleApiError(error);
         } else {
           console.log("Suppressing 401 error in mutation during logout");

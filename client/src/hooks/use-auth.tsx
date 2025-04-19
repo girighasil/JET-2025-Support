@@ -204,19 +204,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear all queries from the cache to prevent re-fetching with stale credentials
       queryClient.clear();
       
+      // Reset the logging out flag immediately after successful logout
+      setLoggingOut(false);
+      
       // Show successful logout message
       toast({
         title: "Logged out successfully",
         description: "You have been logged out of your account."
       });
       
-      // Force redirect to login/auth page
-      window.location.href = "/auth";
-      
-      // Reset the logging out flag after a timeout to ensure all pending requests complete
-      setTimeout(() => {
-        setLoggingOut(false);
-      }, 1000);
+      // Use wouter's navigation instead of hard redirect
+      setLocation("/auth");
     } catch (error) {
       // Reset the logging out flag
       setLoggingOut(false);
