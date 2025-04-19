@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient, setLoggingOut } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 // User type definition
@@ -193,19 +193,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Logout function
-  // Logout function
   const logout = async () => {
     try {
+      // Set logging out flag to prevent 401 errors from showing
+      setLoggingOut(true);
+      
+      // Execute the logout
       await logoutMutation.mutateAsync();
-
+      
       // Clear all queries from the cache to prevent re-fetching with stale credentials
       queryClient.clear();
-
+      
+      // Show successful logout message
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account."
+      });
+      
       // Force redirect to login/auth page
       window.location.href = "/auth";
-
-      // Alternative if using wouter: navigate('/auth');
+      
+      // Reset the logging out flag after a timeout to ensure all pending requests complete
+      setTimeout(() => {
+        setLoggingOut(false);
+      }, 1000);
     } catch (error) {
+      // Reset the logging out flag
+      setLoggingOut(false);
+      
       console.error("Logout error handled:", error);
     }
   };

@@ -144,7 +144,12 @@ export const queryClient = new QueryClient({
     mutations: {
       retry: false,
       onError: (error) => {
-        handleApiError(error);
+        // Skip error handling for 401s during logout
+        if (!(isLoggingOut && error.status === 401)) {
+          handleApiError(error);
+        } else {
+          console.log("Suppressing 401 error in mutation during logout");
+        }
       },
     },
   },
