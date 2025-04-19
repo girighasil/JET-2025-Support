@@ -425,43 +425,104 @@ export default function ManageCourses() {
     if (!enrollmentCourse || selectedStudentIds.length === 0) return;
     
     setBatchEnrollmentLoading(true);
+    console.log('Starting enrollment process for course:', enrollmentCourse);
+    console.log('Selected student IDs before filtering:', selectedStudentIds);
+    console.log('Already enrolled student IDs:', enrolledStudentIds);
     
     try {
+      // First, let's refresh the enrollments data to ensure we have the most current information
+      const freshResponse = await fetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
+      const freshEnrollments = await freshResponse.json();
+      const freshEnrolledIds = freshEnrollments.map((enrollment: any) => enrollment.userId);
+      console.log('Refreshed enrolled student IDs:', freshEnrolledIds);
+      
       // Filter out any already enrolled students (safety check)
       const notEnrolledStudentIds = selectedStudentIds.filter(
-        id => !enrolledStudentIds.includes(id)
+        id => !freshEnrolledIds.includes(id)
       );
+      console.log('Filtered student IDs eligible for enrollment:', notEnrolledStudentIds);
       
       if (notEnrolledStudentIds.length === 0) {
         toast({
           title: 'No New Enrollments',
           description: 'All selected students are already enrolled in this course.',
-          variant: 'default',
         });
         setEnrollmentCourse(null);
         setSelectedStudentIds([]);
         return;
       }
       
-      // Process each enrollment sequentially
+      // Process each enrollment sequentially with better error handling
       let successCount = 0;
+      let errorCount = 0;
+      const errorMessages: string[] = [];
+      
       for (const userId of notEnrolledStudentIds) {
         try {
-          await enrollStudentMutation.mutateAsync({ 
-            userId,
-            courseId: enrollmentCourse.id
+          console.log(`Enrolling student ${userId} in course ${enrollmentCourse.id}`);
+          
+          // First check if this student is already enrolled (double-check)
+          const checkEnrollmentRes = await fetch(`/api/enrollments?userId=${userId}&courseId=${enrollmentCourse.id}`);
+          const existingEnrollments = await checkEnrollmentRes.json();
+          
+          if (Array.isArray(existingEnrollments) && existingEnrollments.length > 0) {
+            console.log(`Student ${userId} is already enrolled, skipping`);
+            continue; // Skip already enrolled students
+          }
+          
+          // Attempt enrollment with detailed error capture
+          const enrollResponse = await fetch('/api/enrollments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              userId,
+              courseId: enrollmentCourse.id
+            }),
           });
-          successCount++;
+          
+          if (enrollResponse.ok) {
+            const result = await enrollResponse.json();
+            console.log(`Successfully enrolled student ${userId}, result:`, result);
+            successCount++;
+          } else {
+            // Get detailed error information
+            const errorData = await enrollResponse.json();
+            const errorMessage = errorData.message || 'Unknown error';
+            errorMessages.push(`Student ${userId}: ${errorMessage}`);
+            errorCount++;
+            console.error(`Failed to enroll student ${userId}:`, errorData);
+          }
         } catch (error) {
-          console.error(`Failed to enroll student ${userId}:`, error);
-          // Individual errors are handled by the mutation
+          console.error(`Exception enrolling student ${userId}:`, error);
+          errorCount++;
         }
       }
       
-      toast({
-        title: 'Enrollment Successful',
-        description: `${successCount} ${successCount === 1 ? 'student has' : 'students have'} been enrolled in ${enrollmentCourse.title}.`,
-      });
+      // Invalidate all enrollment-related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments', enrollmentCourse.id] });
+      
+      // Display appropriate toast based on results
+      if (successCount > 0) {
+        toast({
+          title: 'Enrollment Successful',
+          description: `${successCount} ${successCount === 1 ? 'student has' : 'students have'} been enrolled in ${enrollmentCourse.title}.`,
+        });
+      }
+      
+      if (errorCount > 0) {
+        toast({
+          title: `${errorCount} Enrollment(s) Failed`,
+          description: errorMessages.length > 0 
+            ? errorMessages.slice(0, 3).join('; ') + (errorMessages.length > 3 ? '...' : '')
+            : 'Some enrollments could not be completed',
+          variant: 'destructive',
+        });
+      }
       
       setEnrollmentCourse(null);
       setSelectedStudentIds([]);

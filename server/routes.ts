@@ -992,11 +992,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enrollment Routes
   app.get("/api/enrollments", isAuthenticated, async (req, res) => {
     try {
-      let enrollments;
+      console.log("GET /api/enrollments request with query:", req.query);
+      let enrollments = [];
       
-      if (req.query.courseId) {
-        // Get enrollments for a specific course
+      // Check for combined courseId and userId filters
+      if (req.query.courseId && req.query.userId) {
+        const userId = parseInt(req.query.userId as string);
         const courseId = parseInt(req.query.courseId as string);
+        
+        console.log(`Looking for enrollment with userId=${userId} and courseId=${courseId}`);
+        
+        // Students can only see their own enrollments
+        if (req.user.role === "student" && userId !== req.user.id) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+        
+        // Check if course exists
+        const course = await storage.getCourse(courseId);
+        if (!course) {
+          return res.status(404).json({ message: "Course not found" });
+        }
+        
+        // Get specific enrollment
+        const enrollment = await storage.getEnrollment(userId, courseId);
+        enrollments = enrollment ? [enrollment] : [];
+        console.log(`Enrollment found:`, enrollment ? true : false);
+      }
+      // Check for courseId filter only
+      else if (req.query.courseId) {
+        const courseId = parseInt(req.query.courseId as string);
+        console.log(`Looking for enrollments with courseId=${courseId}`);
         
         // Check if course exists
         const course = await storage.getCourse(courseId);
@@ -1008,12 +1033,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (req.user.role === "student") {
           const enrollment = await storage.getEnrollment(req.user.id, courseId);
           enrollments = enrollment ? [enrollment] : [];
+          console.log(`Student enrollment found:`, enrollment ? true : false);
         } else {
           enrollments = await storage.listEnrollmentsByCourse(courseId);
+          console.log(`Found ${enrollments.length} enrollments for course`);
         }
-      } else if (req.query.userId) {
-        // Get enrollments for a specific user
+      } 
+      // Check for userId filter only
+      else if (req.query.userId) {
         const userId = parseInt(req.query.userId as string);
+        console.log(`Looking for enrollments with userId=${userId}`);
         
         // Students can only see their own enrollments
         if (req.user.role === "student" && userId !== req.user.id) {
@@ -1021,66 +1050,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         enrollments = await storage.listEnrollmentsByUser(userId);
-      } else {
-        // Default to current user if no filters provided
+        console.log(`Found ${enrollments.length} enrollments for user`);
+      } 
+      // Default to current user if no filters provided
+      else {
+        console.log(`No filters provided, returning enrollments for current user ${req.user.id}`);
         enrollments = await storage.listEnrollmentsByUser(req.user.id);
+        console.log(`Found ${enrollments.length} enrollments for current user`);
       }
       
+      console.log(`Returning ${enrollments.length} enrollments`);
       res.json(enrollments);
     } catch (error) {
+      console.error("Error in GET /api/enrollments:", error);
       res.status(500).json({ message: "Server error" });
     }
   });
   
   app.post("/api/enrollments", isAuthenticated, async (req, res) => {
     try {
+      console.log("Processing enrollment request:", req.body);
+      
       // Students can only enroll themselves, admins/teachers can enroll others
       let userId = req.user.id;
       
       if (req.body.userId && req.user.role !== "student") {
         userId = req.body.userId;
+        console.log(`Admin/Teacher is enrolling user ${userId}`);
+      } else {
+        console.log(`Student is self-enrolling with ID ${userId}`);
       }
       
+      // Validate enrollment data
       const enrollmentData = insertEnrollmentSchema.parse({
         ...req.body,
         userId
       });
       
+      console.log("Validated enrollment data:", enrollmentData);
+      
+      // Check if user exists
+      const user = await storage.getUser(enrollmentData.userId);
+      if (!user) {
+        console.log(`User with ID ${enrollmentData.userId} not found`);
+        return res.status(404).json({ message: "User not found" });
+      }
+      
       // Check if course exists and is active
       const course = await storage.getCourse(enrollmentData.courseId);
       if (!course) {
+        console.log(`Course with ID ${enrollmentData.courseId} not found`);
         return res.status(404).json({ message: "Course not found" });
       }
       
       if (!course.isActive && req.user.role === "student") {
+        console.log(`Course ${course.id} is not active, student cannot enroll`);
         return res.status(400).json({ message: "Course is not active" });
       }
       
-      // Check if enrollment already exists
+      // Double check if enrollment already exists to prevent race conditions
+      console.log(`Checking if user ${enrollmentData.userId} is already enrolled in course ${enrollmentData.courseId}`);
       const existingEnrollment = await storage.getEnrollment(enrollmentData.userId, enrollmentData.courseId);
+      
       if (existingEnrollment) {
-        return res.status(400).json({ message: "User is already enrolled in this course" });
+        console.log(`User ${enrollmentData.userId} is already enrolled in course ${enrollmentData.courseId}`);
+        return res.status(400).json({ 
+          message: "User is already enrolled in this course",
+          enrollment: existingEnrollment
+        });
       }
       
-      const enrollment = await storage.createEnrollment(enrollmentData);
+      // Create the enrollment with a timestamp
+      console.log(`Creating enrollment for user ${enrollmentData.userId} in course ${enrollmentData.courseId}`);
+      const enrollmentWithDate = {
+        ...enrollmentData,
+        enrolledAt: new Date()
+      };
+      
+      const enrollment = await storage.createEnrollment(enrollmentWithDate);
+      console.log(`Successfully created enrollment:`, enrollment);
       
       // Create enrollment notification for the user
       try {
-        // If this is a student being enrolled (either self-enrollment or admin enrolling a student)
-        const user = await storage.getUser(enrollmentData.userId);
-        if (user) {
-          // Create notification for course enrollment
-          await storage.createNotification({
-            userId: enrollmentData.userId,
-            title: `Enrolled in "${course.title}"`,
-            message: `You have been successfully enrolled in the course "${course.title}".`,
-            type: "enrollment",
-            resourceId: course.id,
-            resourceType: "course"
-          });
-          
-          console.log(`Created enrollment notification for user ${enrollmentData.userId} in course ${course.title}`);
-        }
+        // Create notification for course enrollment
+        await storage.createNotification({
+          userId: enrollmentData.userId,
+          title: `Enrolled in "${course.title}"`,
+          message: `You have been successfully enrolled in the course "${course.title}".`,
+          type: "enrollment",
+          resourceId: course.id,
+          resourceType: "course",
+          isRead: false,
+          createdAt: new Date()
+        });
+        
+        console.log(`Created enrollment notification for user ${enrollmentData.userId} in course ${course.title}`);
       } catch (notificationError) {
         // Log error but don't fail the enrollment request
         console.error("Error creating enrollment notification:", notificationError);
@@ -1089,9 +1153,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(enrollment);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error in enrollment creation:", error.errors);
         res.status(400).json({ message: error.errors });
       } else {
-        console.error("Error in enrollment creation:", error);
+        console.error("Unexpected error in enrollment creation:", error);
         res.status(500).json({ message: "Server error" });
       }
     }
