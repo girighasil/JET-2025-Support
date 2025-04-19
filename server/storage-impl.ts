@@ -503,12 +503,20 @@ export class DatabaseStorage implements IStorage {
     courseId: number,
     enrollmentUpdate: Partial<InsertEnrollment>
   ): Promise<Enrollment | undefined> {
+    console.log(`Updating enrollment: userId=${userId}, courseId=${courseId}`);
+    
     const [updated] = await this.db
       .update(enrollments)
       .set(enrollmentUpdate)
-      .where(eq(enrollments.userId, userId))
-      .where(eq(enrollments.courseId, courseId))
+      .where(
+        and(
+          eq(enrollments.userId, userId),
+          eq(enrollments.courseId, courseId)
+        )
+      )
       .returning();
+      
+    console.log(`Updated enrollment result:`, updated);
     return updated;
   }
 
@@ -606,8 +614,12 @@ export class DatabaseStorage implements IStorage {
     return await this.db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .where(eq(notifications.isRead, false))
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      )
       .orderBy(notifications.createdAt, 'desc');
   }
 
@@ -630,12 +642,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markAllNotificationsAsRead(userId: number): Promise<number> {
+    console.log(`Marking all notifications as read for userId=${userId}`);
+    
     const result = await this.db
       .update(notifications)
       .set({ isRead: true })
-      .where(eq(notifications.userId, userId))
-      .where(eq(notifications.isRead, false));
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      );
     
+    console.log(`Marked as read result:`, result);
     // Return count of updated records
     return result.rowCount || 0;
   }
@@ -664,8 +683,12 @@ export class DatabaseStorage implements IStorage {
     const userAttempts = await this.db
       .select()
       .from(testAttempts)
-      .where(eq(testAttempts.userId, userId))
-      .where(eq(testAttempts.status, 'completed'));
+      .where(
+        and(
+          eq(testAttempts.userId, userId),
+          eq(testAttempts.status, 'completed')
+        )
+      );
     
     const testPerformance = userAttempts.length > 0
       ? userAttempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0) / userAttempts.length
