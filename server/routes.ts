@@ -5,6 +5,8 @@ import path from "path";
 import { z } from "zod";
 import { storage } from "./storage-impl";
 import { setupAuth } from "./auth";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import {
   insertUserSchema,
   insertCourseSchema,
@@ -15,6 +17,7 @@ import {
   insertEnrollmentSchema,
   insertDoubtSessionSchema,
   insertStudyTimeSchema,
+  enrollments
 } from "@shared/schema";
 
 // Import route modules
@@ -72,15 +75,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const role = req.query.role as string | undefined;
         const users = await storage.listUsers(role);
+        
+        // Get enrollment counts for all users
+        const usersWithEnrollmentCounts = await Promise.all(
+          users.map(async (user) => {
+            const { password: _, ...userWithoutPassword } = user;
+            
+            // For students, get enrollment count
+            if (user.role === 'student') {
+              // Get enrollments for this user
+              const enrollments = await db
+                .select()
+                .from(enrollments)
+                .where(eq(enrollments.userId, user.id));
+              
+              return {
+                ...userWithoutPassword,
+                enrollmentCount: enrollments.length
+              };
+            }
+            
+            return userWithoutPassword;
+          })
+        );
 
-        // Remove passwords from response
-        const usersWithoutPasswords = users.map((user) => {
-          const { password: _, ...userWithoutPassword } = user;
-          return userWithoutPassword;
-        });
-
-        res.json(usersWithoutPasswords);
+        res.json(usersWithEnrollmentCounts);
       } catch (error) {
+        console.error('Error fetching users with enrollment counts:', error);
         res.status(500).json({ message: "Server error" });
       }
     },
