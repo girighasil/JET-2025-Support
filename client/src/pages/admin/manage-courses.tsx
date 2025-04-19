@@ -396,15 +396,26 @@ export default function ManageCourses() {
   });
   
   // Open enrollment dialog
-  const handleOpenEnrollDialog = (course: Course) => {
+  const handleOpenEnrollDialog = async (course: Course) => {
     setEnrollmentCourse(course);
     setSelectedStudentIds([]);
     
-    // Force refresh enrollments data for this course
-    queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
-    
-    // This ensures we reload the correct enrollments for the specific course
-    queryClient.invalidateQueries({ queryKey: ['/api/enrollments', course.id] });
+    try {
+      // Force refresh enrollments data for this course
+      await queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
+      
+      // This ensures we reload the correct enrollments for the specific course
+      await queryClient.invalidateQueries({ queryKey: ['/api/enrollments', course.id] });
+      
+      // Force a direct fetch to make sure we have the latest data before showing UI
+      const res = await fetch(`/api/enrollments?courseId=${course.id}`);
+      if (res.ok) {
+        const freshEnrollments = await res.json();
+        queryClient.setQueryData(['/api/enrollments', course.id], freshEnrollments);
+      }
+    } catch (error) {
+      console.error("Error fetching enrollments:", error);
+    }
   };
   
   // Handle enrollment submission
@@ -414,23 +425,51 @@ export default function ManageCourses() {
     setBatchEnrollmentLoading(true);
     
     try {
-      // Process each enrollment sequentially
-      for (const userId of selectedStudentIds) {
-        await enrollStudentMutation.mutateAsync({ 
-          userId,
-          courseId: enrollmentCourse.id
+      // Filter out any already enrolled students (safety check)
+      const notEnrolledStudentIds = selectedStudentIds.filter(
+        id => !enrolledStudentIds.includes(id)
+      );
+      
+      if (notEnrolledStudentIds.length === 0) {
+        toast({
+          title: 'No New Enrollments',
+          description: 'All selected students are already enrolled in this course.',
+          variant: 'default',
         });
+        setEnrollmentCourse(null);
+        setSelectedStudentIds([]);
+        return;
+      }
+      
+      // Process each enrollment sequentially
+      let successCount = 0;
+      for (const userId of notEnrolledStudentIds) {
+        try {
+          await enrollStudentMutation.mutateAsync({ 
+            userId,
+            courseId: enrollmentCourse.id
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to enroll student ${userId}:`, error);
+          // Individual errors are handled by the mutation
+        }
       }
       
       toast({
         title: 'Enrollment Successful',
-        description: `${selectedStudentIds.length} ${selectedStudentIds.length === 1 ? 'student has' : 'students have'} been enrolled in ${enrollmentCourse.title}.`,
+        description: `${successCount} ${successCount === 1 ? 'student has' : 'students have'} been enrolled in ${enrollmentCourse.title}.`,
       });
       
       setEnrollmentCourse(null);
       setSelectedStudentIds([]);
     } catch (error) {
-      // Error is handled by the mutation
+      console.error('Enrollment process error:', error);
+      toast({
+        title: 'Enrollment Process Error',
+        description: 'There was a problem with the enrollment process. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setBatchEnrollmentLoading(false);
     }
@@ -438,16 +477,24 @@ export default function ManageCourses() {
   
   // Toggle student selection
   const toggleStudentSelection = (studentId: number) => {
-    // Skip if already enrolled
+    // Skip if already enrolled - we never want to modify enrollment status of already enrolled students
     if (enrolledStudentIds.includes(studentId)) {
+      console.log(`Student ${studentId} is already enrolled, skipping selection toggle`);
       return;
     }
     
-    setSelectedStudentIds(prev => 
-      prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
+    setSelectedStudentIds(prev => {
+      const isCurrentlySelected = prev.includes(studentId);
+      
+      // If currently selected, remove from selection
+      if (isCurrentlySelected) {
+        return prev.filter(id => id !== studentId);
+      } 
+      // If not selected, add to selection
+      else {
+        return [...prev, studentId];
+      }
+    });
   };
   
   // Toggle all students
@@ -832,9 +879,12 @@ export default function ManageCourses() {
             </DialogDescription>
           </DialogHeader>
           
-          {isUsersLoading ? (
-            <div className="py-6">
-              <Skeleton className="h-[200px] w-full" />
+          {isUsersLoading || isEnrollmentsLoading ? (
+            <div className="py-6 flex flex-col items-center justify-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-center text-muted-foreground">
+                Loading enrollment data...
+              </p>
             </div>
           ) : students.length === 0 ? (
             <div className="py-6 text-center">
