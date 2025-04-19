@@ -501,6 +501,10 @@ export default function ManageCourses() {
   
   // Toggle all students
   const toggleAllStudents = (checked: boolean) => {
+    // Get console output for debugging
+    console.log(`toggleAllStudents called with checked=${checked}`);
+    console.log(`Current enrolled student IDs:`, enrolledStudentIds);
+    
     if (checked) {
       // Find all students who are eligible for enrollment (not already enrolled)
       const eligibleStudents = students.filter((student: any) => {
@@ -511,16 +515,19 @@ export default function ManageCourses() {
         }
         
         // Only include students who are not already enrolled
-        return !enrolledStudentIds.includes(student.id);
+        const isEligible = !enrolledStudentIds.includes(student.id);
+        console.log(`Student ${student.id} (${student.fullName}) eligibility:`, isEligible);
+        return isEligible;
       });
       
       // Extract just the IDs for selection
       const availableStudentIds = eligibleStudents.map((student: any) => student.id);
       
-      console.log(`Selecting ${availableStudentIds.length} eligible students for enrollment`);
+      console.log(`Found ${availableStudentIds.length} eligible students for enrollment:`, availableStudentIds);
       setSelectedStudentIds(availableStudentIds);
     } else {
       // Deselect all
+      console.log('Deselecting all students');
       setSelectedStudentIds([]);
     }
   };
@@ -914,17 +921,18 @@ export default function ManageCourses() {
                     id="select-all"
                     checked={
                       students.length > 0 &&
+                      selectedStudentIds.length > 0 &&
+                      // Only consider non-enrolled students for the "all selected" state
                       selectedStudentIds.length === 
-                        students.filter((student: any) => !enrolledStudentIds.includes(student.id)).length &&
-                      selectedStudentIds.length > 0
+                        students.filter((student: any) => !enrolledStudentIds.includes(student.id)).length
                     }
-                    onCheckedChange={toggleAllStudents}
+                    onCheckedChange={(checked) => toggleAllStudents(checked === true)}
                   />
                   <label
                     htmlFor="select-all"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Select All Students
+                    Select All Available Students
                   </label>
                 </div>
               </div>
