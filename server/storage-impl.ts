@@ -14,7 +14,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, count, sql } from 'drizzle-orm';
 import * as schema from "@shared/schema";
 import connectPgSimple from "connect-pg-simple";
 import session from "express-session";
@@ -670,79 +670,235 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOverallAnalytics(): Promise<any> {
-    // Get total counts
-    const [userCount] = await this.db.select({ count: count() }).from(users);
-    const [courseCount] = await this.db.select({ count: count() }).from(courses);
-    const [testCount] = await this.db.select({ count: count() }).from(tests);
-    const [sessionCount] = await this.db.select({ count: count() }).from(doubtSessions);
-    
-    // Get all completed test attempts
-    const completedAttempts = await this.db
-      .select()
-      .from(testAttempts)
-      .where(eq(testAttempts.status, 'completed'));
-    
-    // Calculate avg score
-    const avgScore = completedAttempts.length > 0
-      ? completedAttempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0) / completedAttempts.length
-      : 0;
-    
-    return {
-      counts: {
-        users: userCount.count,
-        courses: courseCount.count,
-        tests: testCount.count,
-        doubtSessions: sessionCount.count,
-        testAttempts: completedAttempts.length
-      },
-      performance: {
-        avgScore
+    try {
+      console.log('Starting getOverallAnalytics method');
+      
+      // Get total counts with error handling
+      let userCount, courseCount, testCount, sessionCount, completedAttempts;
+      
+      try {
+        [userCount] = await this.db.select({ count: count() }).from(users);
+        console.log('User count query successful:', userCount);
+      } catch (error) {
+        console.error('Error getting user count:', error);
+        userCount = { count: 0 };
       }
-    };
+      
+      try {
+        [courseCount] = await this.db.select({ count: count() }).from(courses);
+        console.log('Course count query successful:', courseCount);
+      } catch (error) {
+        console.error('Error getting course count:', error);
+        courseCount = { count: 0 };
+      }
+      
+      try {
+        [testCount] = await this.db.select({ count: count() }).from(tests);
+        console.log('Test count query successful:', testCount);
+      } catch (error) {
+        console.error('Error getting test count:', error);
+        testCount = { count: 0 };
+      }
+      
+      try {
+        [sessionCount] = await this.db.select({ count: count() }).from(doubtSessions);
+        console.log('Session count query successful:', sessionCount);
+      } catch (error) {
+        console.error('Error getting session count:', error);
+        sessionCount = { count: 0 };
+      }
+      
+      // Get all completed test attempts
+      try {
+        completedAttempts = await this.db
+          .select()
+          .from(testAttempts)
+          .where(eq(testAttempts.status, 'completed'));
+        console.log('Completed attempts query successful, count:', completedAttempts.length);
+      } catch (error) {
+        console.error('Error getting completed attempts:', error);
+        completedAttempts = [];
+      }
+      
+      // Calculate avg score with safer handling of null/undefined values
+      let avgScore = 0;
+      try {
+        if (completedAttempts && completedAttempts.length > 0) {
+          const totalScore = completedAttempts.reduce((sum, attempt) => {
+            // Ensure we're adding a number, default to 0 if score is null/undefined
+            const attemptScore = attempt && attempt.score !== null && attempt.score !== undefined 
+              ? Number(attempt.score) 
+              : 0;
+            
+            return sum + attemptScore;
+          }, 0);
+          
+          avgScore = totalScore / completedAttempts.length;
+          console.log('Average score calculated:', avgScore);
+        }
+      } catch (error) {
+        console.error('Error calculating average score:', error);
+        avgScore = 0;
+      }
+      
+      // Construct response
+      const response = {
+        counts: {
+          users: userCount?.count || 0,
+          courses: courseCount?.count || 0,
+          tests: testCount?.count || 0,
+          doubtSessions: sessionCount?.count || 0,
+          testAttempts: completedAttempts?.length || 0
+        },
+        performance: {
+          avgScore
+        }
+      };
+      
+      console.log('Analytics response:', response);
+      return response;
+    } catch (error) {
+      console.error('Uncaught error in getOverallAnalytics:', error);
+      // Return basic data structure to prevent UI errors
+      return {
+        counts: {
+          users: 0,
+          courses: 0,
+          tests: 0,
+          doubtSessions: 0,
+          testAttempts: 0
+        },
+        performance: {
+          avgScore: 0
+        }
+      };
+    }
   }
 
   async getTestAnalytics(testId: number): Promise<any> {
-    // Get test details
-    const [test] = await this.db.select().from(tests).where(eq(tests.id, testId));
-    if (!test) return null;
-    
-    // Get all attempts for this test
-    const attempts = await this.db
-      .select()
-      .from(testAttempts)
-      .where(eq(testAttempts.testId, testId));
-    
-    const completedAttempts = attempts.filter(attempt => attempt.status === 'completed');
-    
-    // Calculate statistics
-    const avgScore = completedAttempts.length > 0
-      ? completedAttempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0) / completedAttempts.length
-      : 0;
-    
-    const passingAttempts = completedAttempts.filter(attempt => 
-      (attempt.score || 0) >= test.passingScore
-    );
-    
-    const passRate = completedAttempts.length > 0
-      ? (passingAttempts.length / completedAttempts.length) * 100
-      : 0;
-    
-    return {
-      testInfo: {
-        title: test.title,
-        passingScore: test.passingScore,
-        duration: test.duration
-      },
-      attempts: {
-        total: attempts.length,
-        completed: completedAttempts.length,
-        passed: passingAttempts.length
-      },
-      performance: {
-        avgScore,
-        passRate
+    try {
+      console.log(`Starting getTestAnalytics for testId: ${testId}`);
+      
+      // Get test details
+      let test;
+      try {
+        const result = await this.db.select().from(tests).where(eq(tests.id, testId));
+        test = result[0];
+        console.log('Test query successful:', test);
+        
+        if (!test) {
+          console.log(`No test found with id ${testId}`);
+          return null;
+        }
+      } catch (error) {
+        console.error('Error getting test details:', error);
+        return null;
       }
-    };
+      
+      // Get all attempts for this test
+      let attempts;
+      try {
+        attempts = await this.db
+          .select()
+          .from(testAttempts)
+          .where(eq(testAttempts.testId, testId));
+        console.log(`Retrieved ${attempts.length} test attempts`);
+      } catch (error) {
+        console.error('Error getting test attempts:', error);
+        attempts = [];
+      }
+      
+      const completedAttempts = attempts.filter(attempt => attempt.status === 'completed');
+      console.log(`Found ${completedAttempts.length} completed attempts`);
+      
+      // Calculate statistics with safer handling of null/undefined values
+      let avgScore = 0;
+      try {
+        if (completedAttempts.length > 0) {
+          const totalScore = completedAttempts.reduce((sum, attempt) => {
+            const attemptScore = attempt && attempt.score !== null && attempt.score !== undefined
+              ? Number(attempt.score)
+              : 0;
+            return sum + attemptScore;
+          }, 0);
+          
+          avgScore = totalScore / completedAttempts.length;
+          console.log(`Average score calculated: ${avgScore}`);
+        }
+      } catch (error) {
+        console.error('Error calculating average score:', error);
+        avgScore = 0;
+      }
+      
+      // Safely get passing score
+      const passingScore = test && test.passingScore !== null && test.passingScore !== undefined
+        ? Number(test.passingScore)
+        : 0;
+      
+      let passingAttempts;
+      try {
+        passingAttempts = completedAttempts.filter(attempt => {
+          const score = attempt && attempt.score !== null && attempt.score !== undefined
+            ? Number(attempt.score)
+            : 0;
+          return score >= passingScore;
+        });
+        console.log(`Found ${passingAttempts.length} passing attempts`);
+      } catch (error) {
+        console.error('Error calculating passing attempts:', error);
+        passingAttempts = [];
+      }
+      
+      let passRate = 0;
+      try {
+        passRate = completedAttempts.length > 0
+          ? (passingAttempts.length / completedAttempts.length) * 100
+          : 0;
+        console.log(`Pass rate calculated: ${passRate}%`);
+      } catch (error) {
+        console.error('Error calculating pass rate:', error);
+        passRate = 0;
+      }
+      
+      const response = {
+        testInfo: {
+          title: test?.title || 'Unknown Test',
+          passingScore: test?.passingScore || 0,
+          duration: test?.duration || 0
+        },
+        attempts: {
+          total: attempts?.length || 0,
+          completed: completedAttempts?.length || 0,
+          passed: passingAttempts?.length || 0
+        },
+        performance: {
+          avgScore,
+          passRate
+        }
+      };
+      
+      console.log('Test analytics response:', response);
+      return response;
+    } catch (error) {
+      console.error('Uncaught error in getTestAnalytics:', error);
+      // Return a valid response structure to prevent UI errors
+      return {
+        testInfo: {
+          title: 'Error retrieving test',
+          passingScore: 0,
+          duration: 0
+        },
+        attempts: {
+          total: 0,
+          completed: 0,
+          passed: 0
+        },
+        performance: {
+          avgScore: 0,
+          passRate: 0
+        }
+      };
+    }
   }
 }
 
