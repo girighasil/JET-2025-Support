@@ -31,10 +31,10 @@ import {
 export default function AdminDashboard() {
   const { user } = useAuth();
   
-  // Fetch overall analytics
+  // Fetch overall analytics - only for admin users
   const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
     queryKey: ['/api/analytics/overall'],
-    enabled: !!user,
+    enabled: !!user && user.role === 'admin', // Only enable for admin users
   });
   
   // Fetch recent enrollments for the table
@@ -105,155 +105,195 @@ export default function AdminDashboard() {
 
   return (
     <Layout
-      title="Admin Dashboard"
+      title="Dashboard"
       description="Manage courses, students, and track platform analytics."
       rightContent={
-        <Button asChild className="flex items-center gap-2">
-          <a href="/admin/analytics-dashboard">
-            <BarChart2 className="h-4 w-4" />
-            Advanced Analytics
-          </a>
-        </Button>
+        user?.role === 'admin' && (
+          <Button asChild className="flex items-center gap-2">
+            <a href="/admin/analytics-dashboard">
+              <BarChart2 className="h-4 w-4" />
+              Advanced Analytics
+            </a>
+          </Button>
+        )
       }
     >
       {/* Platform Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {isAnalyticsLoading ? (
-          <>
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-          </>
-        ) : analytics ? (
+        {user?.role === 'admin' ? (
+          isAnalyticsLoading ? (
+            <>
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </>
+          ) : analytics ? (
+            <>
+              <StatsCard
+                title="Total Students"
+                value={analytics.counts.users}
+                icon={Users}
+                actionLink={{ href: "/admin/manage-students", text: "View all students" }}
+                iconVariant="info"
+              />
+              
+              <StatsCard
+                title="Active Courses"
+                value={analytics.counts.courses}
+                icon={BookOpen}
+                actionLink={{ href: "/admin/manage-courses", text: "Manage courses" }}
+                iconVariant="success"
+              />
+              
+              <StatsCard
+                title="Tests Created"
+                value={analytics.counts.tests}
+                icon={FileText}
+                actionLink={{ href: "/admin/manage-tests", text: "Manage tests" }}
+                iconVariant="warning"
+              />
+              
+              <StatsCard
+                title="Scheduled Sessions"
+                value={analytics.counts.sessions}
+                icon={Calendar}
+                actionLink={{ href: "/admin/session-schedule", text: "View schedule" }}
+                iconVariant="error"
+              />
+            </>
+          ) : (
+            <div className="col-span-4 text-center p-8 bg-gray-50 rounded-lg border border-dashed">
+              <p className="text-gray-500">No analytics data available</p>
+            </div>
+          )
+        ) : (
           <>
             <StatsCard
-              title="Total Students"
-              value={analytics.counts.users}
+              title="Manage Students"
+              value=""
               icon={Users}
               actionLink={{ href: "/admin/manage-students", text: "View all students" }}
               iconVariant="info"
             />
             
             <StatsCard
-              title="Active Courses"
-              value={analytics.counts.courses}
+              title="Manage Courses"
+              value=""
               icon={BookOpen}
               actionLink={{ href: "/admin/manage-courses", text: "Manage courses" }}
               iconVariant="success"
             />
             
             <StatsCard
-              title="Tests Created"
-              value={analytics.counts.tests}
+              title="Manage Tests"
+              value=""
               icon={FileText}
               actionLink={{ href: "/admin/manage-tests", text: "Manage tests" }}
               iconVariant="warning"
             />
             
             <StatsCard
-              title="Scheduled Sessions"
-              value={analytics.counts.sessions}
+              title="Schedule Sessions"
+              value=""
               icon={Calendar}
               actionLink={{ href: "/admin/session-schedule", text: "View schedule" }}
               iconVariant="error"
             />
           </>
-        ) : (
-          <div className="col-span-4 text-center p-8 bg-gray-50 rounded-lg border border-dashed">
-            <p className="text-gray-500">No analytics data available</p>
-          </div>
         )}
       </div>
       
-      {/* Analytics Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Student Activity Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Student Activity</CardTitle>
-            <CardDescription>Last 7 days</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            {isAnalyticsLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : analytics?.performanceOverTime ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={analytics.performanceOverTime}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="month" 
-                    tickFormatter={(value) => {
-                      const [year, month] = value.split('-');
-                      return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(month) - 1]}`;
-                    }}
-                  />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="attemptCount"
-                    name="Test Attempts"
-                    stroke="#8884d8"
-                    activeDot={{ r: 8 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="averageScore"
-                    name="Avg. Score (%)"
-                    stroke="#82ca9d"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No activity data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Performance Overview Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Overview</CardTitle>
-            <CardDescription>Average test score by subject</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            {isAnalyticsLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : analytics?.testPerformance ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={[
-                    { name: "Calculus", score: 78 },
-                    { name: "Algebra", score: 82 },
-                    { name: "Geometry", score: 65 },
-                    { name: "Statistics", score: 71 }
-                  ]}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 100]} />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="score" name="Score (%)" fill="#fbbf24" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No performance data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Analytics Charts - Only show for admin users */}
+      {user?.role === 'admin' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Student Activity Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Student Activity</CardTitle>
+              <CardDescription>Last 7 days</CardDescription>
+            </CardHeader>
+            <CardContent className="h-80">
+              {isAnalyticsLoading ? (
+                <Skeleton className="h-full w-full" />
+              ) : analytics?.performanceOverTime ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={analytics.performanceOverTime}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="month" 
+                      tickFormatter={(value) => {
+                        const [year, month] = value.split('-');
+                        return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(month) - 1]}`;
+                      }}
+                    />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="attemptCount"
+                      name="Test Attempts"
+                      stroke="#8884d8"
+                      activeDot={{ r: 8 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="averageScore"
+                      name="Avg. Score (%)"
+                      stroke="#82ca9d"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No activity data available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Performance Overview Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Overview</CardTitle>
+              <CardDescription>Average test score by subject</CardDescription>
+            </CardHeader>
+            <CardContent className="h-80">
+              {isAnalyticsLoading ? (
+                <Skeleton className="h-full w-full" />
+              ) : analytics?.testPerformance ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      { name: "Calculus", score: 78 },
+                      { name: "Algebra", score: 82 },
+                      { name: "Geometry", score: 65 },
+                      { name: "Statistics", score: 71 }
+                    ]}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 100]} />
+                    <YAxis dataKey="name" type="category" width={100} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="score" name="Score (%)" fill="#fbbf24" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No performance data available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
       
       {/* Recent Enrollments */}
       <div className="mb-8">
