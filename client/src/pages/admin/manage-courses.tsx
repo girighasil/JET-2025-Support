@@ -121,32 +121,37 @@ export default function ManageCourses() {
   const { data: courses = [], isLoading } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
   });
-  
+
   // Fetch all students for enrollment dialog
   const { data: users = [], isLoading: isUsersLoading } = useQuery<any[]>({
-    queryKey: ['/api/users'],
+    queryKey: ["/api/users"],
   });
-  
+
   // Filter to get only students
-  const students = Array.isArray(users) 
-    ? users.filter((user: any) => user && user.role === 'student') 
+  const students = Array.isArray(users)
+    ? users.filter((user: any) => user && user.role === "student")
     : [];
-  
+
   // Fetch enrollments when a course is selected for enrollment
-  const { data: courseEnrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
-    queryKey: ['/api/enrollments', enrollmentCourse?.id],
-    enabled: !!enrollmentCourse,
-    queryFn: async () => {
-      if (!enrollmentCourse) return [];
-      // Explicitly request enrollments for this course by ID
-      const res = await fetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
-      if (!res.ok) return [];
-      return res.json();
-    }
-  });
-  
+  const { data: courseEnrollments = [], isLoading: isEnrollmentsLoading } =
+    useQuery({
+      queryKey: ["/api/enrollments", enrollmentCourse?.id],
+      enabled: !!enrollmentCourse,
+      queryFn: async () => {
+        if (!enrollmentCourse) return [];
+        // Explicitly request enrollments for this course by ID
+        const res = await fetch(
+          `/api/enrollments?courseId=${enrollmentCourse.id}`,
+        );
+        if (!res.ok) return [];
+        return res.json();
+      },
+    });
+
   // Extract enrolled student IDs
-  const enrolledStudentIds = courseEnrollments.map((enrollment: any) => enrollment.userId);
+  const enrolledStudentIds = courseEnrollments.map(
+    (enrollment: any) => enrollment.userId,
+  );
 
   // Create course mutation
   const createCourseMutation = useMutation({
@@ -205,7 +210,7 @@ export default function ManageCourses() {
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
       toast({
         title: "Success",
-        description: "The course has been deleted successfully"
+        description: "The course has been deleted successfully",
       });
       setDeleteConfirmCourse(null);
     },
@@ -372,124 +377,157 @@ export default function ManageCourses() {
 
   // Enroll student mutation
   const enrollStudentMutation = useMutation({
-    mutationFn: async ({ userId, courseId }: { userId: number, courseId: number }) => {
-      const res = await apiRequest('POST', '/api/enrollments', {
+    mutationFn: async ({
+      userId,
+      courseId,
+    }: {
+      userId: number;
+      courseId: number;
+    }) => {
+      const res = await apiRequest("POST", "/api/enrollments", {
         userId,
-        courseId
+        courseId,
       });
       return res.json();
     },
     onSuccess: (_, variables) => {
       // Invalidate all enrollment-related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/all"] });
+
       // Specifically invalidate course enrollments for this course
-      queryClient.invalidateQueries({ queryKey: ['/api/enrollments', variables.courseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/enrollments", variables.courseId],
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to Enroll Student',
-        description: error.message || 'There was an error enrolling the student.',
-        variant: 'destructive',
+        title: "Failed to Enroll Student",
+        description:
+          error.message || "There was an error enrolling the student.",
+        variant: "destructive",
       });
-    }
+    },
   });
-  
+
   // Open enrollment dialog
   const handleOpenEnrollDialog = async (course: Course) => {
     setEnrollmentCourse(course);
     setSelectedStudentIds([]);
-    
+
     try {
       // Force refresh enrollments data for this course
-      await queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
-      
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/enrollments/all"],
+      });
+
       // This ensures we reload the correct enrollments for the specific course
-      await queryClient.invalidateQueries({ queryKey: ['/api/enrollments', course.id] });
-      
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/enrollments", course.id],
+      });
+
       // Force a direct fetch to make sure we have the latest data before showing UI
       const res = await fetch(`/api/enrollments?courseId=${course.id}`);
       if (res.ok) {
         const freshEnrollments = await res.json();
-        queryClient.setQueryData(['/api/enrollments', course.id], freshEnrollments);
+        queryClient.setQueryData(
+          ["/api/enrollments", course.id],
+          freshEnrollments,
+        );
       }
     } catch (error) {
       console.error("Error fetching enrollments:", error);
     }
   };
-  
+
   // Handle enrollment submission
   const handleEnrollStudents = async () => {
     if (!enrollmentCourse || selectedStudentIds.length === 0) return;
-    
+
     setBatchEnrollmentLoading(true);
-    console.log('Starting enrollment process for course:', enrollmentCourse);
-    console.log('Selected student IDs before filtering:', selectedStudentIds);
-    console.log('Already enrolled student IDs:', enrolledStudentIds);
-    
+    console.log("Starting enrollment process for course:", enrollmentCourse);
+    console.log("Selected student IDs before filtering:", selectedStudentIds);
+    console.log("Already enrolled student IDs:", enrolledStudentIds);
+
     try {
       // First, let's refresh the enrollments data to ensure we have the most current information
-      const freshResponse = await fetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
+      const freshResponse = await fetch(
+        `/api/enrollments?courseId=${enrollmentCourse.id}`,
+      );
       const freshEnrollments = await freshResponse.json();
-      const freshEnrolledIds = freshEnrollments.map((enrollment: any) => enrollment.userId);
-      console.log('Refreshed enrolled student IDs:', freshEnrolledIds);
-      
+      const freshEnrolledIds = freshEnrollments.map(
+        (enrollment: any) => enrollment.userId,
+      );
+      console.log("Refreshed enrolled student IDs:", freshEnrolledIds);
+
       // Filter out any already enrolled students (safety check)
       const notEnrolledStudentIds = selectedStudentIds.filter(
-        id => !freshEnrolledIds.includes(id)
+        (id) => !freshEnrolledIds.includes(id),
       );
-      console.log('Filtered student IDs eligible for enrollment:', notEnrolledStudentIds);
-      
+      console.log(
+        "Filtered student IDs eligible for enrollment:",
+        notEnrolledStudentIds,
+      );
+
       if (notEnrolledStudentIds.length === 0) {
         toast({
-          title: 'No New Enrollments',
-          description: 'All selected students are already enrolled in this course.',
+          title: "No New Enrollments",
+          description:
+            "All selected students are already enrolled in this course.",
         });
         setEnrollmentCourse(null);
         setSelectedStudentIds([]);
         return;
       }
-      
+
       // Process each enrollment sequentially with better error handling
       let successCount = 0;
       let errorCount = 0;
       const errorMessages: string[] = [];
-      
+
       for (const userId of notEnrolledStudentIds) {
         try {
-          console.log(`Enrolling student ${userId} in course ${enrollmentCourse.id}`);
-          
-          // First check if this student is already enrolled (double-check)
-          const checkEnrollmentRes = await fetch(`/api/enrollments?userId=${userId}&courseId=${enrollmentCourse.id}`);
-          const existingEnrollments = await checkEnrollmentRes.json();
-          
-          if (Array.isArray(existingEnrollments) && existingEnrollments.length > 0) {
-            console.log(`Student ${userId} is already enrolled, skipping`);
+          console.log(
+            `Enrolling student ${userId} in course ${enrollmentCourse.id}`,
+          );
+
+          // Don't do a double check against the server - just use our refreshed list from earlier
+          if (freshEnrolledIds.includes(userId)) {
+            console.log(
+              `Student ${userId} is already enrolled (from refreshed list), skipping`,
+            );
             continue; // Skip already enrolled students
           }
-          
+
+          // Trust our cached data since we just refreshed it at the start of this function
+          console.log(
+            `Student ${userId} is not enrolled yet, proceeding with enrollment`,
+          );
+
           // Attempt enrollment with detailed error capture
-          const enrollResponse = await fetch('/api/enrollments', {
-            method: 'POST',
+          const enrollResponse = await fetch("/api/enrollments", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               userId,
-              courseId: enrollmentCourse.id
+              courseId: enrollmentCourse.id,
             }),
           });
-          
+
           if (enrollResponse.ok) {
             const result = await enrollResponse.json();
-            console.log(`Successfully enrolled student ${userId}, result:`, result);
+            console.log(
+              `Successfully enrolled student ${userId}, result:`,
+              result,
+            );
             successCount++;
           } else {
             // Get detailed error information
             const errorData = await enrollResponse.json();
-            const errorMessage = errorData.message || 'Unknown error';
+            const errorMessage = errorData.message || "Unknown error";
             errorMessages.push(`Student ${userId}: ${errorMessage}`);
             errorCount++;
             console.error(`Failed to enroll student ${userId}:`, errorData);
@@ -499,96 +537,111 @@ export default function ManageCourses() {
           errorCount++;
         }
       }
-      
+
       // Invalidate all enrollment-related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/enrollments/all'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/enrollments', enrollmentCourse.id] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/all"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/enrollments", enrollmentCourse.id],
+      });
+
       // Display appropriate toast based on results
       if (successCount > 0) {
         toast({
-          title: 'Enrollment Successful',
-          description: `${successCount} ${successCount === 1 ? 'student has' : 'students have'} been enrolled in ${enrollmentCourse.title}.`,
+          title: "Enrollment Successful",
+          description: `${successCount} ${successCount === 1 ? "student has" : "students have"} been enrolled in ${enrollmentCourse.title}.`,
         });
       }
-      
+
       if (errorCount > 0) {
         toast({
           title: `${errorCount} Enrollment(s) Failed`,
-          description: errorMessages.length > 0 
-            ? errorMessages.slice(0, 3).join('; ') + (errorMessages.length > 3 ? '...' : '')
-            : 'Some enrollments could not be completed',
-          variant: 'destructive',
+          description:
+            errorMessages.length > 0
+              ? errorMessages.slice(0, 3).join("; ") +
+                (errorMessages.length > 3 ? "..." : "")
+              : "Some enrollments could not be completed",
+          variant: "destructive",
         });
       }
-      
+
       setEnrollmentCourse(null);
       setSelectedStudentIds([]);
     } catch (error) {
-      console.error('Enrollment process error:', error);
+      console.error("Enrollment process error:", error);
       toast({
-        title: 'Enrollment Process Error',
-        description: 'There was a problem with the enrollment process. Please try again.',
-        variant: 'destructive',
+        title: "Enrollment Process Error",
+        description:
+          "There was a problem with the enrollment process. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setBatchEnrollmentLoading(false);
     }
   };
-  
+
   // Toggle student selection
   const toggleStudentSelection = (studentId: number) => {
     // Skip if already enrolled - we never want to modify enrollment status of already enrolled students
     if (enrolledStudentIds.includes(studentId)) {
-      console.log(`Student ${studentId} is already enrolled, skipping selection toggle`);
+      console.log(
+        `Student ${studentId} is already enrolled, skipping selection toggle`,
+      );
       return;
     }
-    
-    setSelectedStudentIds(prev => {
+
+    setSelectedStudentIds((prev) => {
       const isCurrentlySelected = prev.includes(studentId);
-      
+
       // If currently selected, remove from selection
       if (isCurrentlySelected) {
-        return prev.filter(id => id !== studentId);
-      } 
+        return prev.filter((id) => id !== studentId);
+      }
       // If not selected, add to selection
       else {
         return [...prev, studentId];
       }
     });
   };
-  
+
   // Toggle all students
   const toggleAllStudents = (checked: boolean) => {
     // Get console output for debugging
     console.log(`toggleAllStudents called with checked=${checked}`);
     console.log(`Current enrolled student IDs:`, enrolledStudentIds);
-    
+
     if (checked) {
       // Find all students who are eligible for enrollment (not already enrolled)
       const eligibleStudents = students.filter((student: any) => {
         // Skip if id is invalid
-        if (!student || typeof student.id !== 'number') {
-          console.warn('Invalid student object found:', student);
+        if (!student || typeof student.id !== "number") {
+          console.warn("Invalid student object found:", student);
           return false;
         }
-        
+
         // Only include students who are not already enrolled
         const isEligible = !enrolledStudentIds.includes(student.id);
-        console.log(`Student ${student.id} (${student.fullName}) eligibility:`, isEligible);
+        console.log(
+          `Student ${student.id} (${student.fullName}) eligibility:`,
+          isEligible,
+        );
         return isEligible;
       });
-      
+
       // Extract just the IDs for selection
-      const availableStudentIds = eligibleStudents.map((student: any) => student.id);
-      
-      console.log(`Found ${availableStudentIds.length} eligible students for enrollment:`, availableStudentIds);
+      const availableStudentIds = eligibleStudents.map(
+        (student: any) => student.id,
+      );
+
+      console.log(
+        `Found ${availableStudentIds.length} eligible students for enrollment:`,
+        availableStudentIds,
+      );
       setSelectedStudentIds(availableStudentIds);
     } else {
       // Deselect all
-      console.log('Deselecting all students');
+      console.log("Deselecting all students");
       setSelectedStudentIds([]);
     }
   };
@@ -949,19 +1002,20 @@ export default function ManageCourses() {
       </Dialog>
 
       {/* Enrollment Dialog */}
-      <Dialog 
-        open={!!enrollmentCourse} 
+      <Dialog
+        open={!!enrollmentCourse}
         onOpenChange={(open) => !open && setEnrollmentCourse(null)}
       >
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Enroll Students in Course</DialogTitle>
             <DialogDescription>
-              Select students to enroll in <span className="font-medium">{enrollmentCourse?.title}</span>.
+              Select students to enroll in{" "}
+              <span className="font-medium">{enrollmentCourse?.title}</span>.
               You can select multiple students.
             </DialogDescription>
           </DialogHeader>
-          
+
           {isUsersLoading || isEnrollmentsLoading ? (
             <div className="py-6 flex flex-col items-center justify-center gap-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -971,23 +1025,30 @@ export default function ManageCourses() {
             </div>
           ) : students.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-muted-foreground">No students available. Please add students first.</p>
+              <p className="text-muted-foreground">
+                No students available. Please add students first.
+              </p>
             </div>
           ) : (
             <>
               {/* Select All Checkbox */}
               <div className="border-b pb-2 mb-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="select-all"
                     checked={
                       students.length > 0 &&
                       selectedStudentIds.length > 0 &&
                       // Only consider non-enrolled students for the "all selected" state
-                      selectedStudentIds.length === 
-                        students.filter((student: any) => !enrolledStudentIds.includes(student.id)).length
+                      selectedStudentIds.length ===
+                        students.filter(
+                          (student: any) =>
+                            !enrolledStudentIds.includes(student.id),
+                        ).length
                     }
-                    onCheckedChange={(checked) => toggleAllStudents(checked === true)}
+                    onCheckedChange={(checked) =>
+                      toggleAllStudents(checked === true)
+                    }
                   />
                   <label
                     htmlFor="select-all"
@@ -997,7 +1058,7 @@ export default function ManageCourses() {
                   </label>
                 </div>
               </div>
-              
+
               {/* Student List */}
               <ScrollArea className="h-[300px] pr-4">
                 <div className="space-y-3">
@@ -1006,35 +1067,45 @@ export default function ManageCourses() {
                     const isEnrolled = enrolledStudentIds.includes(student.id);
                     // Check if student is currently selected for enrollment
                     const isSelected = selectedStudentIds.includes(student.id);
-                    
+
                     return (
-                      <div 
-                        key={student.id} 
+                      <div
+                        key={student.id}
                         className={`flex items-center space-x-3 border rounded-md p-3 ${
-                          isEnrolled ? "bg-muted/40" : isSelected ? "bg-primary/5" : "hover:bg-gray-50"
+                          isEnrolled
+                            ? "bg-muted/40"
+                            : isSelected
+                              ? "bg-primary/5"
+                              : "hover:bg-gray-50"
                         }`}
                       >
-                        <Checkbox 
+                        <Checkbox
                           id={`student-${student.id}`}
                           checked={isEnrolled || isSelected}
-                          onCheckedChange={() => toggleStudentSelection(student.id)}
+                          onCheckedChange={() =>
+                            toggleStudentSelection(student.id)
+                          }
                           disabled={isEnrolled}
                           className={isEnrolled ? "opacity-70" : ""}
                         />
-                        
+
                         <div className="flex-1 flex justify-between items-center">
                           <div>
                             <label
                               htmlFor={`student-${student.id}`}
                               className={`text-sm font-medium leading-none ${
-                                isEnrolled ? "cursor-not-allowed text-muted-foreground" : "cursor-pointer"
+                                isEnrolled
+                                  ? "cursor-not-allowed text-muted-foreground"
+                                  : "cursor-pointer"
                               }`}
                             >
                               {student.fullName}
                             </label>
-                            <p className="text-sm text-muted-foreground">{student.email}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {student.email}
+                            </p>
                           </div>
-                          
+
                           {isEnrolled && (
                             <Badge className="bg-green-50 text-green-700 hover:bg-green-50 ml-2">
                               <CheckCircle2 className="h-3 w-3 inline-block mr-1" />
@@ -1049,21 +1120,25 @@ export default function ManageCourses() {
               </ScrollArea>
             </>
           )}
-          
+
           <DialogFooter className="flex items-center justify-between pt-4 border-t mt-4">
             <div className="text-sm text-muted-foreground">
-              {selectedStudentIds.length} {selectedStudentIds.length === 1 ? 'student' : 'students'} selected
+              {selectedStudentIds.length}{" "}
+              {selectedStudentIds.length === 1 ? "student" : "students"}{" "}
+              selected
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setEnrollmentCourse(null)}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleEnrollStudents}
-                disabled={batchEnrollmentLoading || selectedStudentIds.length === 0}
+                disabled={
+                  batchEnrollmentLoading || selectedStudentIds.length === 0
+                }
                 className="gap-2"
               >
                 {batchEnrollmentLoading ? (

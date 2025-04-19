@@ -459,12 +459,25 @@ export class DatabaseStorage implements IStorage {
 
   // Enrollment Methods
   async getEnrollment(userId: number, courseId: number): Promise<Enrollment | undefined> {
-    const [enrollment] = await this.db
-      .select()
-      .from(enrollments)
-      .where(eq(enrollments.userId, userId))
-      .where(eq(enrollments.courseId, courseId));
-    return enrollment;
+    console.log(`Checking enrollment for userId=${userId}, courseId=${courseId}`);
+    
+    try {
+      // Use explicit and() for combining conditions to ensure both are applied
+      const result = await this.db.select().from(enrollments)
+        .where(sql`${enrollments.userId} = ${userId} AND ${enrollments.courseId} = ${courseId}`);
+      
+      console.log(`Enrollment check result:`, result);
+      
+      if (result && result.length > 0) {
+        return result[0];
+      }
+      
+      console.log(`No enrollment found for userId=${userId}, courseId=${courseId}`);
+      return undefined;
+    } catch (error) {
+      console.error(`Error in getEnrollment for userId=${userId}, courseId=${courseId}:`, error);
+      return undefined;
+    }
   }
 
   async listEnrollmentsByUser(userId: number): Promise<Enrollment[]> {
