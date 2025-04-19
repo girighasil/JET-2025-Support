@@ -7,7 +7,28 @@ async function parseApiError(res: Response): Promise<Error> {
     const contentType = res.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       const data = await res.json();
-      return new Error(JSON.stringify(data));
+      
+      // Create a custom error object with a user-friendly message
+      let errorMessage = "An error occurred";
+      
+      // Extract error message from various API response formats
+      if (typeof data.message === 'string') {
+        errorMessage = data.message;
+      } else if (Array.isArray(data.message) && data.message.length > 0) {
+        errorMessage = typeof data.message[0] === 'string' 
+          ? data.message[0] 
+          : data.message[0]?.message || "Invalid input";
+      } else if (data.error && typeof data.error === 'string') {
+        errorMessage = data.error;
+      } else if (typeof data === 'string') {
+        errorMessage = data;
+      }
+      
+      const error = new Error(errorMessage);
+      // Store original response data for debugging
+      (error as any).originalData = data;
+      (error as any).status = res.status;
+      return error;
     } else {
       const text = await res.text();
       return new Error(text || res.statusText);
