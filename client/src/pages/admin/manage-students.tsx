@@ -60,16 +60,23 @@ export default function ManageStudents() {
   const { data: studentEnrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
     queryKey: ['/api/enrollments', enrollmentUser?.id],
     enabled: !!enrollmentUser,
-    select: (data) => {
-      // Filter enrollments for the selected student
-      return Array.isArray(data) 
-        ? data.filter((enrollment: any) => enrollment.userId === enrollmentUser?.id)
-        : [];
+    queryFn: async () => {
+      if (!enrollmentUser) return [];
+      
+      console.log(`Fetching enrollments for student ${enrollmentUser.id}`);
+      // Explicitly fetch enrollments with userId filter
+      const res = await apiRequest('GET', `/api/enrollments?userId=${enrollmentUser.id}`);
+      const data = await res.json();
+      
+      console.log(`Found ${data.length} enrollments for student ${enrollmentUser.id}:`, data);
+      return data;
     }
   });
   
-  // Extract enrolled course IDs
-  const enrolledCourseIds = studentEnrollments.map((enrollment: any) => enrollment.courseId);
+  // Extract enrolled course IDs with safety check
+  const enrolledCourseIds = Array.isArray(studentEnrollments) 
+    ? studentEnrollments.map((enrollment: any) => enrollment.courseId) 
+    : [];
   
   // Filter to get only students
   const students = users.filter((user: any) => user.role === 'student');
@@ -215,15 +222,41 @@ export default function ManageStudents() {
   // Enroll student mutation
   const enrollStudentMutation = useMutation({
     mutationFn: async ({ userId, courseId }: { userId: number, courseId: number }) => {
-      const res = await apiRequest('POST', '/api/enrollments', {
-        userId,
-        courseId
-      });
-      return res.json();
+      console.log(`Enrolling student ${userId} in course ${courseId}`);
+      try {
+        const res = await apiRequest('POST', '/api/enrollments', {
+          userId,
+          courseId
+        });
+        
+        // Check if response is ok before parsing JSON
+        if (!res.ok) {
+          const errorData = await res.json();
+          // If the error is that student is already enrolled, we can handle this gracefully
+          if (errorData.message?.includes("already enrolled")) {
+            console.log(`Student ${userId} is already enrolled in course ${courseId}`);
+            return { 
+              alreadyEnrolled: true, 
+              message: errorData.message,
+              enrollment: errorData.enrollment 
+            };
+          }
+          throw new Error(errorData.message || 'Error enrolling student');
+        }
+        
+        const data = await res.json();
+        console.log(`Successfully enrolled student ${userId}, result:`, data);
+        return data;
+      } catch (error: any) {
+        console.error(`Failed to enroll student ${userId} in course ${courseId}:`, error);
+        throw error;
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+    onSuccess: (data) => {
+      if (!data.alreadyEnrolled) {
+        queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -236,11 +269,22 @@ export default function ManageStudents() {
   
   // Open enrollment dialog
   const handleOpenEnrollDialog = (student: any) => {
-    setEnrollmentUser(student);
+    console.log(`Opening enrollment dialog for student:`, student);
+    
+    // Reset state
     setSelectedCourses([]);
+    setEnrollmentUser(student);
     
     // Force refresh enrollments data for this student
+    queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
     queryClient.invalidateQueries({ queryKey: ['/api/enrollments', student.id] });
+    
+    // Explicitly fetch student enrollments to ensure we have the latest data
+    setTimeout(() => {
+      // This timeout ensures that the invalidation has time to complete
+      // before we update our UI state
+      console.log(`Refreshing enrollment data for student ${student.id}`);
+    }, 100);
   };
   
   // Handle enrollment submission
@@ -248,25 +292,86 @@ export default function ManageStudents() {
     if (!enrollmentUser || selectedCourses.length === 0) return;
     
     setEnrollmentLoading(true);
+    console.log(`Starting enrollment process for student:`, enrollmentUser);
+    console.log(`Selected course IDs:`, selectedCourses);
+    
+    // Track enrollment results
+    const results = {
+      success: 0,
+      alreadyEnrolled: 0,
+      failed: 0
+    };
     
     try {
       // Process each enrollment sequentially
       for (const courseId of selectedCourses) {
-        await enrollStudentMutation.mutateAsync({ 
-          userId: enrollmentUser.id, 
-          courseId 
+        try {
+          console.log(`Processing enrollment for student ${enrollmentUser.id} in course ${courseId}`);
+          
+          // Get course info for better error messages
+          const course = courses.find((c: any) => c.id === courseId);
+          const courseName = course ? course.title : `Course ${courseId}`;
+          
+          const result = await enrollStudentMutation.mutateAsync({ 
+            userId: enrollmentUser.id, 
+            courseId 
+          });
+          
+          if (result.alreadyEnrolled) {
+            console.log(`Student ${enrollmentUser.id} is already enrolled in course ${courseId}`);
+            results.alreadyEnrolled++;
+          } else {
+            console.log(`Successfully enrolled student ${enrollmentUser.id} in course ${courseId}`);
+            results.success++;
+          }
+        } catch (error) {
+          console.error(`Error enrolling student ${enrollmentUser.id} in course ${courseId}:`, error);
+          results.failed++;
+        }
+      }
+      
+      // Force refresh enrollments after all the operations
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      // Show appropriate toast message based on results
+      if (results.success > 0 || results.alreadyEnrolled > 0) {
+        const successMsg = results.success > 0 
+          ? `${results.success} ${results.success === 1 ? 'course' : 'courses'} successfully` 
+          : '';
+        
+        const alreadyMsg = results.alreadyEnrolled > 0 
+          ? `${results.alreadyEnrolled} ${results.alreadyEnrolled === 1 ? 'course' : 'courses'} already enrolled` 
+          : '';
+        
+        const failedMsg = results.failed > 0 
+          ? `${results.failed} ${results.failed === 1 ? 'enrollment' : 'enrollments'} failed` 
+          : '';
+        
+        const messages = [successMsg, alreadyMsg, failedMsg].filter(Boolean).join(', ');
+        
+        toast({
+          title: 'Enrollment Process Complete',
+          description: `${enrollmentUser.fullName}: ${messages}.`,
+          variant: results.failed > 0 ? 'default' : 'default',
+        });
+      } else if (results.failed > 0) {
+        toast({
+          title: 'Enrollment Failed',
+          description: `Failed to enroll ${enrollmentUser.fullName} in any courses.`,
+          variant: 'destructive',
         });
       }
       
-      toast({
-        title: 'Enrollment Successful',
-        description: `${enrollmentUser.fullName} has been enrolled in ${selectedCourses.length} ${selectedCourses.length === 1 ? 'course' : 'courses'}.`,
-      });
-      
       setEnrollmentUser(null);
       setSelectedCourses([]);
-    } catch (error) {
-      // Error is handled by the mutation
+    } catch (error: any) {
+      console.error('Unexpected error in batch enrollment:', error);
+      toast({
+        title: 'Enrollment Error',
+        description: error.message || 'An unexpected error occurred during enrollment.',
+        variant: 'destructive',
+      });
     } finally {
       setEnrollmentLoading(false);
     }
