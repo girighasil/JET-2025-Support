@@ -537,12 +537,41 @@ export default function ManageEnrollments() {
         </Dialog>
       }
     >
+      {selectedCourse && (
+        <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+          <h3 className="text-lg font-medium">
+            <span className="mr-2">Showing enrollments for:</span>
+            <Badge variant="secondary" className="bg-primary/10 hover:bg-primary/20 text-primary">
+              {selectedCourse.title}
+            </Badge>
+          </h3>
+          <div className="mt-2 flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSelectedCourse(null)}
+            >
+              Show All Enrollments
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => openBatchEnrollDialog(selectedCourse)}
+              className="flex items-center gap-1"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>Enroll Students</span>
+            </Button>
+          </div>
+        </div>
+      )}
+      
       {isLoading ? (
         <Skeleton className="h-[600px] w-full" />
-      ) : enrollments.length > 0 ? (
+      ) : filteredEnrollments.length > 0 ? (
         <DataTable 
           columns={enrollmentColumns} 
-          data={enrollments} 
+          data={filteredEnrollments} 
           searchable={true}
           searchPlaceholder="Search enrollments..."
         />
