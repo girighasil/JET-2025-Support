@@ -14,7 +14,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, desc, count, sql } from 'drizzle-orm';
+import { eq, desc, count, sql, and } from 'drizzle-orm';
 import * as schema from "@shared/schema";
 import connectPgSimple from "connect-pg-simple";
 import session from "express-session";
@@ -513,11 +513,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEnrollment(userId: number, courseId: number): Promise<boolean> {
-    await this.db
+    console.log(`Deleting enrollment for userId=${userId}, courseId=${courseId}`);
+    
+    const result = await this.db
       .delete(enrollments)
-      .where(eq(enrollments.userId, userId))
-      .where(eq(enrollments.courseId, courseId));
-    return true;
+      .where(
+        and(
+          eq(enrollments.userId, userId),
+          eq(enrollments.courseId, courseId)
+        )
+      );
+    
+    console.log(`Deletion result:`, result);
+    return result.count > 0;
   }
 
   // Doubt Session Methods
