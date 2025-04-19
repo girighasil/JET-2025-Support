@@ -45,6 +45,8 @@ export default function ManageStudents() {
   const [enrollmentUser, setEnrollmentUser] = useState<any>(null);
   const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [viewEnrollmentUser, setViewEnrollmentUser] = useState<any>(null);
+  const [deleteConfirmEnrollment, setDeleteConfirmEnrollment] = useState<any>(null);
   
   // Fetch students
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
@@ -70,6 +72,34 @@ export default function ManageStudents() {
       
       console.log(`Found ${data.length} enrollments for student ${enrollmentUser.id}:`, data);
       return data;
+    }
+  });
+  
+  // Fetch enrollments when viewing a student's enrollments
+  const { data: viewStudentEnrollments = [], isLoading: isViewEnrollmentsLoading } = useQuery({
+    queryKey: ['/api/enrollments', viewEnrollmentUser?.id],
+    enabled: !!viewEnrollmentUser,
+    queryFn: async () => {
+      if (!viewEnrollmentUser) return [];
+      
+      console.log(`Fetching enrollments for student ${viewEnrollmentUser.id} for viewing`);
+      // Get enrollments with course details
+      const res = await apiRequest('GET', `/api/enrollments?userId=${viewEnrollmentUser.id}`);
+      const enrollments = await res.json();
+      
+      // Enrich with course details
+      const enrichedEnrollments = enrollments.map((enrollment: any) => {
+        const course = courses.find((c: any) => c.id === enrollment.courseId);
+        return {
+          ...enrollment,
+          courseName: course?.title || `Course ${enrollment.courseId}`,
+          courseCategory: course?.category || 'Unknown',
+          courseDescription: course?.description || '',
+        };
+      });
+      
+      console.log(`Found ${enrichedEnrollments.length} enriched enrollments for student ${viewEnrollmentUser.id}:`, enrichedEnrollments);
+      return enrichedEnrollments;
     }
   });
   
@@ -104,6 +134,74 @@ export default function ManageStudents() {
     }
   });
   
+  // Delete enrollment mutation
+  const deleteEnrollmentMutation = useMutation({
+    mutationFn: async ({ userId, courseId }: { userId: number, courseId: number }) => {
+      console.log(`Deleting enrollment for student ${userId} in course ${courseId}`);
+      const res = await apiRequest('DELETE', `/api/enrollments/${userId}/${courseId}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error deleting enrollment');
+      }
+      
+      return { userId, courseId };
+    },
+    onSuccess: ({ userId, courseId }) => {
+      console.log(`Successfully deleted enrollment: user ${userId}, course ${courseId}`);
+      
+      // Update view enrollments cache
+      const currentEnrollments = queryClient.getQueryData(['/api/enrollments', userId]) || [];
+      if (Array.isArray(currentEnrollments)) {
+        // Optimistic update - modify the cache directly
+        const updatedEnrollments = (currentEnrollments as any[]).filter(
+          e => e.courseId !== courseId
+        );
+        queryClient.setQueryData(['/api/enrollments', userId], updatedEnrollments);
+      }
+      
+      // Invalidate affected queries
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      toast({
+        title: 'Enrollment Removed',
+        description: 'The student has been unenrolled from the course.',
+      });
+      
+      // Close the confirmation dialog
+      setDeleteConfirmEnrollment(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to Remove Enrollment',
+        description: error.message || 'There was an error removing the enrollment.',
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Handle removing an enrollment
+  const handleDeleteEnrollment = () => {
+    if (deleteConfirmEnrollment) {
+      deleteEnrollmentMutation.mutate({
+        userId: deleteConfirmEnrollment.userId,
+        courseId: deleteConfirmEnrollment.courseId
+      });
+    }
+  };
+  
+  // Handle opening the view enrollments dialog
+  const handleOpenViewEnrollmentsDialog = (student: any) => {
+    console.log(`Opening view enrollments dialog for student:`, student);
+    
+    // Reset state
+    setViewEnrollmentUser(student);
+    
+    // Force refresh enrollments data for this student
+    queryClient.invalidateQueries({ queryKey: ['/api/enrollments', student.id] });
+  };
+
   // Table columns for students
   const studentColumns = [
     {
@@ -148,11 +246,30 @@ export default function ManageStudents() {
       id: 'enrolledCourses',
       header: 'Enrolled Courses',
       cell: ({ row }: any) => {
-        const enrollmentCount = row.original.enrollmentCount || 0;
+        const student = row.original;
+        const enrollmentCount = student.enrollmentCount || 0;
+        
         return (
-          <Badge variant="outline" className="whitespace-nowrap">
-            {enrollmentCount} {enrollmentCount === 1 ? 'Course' : 'Courses'}
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="whitespace-nowrap">
+              {enrollmentCount} {enrollmentCount === 1 ? 'Course' : 'Courses'}
+            </Badge>
+            
+            {enrollmentCount > 0 && (
+              <Button 
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-blue-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenViewEnrollmentsDialog(student);
+                }}
+              >
+                <Edit className="h-3 w-3 mr-1" />
+                <span className="text-xs">View</span>
+              </Button>
+            )}
+          </div>
         );
       }
     },
