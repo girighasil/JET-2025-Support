@@ -705,6 +705,134 @@ export default function ManageStudents() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* View Enrollments Dialog */}
+      <Dialog open={!!viewEnrollmentUser} onOpenChange={(open) => !open && setViewEnrollmentUser(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Student Enrollments</DialogTitle>
+            <DialogDescription>
+              Viewing courses that <span className="font-medium">{viewEnrollmentUser?.fullName}</span> is enrolled in.
+              You can remove students from courses using the remove button.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isViewEnrollmentsLoading ? (
+            <div className="py-6">
+              <Skeleton className="h-[200px] w-full" />
+            </div>
+          ) : viewStudentEnrollments.length === 0 ? (
+            <div className="py-6 text-center">
+              <BookOpen className="h-14 w-14 mx-auto mb-4 text-muted-foreground/60" />
+              <p className="font-medium text-muted-foreground mb-2">No enrollments found</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                The student is not enrolled in any courses.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setViewEnrollmentUser(null);
+                  handleOpenEnrollDialog(viewEnrollmentUser);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Enroll in Courses
+              </Button>
+            </div>
+          ) : (
+            <div className="py-4">
+              <div className="rounded-md border">
+                <ScrollArea className="h-[300px]">
+                  <div className="p-4">
+                    {viewStudentEnrollments.map((enrollment: any) => (
+                      <div 
+                        key={`${enrollment.userId}-${enrollment.courseId}`} 
+                        className="flex items-center justify-between py-3 px-2 border-b last:border-0"
+                      >
+                        <div className="max-w-[400px]">
+                          <h4 className="font-medium">{enrollment.courseName}</h4>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {enrollment.courseDescription || 'No description available'}
+                          </p>
+                          <div className="mt-1 text-xs text-muted-foreground flex items-center">
+                            <span className="flex items-center">
+                              Enrolled on {enrollment.enrolledAt 
+                                ? format(new Date(enrollment.enrolledAt), 'MMM d, yyyy') 
+                                : 'unknown date'}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDeleteConfirmEnrollment({
+                              userId: enrollment.userId,
+                              courseId: enrollment.courseId,
+                              courseName: enrollment.courseName,
+                              studentName: viewEnrollmentUser.fullName
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 ml-auto"
+                        >
+                          <Trash className="h-4 w-4" />
+                          <span className="ml-1">Remove</span>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="pt-4">
+            <Button variant="outline" onClick={() => setViewEnrollmentUser(null)}>
+              Close
+            </Button>
+            <Button 
+              variant="default"
+              onClick={() => {
+                setViewEnrollmentUser(null);
+                handleOpenEnrollDialog(viewEnrollmentUser);
+              }}
+            >
+              Enroll in More Courses
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Enrollment Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmEnrollment} onOpenChange={(open) => !open && setDeleteConfirmEnrollment(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Unenrollment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove <span className="font-medium">{deleteConfirmEnrollment?.studentName}</span> from <span className="font-medium">{deleteConfirmEnrollment?.courseName}</span>?
+              This action cannot be undone and the student will lose access to all course content and progress.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmEnrollment(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteEnrollment}
+              disabled={deleteEnrollmentMutation.isPending}
+            >
+              {deleteEnrollmentMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Remove Enrollment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
