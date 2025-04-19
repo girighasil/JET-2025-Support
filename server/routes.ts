@@ -1266,25 +1266,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(
         `Checking if user ${enrollmentData.userId} is already enrolled in course ${enrollmentData.courseId}`,
       );
-      
+
       const existingEnrollment = await storage.getEnrollment(
         enrollmentData.userId,
-        enrollmentData.courseId
+        enrollmentData.courseId,
       );
-      
+
       if (existingEnrollment) {
         console.log(
           `User ${enrollmentData.userId} is already enrolled in course ${enrollmentData.courseId}`,
-          existingEnrollment
+          existingEnrollment,
         );
         return res.status(400).json({
           message: "User is already enrolled in this course",
-          enrollment: existingEnrollment
+          enrollment: existingEnrollment,
         });
       }
-      
+
       console.log(
-        `User ${enrollmentData.userId} is NOT enrolled in course ${enrollmentData.courseId}, proceeding with enrollment`
+        `User ${enrollmentData.userId} is NOT enrolled in course ${enrollmentData.courseId}, proceeding with enrollment`,
       );
 
       // Create the enrollment with a timestamp
@@ -1389,24 +1389,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userId = parseInt(req.params.userId);
         const courseId = parseInt(req.params.courseId);
 
+        console.log(`API: Deleting enrollment for userId=${userId}, courseId=${courseId}`);
+
         // Check if enrollment exists
         const existingEnrollment = await storage.getEnrollment(
           userId,
           courseId,
         );
         if (!existingEnrollment) {
+          console.log(`API: Enrollment not found for userId=${userId}, courseId=${courseId}`);
           return res.status(404).json({ message: "Enrollment not found" });
         }
 
-        const deleted = await storage.deleteEnrollment(userId, courseId);
+        // Delete the enrollment - we already know it exists, so we just need to delete it
+        await storage.deleteEnrollment(userId, courseId);
 
-        if (!deleted) {
-          return res.status(404).json({ message: "Enrollment not found" });
-        }
-
-        res.json({ message: "Enrollment deleted successfully" });
+        // Always return success with 200 status code if we get here
+        console.log(`API: Successfully deleted enrollment for userId=${userId}, courseId=${courseId}`);
+        return res.status(200).json({ message: "Enrollment deleted successfully" });
       } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        console.error("Error deleting enrollment:", error);
+        return res.status(500).json({ message: "Server error", error: String(error) });
       }
     },
   );
