@@ -123,12 +123,14 @@ export default function ManageCourses() {
   });
   
   // Fetch all students for enrollment dialog
-  const { data: users = [], isLoading: isUsersLoading } = useQuery({
+  const { data: users = [], isLoading: isUsersLoading } = useQuery<any[]>({
     queryKey: ['/api/users'],
   });
   
   // Filter to get only students
-  const students = users.filter((user: any) => user.role === 'student');
+  const students = Array.isArray(users) 
+    ? users.filter((user: any) => user && user.role === 'student') 
+    : [];
   
   // Fetch enrollments when a course is selected for enrollment
   const { data: courseEnrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
@@ -500,12 +502,25 @@ export default function ManageCourses() {
   // Toggle all students
   const toggleAllStudents = (checked: boolean) => {
     if (checked) {
-      // Only select students who are not already enrolled
-      const availableStudentIds = students
-        .filter((student: any) => !enrolledStudentIds.includes(student.id))
-        .map((student: any) => student.id);
+      // Find all students who are eligible for enrollment (not already enrolled)
+      const eligibleStudents = students.filter((student: any) => {
+        // Skip if id is invalid
+        if (!student || typeof student.id !== 'number') {
+          console.warn('Invalid student object found:', student);
+          return false;
+        }
+        
+        // Only include students who are not already enrolled
+        return !enrolledStudentIds.includes(student.id);
+      });
+      
+      // Extract just the IDs for selection
+      const availableStudentIds = eligibleStudents.map((student: any) => student.id);
+      
+      console.log(`Selecting ${availableStudentIds.length} eligible students for enrollment`);
       setSelectedStudentIds(availableStudentIds);
     } else {
+      // Deselect all
       setSelectedStudentIds([]);
     }
   };
@@ -918,39 +933,48 @@ export default function ManageCourses() {
               <ScrollArea className="h-[300px] pr-4">
                 <div className="space-y-3">
                   {students.map((student: any) => {
+                    // Check if student is already enrolled
                     const isEnrolled = enrolledStudentIds.includes(student.id);
+                    // Check if student is currently selected for enrollment
+                    const isSelected = selectedStudentIds.includes(student.id);
+                    
                     return (
                       <div 
                         key={student.id} 
                         className={`flex items-center space-x-3 border rounded-md p-3 ${
-                          isEnrolled ? 'bg-muted' : 'hover:bg-gray-50'
+                          isEnrolled ? "bg-muted/40" : isSelected ? "bg-primary/5" : "hover:bg-gray-50"
                         }`}
                       >
                         <Checkbox 
                           id={`student-${student.id}`}
-                          checked={isEnrolled ? true : selectedStudentIds.includes(student.id)}
+                          checked={isEnrolled || isSelected}
                           onCheckedChange={() => toggleStudentSelection(student.id)}
                           disabled={isEnrolled}
+                          className={isEnrolled ? "opacity-70" : ""}
                         />
-                        <div className="flex-1">
-                          <label
-                            htmlFor={`student-${student.id}`}
-                            className={`text-sm font-medium leading-none ${
-                              isEnrolled ? 'cursor-not-allowed text-muted-foreground' : 'cursor-pointer'
-                            }`}
-                          >
-                            {student.fullName}
-                          </label>
-                          <p className="text-sm text-muted-foreground">{student.email}</p>
+                        
+                        <div className="flex-1 flex justify-between items-center">
+                          <div>
+                            <label
+                              htmlFor={`student-${student.id}`}
+                              className={`text-sm font-medium leading-none ${
+                                isEnrolled ? "cursor-not-allowed text-muted-foreground" : "cursor-pointer"
+                              }`}
+                            >
+                              {student.fullName}
+                            </label>
+                            <p className="text-sm text-muted-foreground">{student.email}</p>
+                          </div>
+                          
                           {isEnrolled && (
-                            <p className="text-xs text-green-600 mt-1">
+                            <Badge className="bg-green-50 text-green-700 hover:bg-green-50 ml-2">
                               <CheckCircle2 className="h-3 w-3 inline-block mr-1" />
-                              Already enrolled
-                            </p>
+                              Already Enrolled
+                            </Badge>
                           )}
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </ScrollArea>
