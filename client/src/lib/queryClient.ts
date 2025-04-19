@@ -1,6 +1,15 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { handleApiError } from "./utils";
 
+// Flag to track if user is in process of logging out
+let isLoggingOut = false;
+
+// Function to set the logging out state
+export function setLoggingOut(value: boolean) {
+  isLoggingOut = value;
+  console.log(`Logout state set to: ${value}`);
+}
+
 // Parse API error responses into a user-friendly format
 async function parseApiError(res: Response): Promise<Error> {
   try {
@@ -77,8 +86,13 @@ export async function apiRequest(
     await throwIfResNotOk(res);
     return res;
   } catch (error) {
-    // Handle API errors with user-friendly messages
-    handleApiError(error);
+    // Skip error handling for 401s during logout
+    if (!(isLoggingOut && error.status === 401)) {
+      // Handle API errors with user-friendly messages
+      handleApiError(error);
+    } else {
+      console.log("Suppressing 401 error during logout:", error.message);
+    }
     throw error;
   }
 }
@@ -101,9 +115,12 @@ export const getQueryFn: <T>(options: {
       await throwIfResNotOk(res);
       return await res.json();
     } catch (error) {
-      // Only handle errors if they're not 401 unauthorized (those are expected in some cases)
-      if (!(error instanceof Error && error.message.includes("401"))) {
+      // Skip error handling during logout or for expected 401s
+      if (!(isLoggingOut && error.status === 401) && 
+          !(error instanceof Error && error.message.includes("401"))) {
         handleApiError(error);
+      } else if (isLoggingOut && error.status === 401) {
+        console.log("Suppressing 401 error in query during logout");
       }
       throw error;
     }

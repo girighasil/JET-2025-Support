@@ -1,8 +1,14 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useEffect,
+} from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 // User type definition
 export interface User {
@@ -10,7 +16,7 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: "admin" | "teacher" | "student";
   avatar?: string;
 }
 
@@ -30,7 +36,7 @@ export interface RegisterData {
   password: string;
   email: string;
   fullName: string;
-  role?: 'admin' | 'teacher' | 'student';
+  role?: "admin" | "teacher" | "student";
 }
 
 // Create auth context
@@ -45,11 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Query to get session state
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['/api/user'],
+    queryKey: ["/api/user"],
     queryFn: async ({ queryKey }) => {
       try {
         const res = await fetch(queryKey[0] as string, {
-          credentials: 'include',
+          credentials: "include",
         });
         if (res.status === 401) {
           return null;
@@ -59,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return res.json();
       } catch (error) {
-        console.error('Auth session error:', error);
+        console.error("Auth session error:", error);
         return null;
       }
     },
@@ -76,79 +82,92 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login mutation
   const loginMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const res = await apiRequest('POST', '/api/login', { username, password });
+    mutationFn: async ({
+      username,
+      password,
+    }: {
+      username: string;
+      password: string;
+    }) => {
+      const res = await apiRequest("POST", "/api/login", {
+        username,
+        password,
+      });
       return res.json();
     },
     onSuccess: (data) => {
       setUser(data);
-      queryClient.setQueryData(['/api/user'], data);
+      queryClient.setQueryData(["/api/user"], data);
       toast({
-        title: 'Login successful',
+        title: "Login successful",
         description: `Welcome back, ${data.fullName}!`,
       });
-      
+
       // Redirect based on role
-      if (data.role === 'student') {
-        setLocation('/student/dashboard');
+      if (data.role === "student") {
+        setLocation("/student/dashboard");
       } else {
-        setLocation('/admin/dashboard');
+        setLocation("/admin/dashboard");
       }
     },
     onError: (error: Error) => {
       toast({
-        title: 'Login failed',
-        description: error.message || 'Invalid username or password',
-        variant: 'destructive',
+        title: "Login failed",
+        description: error.message || "Invalid username or password",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest('POST', '/api/register', userData);
+      const res = await apiRequest("POST", "/api/register", userData);
       return res.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Registration successful',
-        description: 'You have been registered successfully. Please login.',
+        title: "Registration successful",
+        description: "You have been registered successfully. Please login.",
       });
-      setLocation('/auth');
+      setLocation("/auth");
     },
     onError: (error: Error) => {
       toast({
-        title: 'Registration failed',
-        description: error.message || 'Failed to register. Please try again.',
-        variant: 'destructive',
+        title: "Registration failed",
+        description: error.message || "Failed to register. Please try again.",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/logout', {});
-      return res.json();
+      await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      // Clear user data
       setUser(null);
-      queryClient.setQueryData(['/api/user'], null);
-      queryClient.invalidateQueries();
-      toast({
-        title: 'Logged out',
-        description: 'You have been logged out successfully.',
-      });
-      setLocation('/');
+
+      // Clear user query data
+      queryClient.setQueryData(["/api/user"], null);
+
+      // Invalidate and remove all queries that require authentication
+      queryClient.clear();
+
+      // Optional: Instead of clear(), you could specifically invalidate known endpoints:
+      // queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      // queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      // etc.
     },
     onError: (error: Error) => {
       toast({
-        title: 'Logout failed',
-        description: error.message || 'Something went wrong',
-        variant: 'destructive',
+        title: "Logout failed",
+        description: error.message || "Something went wrong while logging out",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Login function
@@ -158,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       // Error is already handled by onError callback, no need to rethrow
       // This prevents the error from propagating up and showing the runtime error overlay
-      console.error('Login error handled:', error);
+      console.error("Login error handled:", error);
     }
   };
 
@@ -169,18 +188,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       // Error is already handled by onError callback, no need to rethrow
       // This prevents the error from propagating up and showing the runtime error overlay
-      console.error('Registration error handled:', error);
+      console.error("Registration error handled:", error);
     }
   };
 
   // Logout function
+  // Logout function
   const logout = async () => {
     try {
       await logoutMutation.mutateAsync();
+
+      // Clear all queries from the cache to prevent re-fetching with stale credentials
+      queryClient.clear();
+
+      // Force redirect to login/auth page
+      window.location.href = "/auth";
+
+      // Alternative if using wouter: navigate('/auth');
     } catch (error) {
-      // Error is already handled by onError callback, no need to rethrow
-      // This prevents the error from propagating up and showing the runtime error overlay
-      console.error('Logout error handled:', error);
+      console.error("Logout error handled:", error);
     }
   };
 
@@ -201,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
