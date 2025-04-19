@@ -150,6 +150,18 @@ export function handleApiError(error: any, showToast = true) {
     else if (error.message.includes('Invalid URL')) {
       errorMessage = 'The provided URL is invalid.';
     }
+    // Check for JSON-formatted error messages (from our custom API errors)
+    else if (error.message.startsWith('{') && error.message.endsWith('}')) {
+      try {
+        const parsedError = JSON.parse(error.message);
+        if (parsedError.message) {
+          errorMessage = parsedError.message;
+        }
+      } catch (parseError) {
+        // If JSON parsing fails, fall back to the original message
+        errorMessage = error.message;
+      }
+    }
     // Use the error message directly
     else {
       errorMessage = error.message;

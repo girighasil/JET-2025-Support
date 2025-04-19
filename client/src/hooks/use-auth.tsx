@@ -153,17 +153,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login function
   const login = async (username: string, password: string) => {
-    await loginMutation.mutateAsync({ username, password });
+    try {
+      await loginMutation.mutateAsync({ username, password });
+    } catch (error) {
+      // Error is already handled by onError callback, no need to rethrow
+      // This prevents the error from propagating up and showing the runtime error overlay
+      console.error('Login error handled:', error);
+    }
   };
 
   // Register function
   const register = async (userData: RegisterData) => {
-    await registerMutation.mutateAsync(userData);
+    try {
+      await registerMutation.mutateAsync(userData);
+    } catch (error) {
+      // Error is already handled by onError callback, no need to rethrow
+      // This prevents the error from propagating up and showing the runtime error overlay
+      console.error('Registration error handled:', error);
+    }
   };
 
   // Logout function
   const logout = async () => {
-    await logoutMutation.mutateAsync();
+    try {
+      await logoutMutation.mutateAsync();
+    } catch (error) {
+      // Error is already handled by onError callback, no need to rethrow
+      // This prevents the error from propagating up and showing the runtime error overlay
+      console.error('Logout error handled:', error);
+    }
   };
 
   // Auth context value
