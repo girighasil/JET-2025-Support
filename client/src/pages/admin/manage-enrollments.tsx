@@ -198,6 +198,7 @@ export default function ManageEnrollments() {
   // Delete enrollment mutation
   const deleteEnrollmentMutation = useMutation({
     mutationFn: async ({ userId, courseId }: { userId: number; courseId: number }) => {
+      console.log(`Deleting enrollment for userId=${userId}, courseId=${courseId}`);
       const res = await apiRequest('DELETE', `/api/enrollments/${userId}/${courseId}`, {});
       return res.json();
     },
@@ -210,6 +211,7 @@ export default function ManageEnrollments() {
       setDeleteConfirmEnrollment(null);
     },
     onError: (error: Error) => {
+      console.error('Delete enrollment error:', error);
       toast({
         title: 'Failed to Delete Enrollment',
         description: error.message || 'There was an error deleting the enrollment.',
@@ -399,6 +401,8 @@ export default function ManageEnrollments() {
   // Handle enrollment deletion
   const handleDeleteEnrollment = () => {
     if (deleteConfirmEnrollment) {
+      console.log('Deletion confirmation object:', deleteConfirmEnrollment);
+      
       deleteEnrollmentMutation.mutate({
         userId: deleteConfirmEnrollment.studentId,
         courseId: deleteConfirmEnrollment.courseId
