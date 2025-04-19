@@ -1266,36 +1266,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(
         `Checking if user ${enrollmentData.userId} is already enrolled in course ${enrollmentData.courseId}`,
       );
-      try {
-        // Explicitly query enrollments table with both conditions
-        const enrollmentQuery = await db
-          .select()
-          .from(enrollments)
-          .where(
-            and(
-              eq(enrollments.userId, enrollmentData.userId),
-              eq(enrollments.courseId, enrollmentData.courseId),
-            ),
-          );
-
-        console.log("Enrollment check query result:", enrollmentQuery);
-
-        if (enrollmentQuery && enrollmentQuery.length > 0) {
-          console.log(
-            `User ${enrollmentData.userId} is already enrolled in course ${enrollmentData.courseId}`,
-          );
-          return res.status(400).json({
-            message: "User is already enrolled in this course",
-            enrollment: enrollmentQuery[0],
-          });
-        }
-
+      
+      const existingEnrollment = await storage.getEnrollment(
+        enrollmentData.userId,
+        enrollmentData.courseId
+      );
+      
+      if (existingEnrollment) {
         console.log(
-          `User ${enrollmentData.userId} is NOT enrolled in course ${enrollmentData.courseId}, proceeding with enrollment`,
+          `User ${enrollmentData.userId} is already enrolled in course ${enrollmentData.courseId}`,
+          existingEnrollment
         );
-      } catch (checkError) {
-        console.error("Error checking enrollment:", checkError);
+        return res.status(400).json({
+          message: "User is already enrolled in this course",
+          enrollment: existingEnrollment
+        });
       }
+      
+      console.log(
+        `User ${enrollmentData.userId} is NOT enrolled in course ${enrollmentData.courseId}, proceeding with enrollment`
+      );
 
       // Create the enrollment with a timestamp
       console.log(
