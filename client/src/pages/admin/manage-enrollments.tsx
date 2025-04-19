@@ -229,9 +229,7 @@ export default function ManageEnrollments() {
   });
   
   // Table columns for enrollments
-  // Fix UserMinus import - sometimes Lucide React doesn't export this
-  // Use Trash icon with different styling as an alternative
-  const RemoveIcon = Trash;
+  // Use the trash icon as a removal indicator
   
   const enrollmentColumns = selectedCourse ? [
     // When viewing enrollments for a specific course, don't show the course column
