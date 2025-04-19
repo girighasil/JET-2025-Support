@@ -256,7 +256,7 @@ export default function ManageStudents() {
           <div className="flex items-center">
             <Badge 
               variant="secondary" 
-              className="whitespace-nowrap cursor-pointer px-3 py-1.5 hover:bg-slate-200 transition-colors rounded-lg font-medium border border-slate-300"
+              className="whitespace-nowrap cursor-pointer px-3 py-1.5 hover:bg-slate-200 transition-colors rounded-lg font-medium border border-slate-300 flex items-center"
               onClick={(e) => {
                 e.stopPropagation();
                 if (enrollmentCount > 0) {
@@ -268,6 +268,7 @@ export default function ManageStudents() {
             >
               <BookOpen className="h-3.5 w-3.5 mr-1.5" />
               {enrollmentCount} {enrollmentCount === 1 ? 'Course' : 'Courses'}
+              <Edit className="h-3.5 w-3.5 ml-1.5" />
             </Badge>
           </div>
         );

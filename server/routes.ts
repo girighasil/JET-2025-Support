@@ -84,14 +84,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // For students, get enrollment count
             if (user.role === 'student') {
               // Get enrollments for this user
-              const enrollments = await db
-                .select()
-                .from(enrollments)
-                .where(eq(enrollments.userId, user.id));
+              const userEnrollments = await storage.listEnrollmentsByUser(user.id);
               
               return {
                 ...userWithoutPassword,
-                enrollmentCount: enrollments.length
+                enrollmentCount: userEnrollments.length
               };
             }
             
