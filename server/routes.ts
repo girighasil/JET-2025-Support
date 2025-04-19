@@ -17,7 +17,7 @@ import {
   insertEnrollmentSchema,
   insertDoubtSessionSchema,
   insertStudyTimeSchema,
-  enrollments
+  enrollments as enrollmentsTable
 } from "@shared/schema";
 
 // Import route modules
