@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation, useRoute } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -303,12 +304,14 @@ export default function ManageCourses() {
             >
               <Trash className="h-4 w-4" />
             </Button>
-            <a
-              href={`/admin/manage-enrollments?courseId=${course.id}`}
-              className="text-primary hover:underline text-sm mr-2"
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/admin/manage-enrollments?courseId=${course.id}`)}
+              className="text-primary hover:text-primary-dark p-0 h-auto"
             >
               View Enrollments
-            </a>
+            </Button>
             <Button
               variant="outline"
               size="sm"
