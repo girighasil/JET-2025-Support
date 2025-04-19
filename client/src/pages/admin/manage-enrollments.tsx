@@ -43,7 +43,6 @@ import {
   XCircle,
   Loader2,
   UserPlus,
-  UserMinus,
   Check
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -229,8 +228,6 @@ export default function ManageEnrollments() {
   });
   
   // Table columns for enrollments
-  // Use the trash icon as a removal indicator
-  
   const enrollmentColumns = selectedCourse ? [
     // When viewing enrollments for a specific course, don't show the course column
     // Just show student name, enrollment date, status, and remove button
@@ -295,7 +292,7 @@ export default function ManageEnrollments() {
               title="Remove student from this course"
               className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
             >
-              <RemoveIcon className="h-4 w-4" />
+              <Trash className="h-4 w-4" />
               <span>Remove</span>
             </Button>
           </div>
@@ -385,7 +382,7 @@ export default function ManageEnrollments() {
               title="Remove student from this course"
               className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
             >
-              <RemoveIcon className="h-4 w-4" />
+              <Trash className="h-4 w-4" />
               <span>Remove</span>
             </Button>
           </div>
@@ -671,8 +668,8 @@ export default function ManageEnrollments() {
             </label>
           </div>
           
-          <ScrollArea className="h-[300px] rounded-md border p-4">
-            <div className="space-y-3">
+          <ScrollArea className="h-[250px] border rounded-md p-2">
+            <div className="space-y-2">
               {students.map((student: any) => {
                 const isEnrolled = enrolledStudentIds.includes(student.id);
                 const isSelected = selectedStudentIds.includes(student.id);
@@ -680,33 +677,28 @@ export default function ManageEnrollments() {
                 return (
                   <div 
                     key={student.id} 
-                    className={`flex items-center gap-3 p-2 rounded ${
-                      isEnrolled ? 'bg-gray-100 opacity-60' : isSelected ? 'bg-blue-50' : ''
+                    className={`p-2 rounded-md flex items-center justify-between ${
+                      isEnrolled ? 'bg-gray-100' : 'hover:bg-gray-50'
                     }`}
                   >
-                    <Checkbox 
-                      id={`student-${student.id}`} 
-                      checked={isEnrolled || isSelected} 
-                      onCheckedChange={() => toggleStudentSelection(student.id)}
-                      disabled={isEnrolled}
-                    />
-                    <div className="flex items-center gap-3 flex-1">
+                    <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
                         <Users className="h-4 w-4 text-gray-500" />
                       </div>
-                      <div className="flex flex-col">
-                        <label 
-                          htmlFor={`student-${student.id}`} 
-                          className={`text-sm font-medium cursor-pointer ${isEnrolled ? 'text-gray-500' : ''}`}
-                        >
-                          {student.fullName}
-                        </label>
-                        <span className="text-xs text-gray-500">{student.email}</span>
+                      <div>
+                        <p className="text-sm font-medium">{student.fullName}</p>
+                        <p className="text-xs text-gray-500">{student.email}</p>
                       </div>
-                      {isEnrolled && (
-                        <Badge className="ml-auto bg-gray-200 text-gray-700 hover:bg-gray-200">
-                          Already Enrolled
-                        </Badge>
+                    </div>
+                    <div>
+                      {isEnrolled ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Already Enrolled</Badge>
+                      ) : (
+                        <Checkbox 
+                          checked={isSelected} 
+                          onCheckedChange={() => toggleStudentSelection(student.id)} 
+                          className="rounded-sm"
+                        />
                       )}
                     </div>
                   </div>
@@ -715,10 +707,7 @@ export default function ManageEnrollments() {
             </div>
           </ScrollArea>
           
-          <DialogFooter className="flex justify-between items-center pt-2">
-            <div className="text-sm text-muted-foreground">
-              Selected {selectedStudentIds.length} student{selectedStudentIds.length === 1 ? '' : 's'}
-            </div>
+          <DialogFooter className="pt-4">
             <div className="flex gap-2">
               <Button 
                 type="button" 
