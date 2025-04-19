@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from '@/components/ui/layout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -74,10 +74,31 @@ export default function ManageEnrollments() {
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [batchEnrollmentLoading, setBatchEnrollmentLoading] = useState(false);
   
+  // Get URL search parameters
+  const params = new URLSearchParams(window.location.search);
+  const courseIdParam = params.get('courseId');
+  
   // Fetch courses for the select input
   const { data: courses = [], isLoading: isCoursesLoading } = useQuery({
     queryKey: ['/api/courses'],
   });
+  
+  // Initialize course filter from URL parameter if present
+  useEffect(() => {
+    if (courseIdParam && courses && Array.isArray(courses)) {
+      console.log(`Initializing with courseId from URL: ${courseIdParam}`);
+      
+      // Find the course in the courses list
+      const course = courses.find((c: any) => c.id === parseInt(courseIdParam));
+      if (course) {
+        console.log('Found course from URL parameter:', course);
+        setSelectedCourse(course);
+      } else {
+        // If we don't have the courses loaded yet, we'll need to wait
+        console.log('Course not found yet, will try once courses are loaded');
+      }
+    }
+  }, [courseIdParam, courses]);
   
   // Fetch students for the select input
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
@@ -144,6 +165,11 @@ export default function ManageEnrollments() {
         .filter((enrollment: any) => enrollment.courseId === selectedCourse.id)
         .map((enrollment: any) => enrollment.userId)
     : [];
+    
+  // Filter enrollments based on the selected course (if any)
+  const filteredEnrollments = selectedCourse
+    ? enrollments.filter((enrollment: any) => enrollment.courseId === selectedCourse.id)
+    : enrollments;
   
   // Create enrollment mutation
   const createEnrollmentMutation = useMutation({

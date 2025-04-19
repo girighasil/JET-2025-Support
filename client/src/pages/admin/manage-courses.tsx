@@ -104,6 +104,7 @@ export default function ManageCourses() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation(); // Add useLocation hook to get navigate function
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(
