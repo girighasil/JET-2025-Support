@@ -51,6 +51,9 @@ export default function ManageStudents() {
   // Fetch students
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
     queryKey: ['/api/users'],
+    onSuccess: (data) => {
+      console.log('Fetched users data:', data);
+    }
   });
   
   // Fetch all courses for enrollment dialog
@@ -252,8 +255,8 @@ export default function ManageStudents() {
         return (
           <div className="flex items-center">
             <Badge 
-              variant="outline" 
-              className="whitespace-nowrap cursor-pointer px-2 py-1 hover:bg-gray-100 transition-colors rounded-lg"
+              variant="secondary" 
+              className="whitespace-nowrap cursor-pointer px-3 py-1.5 hover:bg-slate-200 transition-colors rounded-lg font-medium border border-slate-300"
               onClick={(e) => {
                 e.stopPropagation();
                 if (enrollmentCount > 0) {
@@ -263,6 +266,7 @@ export default function ManageStudents() {
                 }
               }}
             >
+              <BookOpen className="h-3.5 w-3.5 mr-1.5" />
               {enrollmentCount} {enrollmentCount === 1 ? 'Course' : 'Courses'}
             </Badge>
           </div>
