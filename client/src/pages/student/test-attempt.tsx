@@ -18,6 +18,46 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 
+// Define test interfaces
+interface Test {
+  id: number;
+  title: string;
+  description: string;
+  duration: number;
+  questions: Question[];
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+}
+
+interface Question {
+  id: number;
+  testId: number;
+  questionText: string;
+  questionType: 'multiple-choice' | 'multiple-answer' | 'short-answer' | 'numerical';
+  options?: string[];
+  correctAnswer?: string | string[];
+  points: number;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface TestAttempt {
+  id: number;
+  userId: number;
+  testId: number;
+  status: 'in-progress' | 'completed' | 'graded';
+  startedAt: string;
+  completedAt?: string;
+  score?: number;
+  maxScore?: number;
+  answers: Record<number, any>;
+  duration: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function StudentTestAttempt() {
   const search = useSearch();
   const params = new URLSearchParams(search);
@@ -35,19 +75,19 @@ export default function StudentTestAttempt() {
   const [showTimeoutAlert, setShowTimeoutAlert] = useState(false);
   
   // Fetch test details
-  const { data: test, isLoading: isTestLoading } = useQuery({
+  const { data: test, isLoading: isTestLoading } = useQuery<Test>({
     queryKey: [`/api/tests/${testId}`],
     enabled: !!testId,
   });
   
   // Fetch test attempt
-  const { data: testAttempt, isLoading: isAttemptLoading } = useQuery({
+  const { data: testAttempt, isLoading: isAttemptLoading } = useQuery<TestAttempt>({
     queryKey: [`/api/test-attempts/${attemptId}`],
     enabled: !!attemptId,
   });
   
   // Fetch questions
-  const { data: questions = [], isLoading: isQuestionsLoading } = useQuery({
+  const { data: questions = [], isLoading: isQuestionsLoading } = useQuery<Question[]>({
     queryKey: [`/api/tests/${testId}/questions`],
     enabled: !!testId,
   });

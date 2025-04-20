@@ -506,32 +506,24 @@ export default function ManageCourses() {
             `Student ${userId} is not enrolled yet, proceeding with enrollment`,
           );
 
-          // Attempt enrollment with detailed error capture
-          const enrollResponse = await fetch("/api/enrollments", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+          // Attempt enrollment with detailed error capture using apiRequest for consistency
+          try {
+            const result = await apiRequest("POST", "/api/enrollments", {
               userId,
               courseId: enrollmentCourse.id,
-            }),
-          });
-
-          if (enrollResponse.ok) {
-            const result = await enrollResponse.json();
+            }).then(res => res.json());
+            
             console.log(
               `Successfully enrolled student ${userId}, result:`,
               result,
             );
             successCount++;
-          } else {
+          } catch (error: any) {
             // Get detailed error information
-            const errorData = await enrollResponse.json();
-            const errorMessage = errorData.message || "Unknown error";
+            const errorMessage = error.message || "Unknown error";
             errorMessages.push(`Student ${userId}: ${errorMessage}`);
             errorCount++;
-            console.error(`Failed to enroll student ${userId}:`, errorData);
+            console.error(`Failed to enroll student ${userId}:`, error);
           }
         } catch (error) {
           console.error(`Exception enrolling student ${userId}:`, error);

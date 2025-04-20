@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient, setLoggingOut } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { safeFetch } from "@/lib/safeFetch";
 
 // User type definition
 export interface User {
@@ -54,16 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: async ({ queryKey }) => {
       try {
-        const res = await fetch(queryKey[0] as string, {
-          credentials: "include",
-        });
-        if (res.status === 401) {
-          return null;
-        }
-        if (!res.ok) {
-          throw new Error(`Error: ${res.status}`);
-        }
-        return res.json();
+        // Using our enhanced safeFetch utility
+        return await safeFetch(queryKey[0] as string, { allowNotFound: true });
       } catch (error) {
         console.error("Auth session error:", error);
         return null;
