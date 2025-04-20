@@ -61,20 +61,41 @@ export async function safeJsonParse(res: Response): Promise<any> {
 }
 
 /**
+ * Extended options for the safeFetch function
+ */
+export interface SafeFetchOptions extends RequestInit {
+  /** If true, returns null for 404 status instead of throwing an error */
+  allowNotFound?: boolean;
+}
+
+/**
  * A wrapper around fetch that provides safe error handling for HTML responses
  * @param url The URL to fetch
- * @param options The fetch options
+ * @param options The fetch options including safeFetch-specific options
  * @returns The fetched data, safely parsed from JSON
  */
 export async function safeFetch<T = any>(
   url: string,
-  options?: RequestInit
-): Promise<T> {
+  options?: SafeFetchOptions
+): Promise<T | null> {
   try {
+    // Extract our custom options
+    const { allowNotFound, ...fetchOptions } = options || {};
+    
     const response = await fetch(url, {
       credentials: 'include',
-      ...options
+      ...fetchOptions
     });
+    
+    // Special case for 404 when allowNotFound is true
+    if (allowNotFound && response.status === 404) {
+      return null;
+    }
+    
+    // Special case for 401 when it's an auth check
+    if (allowNotFound && response.status === 401) {
+      return null;
+    }
     
     if (!response.ok) {
       // Handle error responses
