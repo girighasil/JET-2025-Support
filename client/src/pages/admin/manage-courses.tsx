@@ -66,6 +66,8 @@ type Course = {
   attachments?: FileItem[];
   createdAt: string;
   updatedAt: string;
+  createdBy: number;
+  creatorName?: string;
 };
 
 // Form schema for a course
@@ -103,7 +105,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function ManageCourses() {
   const { user } = useAuth();
-  const isTeacher = user?.role === 'teacher';
+  const isTeacher = user?.role === "teacher";
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation(); // Add useLocation hook to get navigate function
@@ -126,9 +128,10 @@ export default function ManageCourses() {
     queryKey: ["/api/courses"],
   });
 
-  // Fetch all students for enrollment dialog
+  // Fetch all students for enrollment dialog (only for admins)
   const { data: users = [], isLoading: isUsersLoading } = useQuery<any[]>({
     queryKey: ["/api/users"],
+    enabled: user?.role !== "teacher", // Only enable this query for non-teachers
   });
 
   // Filter to get only students
@@ -144,7 +147,9 @@ export default function ManageCourses() {
       queryFn: async () => {
         if (!enrollmentCourse) return [];
         // Explicitly request enrollments for this course by ID
-        return await safeFetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
+        return await safeFetch(
+          `/api/enrollments?courseId=${enrollmentCourse.id}`,
+        );
       },
     });
 
@@ -257,6 +262,18 @@ export default function ManageCourses() {
         return <Badge variant="outline">{row.getValue("category")}</Badge>;
       },
     },
+    // Add the Created By column here, after the category column
+    {
+      accessorKey: "creatorName",
+      header: "Created By",
+      cell: ({ row }: any) => {
+        return (
+          <span className="text-sm">
+            {row.getValue("creatorName") || "Unknown"}
+          </span>
+        );
+      },
+    },
     {
       accessorKey: "createdAt",
       header: "Created",
@@ -303,29 +320,30 @@ export default function ManageCourses() {
             >
               <Trash className="h-4 w-4" />
             </Button>
+            {/* Only show View Enrollments and Enroll Students for admins */}
             {user?.role !== "teacher" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  navigate(`/admin/manage-enrollments?courseId=${course.id}`)
-                }
-                className="text-primary hover:text-primary-dark p-0.5 h-auto"
-              >
-                View Enrollments
-              </Button>
-            )}
-            {user?.role !== "teacher" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleOpenEnrollDialog(course)}
-                title="Enroll Students in this Course"
-                className="text-green-600 flex items-center flex gap-1 p-0.5 h-auto"
-              >
-                <UserPlus className="h-1.5 w-1.5" />
-                <span>Enroll Students</span>
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    navigate(`/admin/manage-enrollments?courseId=${course.id}`)
+                  }
+                  className="text-primary hover:text-primary-dark p-0.5 h-auto"
+                >
+                  View Enrollments
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenEnrollDialog(course)}
+                  title="Enroll Students in this Course"
+                  className="text-green-600 flex items-center flex gap-1 p-0.5 h-auto"
+                >
+                  <UserPlus className="h-1.5 w-1.5" />
+                  <span>Enroll Students</span>
+                </Button>
+              </>
             )}
           </div>
         );
@@ -436,10 +454,12 @@ export default function ManageCourses() {
       });
 
       // Force a direct fetch to make sure we have the latest data before showing UI
-      const freshEnrollments = await safeFetch(`/api/enrollments?courseId=${course.id}`);
+      const freshEnrollments = await safeFetch(
+        `/api/enrollments?courseId=${course.id}`,
+      );
       queryClient.setQueryData(
         ["/api/enrollments", course.id],
-        freshEnrollments
+        freshEnrollments,
       );
     } catch (error) {
       console.error("Error fetching enrollments:", error);
@@ -457,7 +477,9 @@ export default function ManageCourses() {
 
     try {
       // First, let's refresh the enrollments data to ensure we have the most current information
-      const freshEnrollments = await safeFetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
+      const freshEnrollments = await safeFetch(
+        `/api/enrollments?courseId=${enrollmentCourse.id}`,
+      );
       const freshEnrolledIds = freshEnrollments.map(
         (enrollment: any) => enrollment.userId,
       );
@@ -512,8 +534,8 @@ export default function ManageCourses() {
             const result = await apiRequest("POST", "/api/enrollments", {
               userId,
               courseId: enrollmentCourse.id,
-            }).then(res => res.json());
-            
+            }).then((res) => res.json());
+
             console.log(
               `Successfully enrolled student ${userId}, result:`,
               result,
@@ -651,7 +673,7 @@ export default function ManageCourses() {
 
   return (
     <Layout
-      title="Manage Courses"
+      title={isTeacher ? "Manage Your Courses" : "Manage All Courses"}
       description="Create, edit, and manage courses for students"
       rightContent={
         <Button
@@ -663,6 +685,14 @@ export default function ManageCourses() {
         </Button>
       }
     >
+      {isTeacher && (
+        <div className="mb-6 p-4 border rounded-md bg-amber-50">
+          <p className="text-sm text-amber-800">
+            As a teacher, you can only view, edit, and modify courses you have
+            created.
+          </p>
+        </div>
+      )}
       {/* Import/Export Section */}
       <div className="mb-6 p-4 border rounded-md bg-muted/20">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">

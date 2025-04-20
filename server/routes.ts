@@ -17,7 +17,7 @@ import {
   insertEnrollmentSchema,
   insertDoubtSessionSchema,
   insertStudyTimeSchema,
-  enrollments as enrollmentsTable
+  enrollments as enrollmentsTable,
 } from "@shared/schema";
 
 // Import route modules
@@ -75,30 +75,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const role = req.query.role as string | undefined;
         const users = await storage.listUsers(role);
-        
+
         // Get enrollment counts for all users
         const usersWithEnrollmentCounts = await Promise.all(
           users.map(async (user) => {
             const { password: _, ...userWithoutPassword } = user;
-            
+
             // For students, get enrollment count
-            if (user.role === 'student') {
+            if (user.role === "student") {
               // Get enrollments for this user
-              const userEnrollments = await storage.listEnrollmentsByUser(user.id);
-              
+              const userEnrollments = await storage.listEnrollmentsByUser(
+                user.id,
+              );
+
               return {
                 ...userWithoutPassword,
-                enrollmentCount: userEnrollments.length
+                enrollmentCount: userEnrollments.length,
               };
             }
-            
+
             return userWithoutPassword;
-          })
+          }),
         );
 
         res.json(usersWithEnrollmentCounts);
       } catch (error) {
-        console.error('Error fetching users with enrollment counts:', error);
+        console.error("Error fetching users with enrollment counts:", error);
         res.status(500).json({ message: "Server error" });
       }
     },
@@ -138,15 +140,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let courses;
       // Using the negation pattern that avoids TypeScript errors
-      if (req.user.role === 'teacher') {
+      if (req.user.role === "teacher") {
         // Teachers see only courses they created
         courses = await storage.listCourses(isActive, req.user.id);
       } else {
         // Admin or other roles see all courses
         courses = await storage.listCourses(isActive);
       }
-
-      res.json(courses);
+      // Enrich courses with creator information
+      const coursesWithCreatorInfo = await Promise.all(
+        courses.map(async (course) => {
+          const creator = await storage.getUser(course.createdBy);
+          console.log("Course creator data:", { courseId: course.id, createdBy: course.createdBy, creator });
+          return {
+            ...course,
+            creatorName: creator
+              ? creator.fullName || creator.username
+              : "Unknown",
+          };
+        }),
+      );
+      console.log("Sending enriched courses data with creator info");
+      res.json(coursesWithCreatorInfo);
     } catch (error) {
       console.error("Error fetching courses:", error);
       res.status(500).json({ message: "Server error" });
@@ -1417,7 +1432,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userId = parseInt(req.params.userId);
         const courseId = parseInt(req.params.courseId);
 
-        console.log(`API: Deleting enrollment for userId=${userId}, courseId=${courseId}`);
+        console.log(
+          `API: Deleting enrollment for userId=${userId}, courseId=${courseId}`,
+        );
 
         // Check if enrollment exists
         const existingEnrollment = await storage.getEnrollment(
@@ -1425,7 +1442,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           courseId,
         );
         if (!existingEnrollment) {
-          console.log(`API: Enrollment not found for userId=${userId}, courseId=${courseId}`);
+          console.log(
+            `API: Enrollment not found for userId=${userId}, courseId=${courseId}`,
+          );
           return res.status(404).json({ message: "Enrollment not found" });
         }
 
@@ -1433,11 +1452,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.deleteEnrollment(userId, courseId);
 
         // Always return success with 200 status code if we get here
-        console.log(`API: Successfully deleted enrollment for userId=${userId}, courseId=${courseId}`);
-        return res.status(200).json({ message: "Enrollment deleted successfully" });
+        console.log(
+          `API: Successfully deleted enrollment for userId=${userId}, courseId=${courseId}`,
+        );
+        return res
+          .status(200)
+          .json({ message: "Enrollment deleted successfully" });
       } catch (error) {
         console.error("Error deleting enrollment:", error);
-        return res.status(500).json({ message: "Server error", error: String(error) });
+        return res
+          .status(500)
+          .json({ message: "Server error", error: String(error) });
       }
     },
   );
