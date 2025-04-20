@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Layout } from "@/components/ui/layout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { safeFetch } from "@/lib/safeFetch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, useRoute } from "wouter";
@@ -142,11 +143,7 @@ export default function ManageCourses() {
       queryFn: async () => {
         if (!enrollmentCourse) return [];
         // Explicitly request enrollments for this course by ID
-        const res = await fetch(
-          `/api/enrollments?courseId=${enrollmentCourse.id}`,
-        );
-        if (!res.ok) return [];
-        return res.json();
+        return await safeFetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
       },
     });
 
@@ -438,14 +435,11 @@ export default function ManageCourses() {
       });
 
       // Force a direct fetch to make sure we have the latest data before showing UI
-      const res = await fetch(`/api/enrollments?courseId=${course.id}`);
-      if (res.ok) {
-        const freshEnrollments = await res.json();
-        queryClient.setQueryData(
-          ["/api/enrollments", course.id],
-          freshEnrollments,
-        );
-      }
+      const freshEnrollments = await safeFetch(`/api/enrollments?courseId=${course.id}`);
+      queryClient.setQueryData(
+        ["/api/enrollments", course.id],
+        freshEnrollments
+      );
     } catch (error) {
       console.error("Error fetching enrollments:", error);
     }
@@ -462,10 +456,7 @@ export default function ManageCourses() {
 
     try {
       // First, let's refresh the enrollments data to ensure we have the most current information
-      const freshResponse = await fetch(
-        `/api/enrollments?courseId=${enrollmentCourse.id}`,
-      );
-      const freshEnrollments = await freshResponse.json();
+      const freshEnrollments = await safeFetch(`/api/enrollments?courseId=${enrollmentCourse.id}`);
       const freshEnrolledIds = freshEnrollments.map(
         (enrollment: any) => enrollment.userId,
       );
