@@ -6,7 +6,7 @@ import { z } from "zod";
 import { storage } from "./storage-impl";
 import { setupAuth } from "./auth";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
   insertUserSchema,
   insertCourseSchema,
@@ -180,8 +180,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Course not found" });
       }
 
+      // Handle backward compatibility for videoUrl/videoUrls
+      // If course has a legacy videoUrl field but no videoUrls array, create one
+      if (course.videoUrl && (!course.videoUrls || !Array.isArray(course.videoUrls))) {
+        console.log("Converting legacy videoUrl to videoUrls array for course:", courseId);
+        course.videoUrls = [course.videoUrl];
+      }
+
+      // Ensure resourceLinks is always an array if missing
+      if (!course.resourceLinks) {
+        course.resourceLinks = [];
+      }
+
+      // Add debug logging to see what's in the response
+      console.log("Course data sent to client:", {
+        id: course.id,
+        title: course.title,
+        hasVideoUrls: !!course.videoUrls,
+        videoUrlsLength: course.videoUrls ? course.videoUrls.length : 0,
+        hasResourceLinks: !!course.resourceLinks,
+        resourceLinksLength: course.resourceLinks ? course.resourceLinks.length : 0
+      });
+      
       res.json(course);
     } catch (error) {
+      console.error("Error getting course:", error);
       res.status(500).json({ message: "Server error" });
     }
   });
