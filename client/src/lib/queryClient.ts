@@ -10,37 +10,90 @@ export function setLoggingOut(value: boolean) {
   console.log(`Logout state set to: ${value}`);
 }
 
+// Helper function to check if a response might be HTML
+function isLikelyHtmlResponse(text: string): boolean {
+  const htmlIndicators = ['<!DOCTYPE', '<html', '<head', '<body', '<!doctype'];
+  const lowerText = text.toLowerCase().trim();
+  return htmlIndicators.some(indicator => lowerText.includes(indicator.toLowerCase()));
+}
+
 // Parse API error responses into a user-friendly format
 async function parseApiError(res: Response): Promise<Error> {
   try {
     const contentType = res.headers.get("content-type");
+    
+    // Handle JSON responses
     if (contentType && contentType.includes("application/json")) {
-      const data = await res.json();
+      try {
+        const data = await res.json();
+        
+        // Create a custom error object with a user-friendly message
+        let errorMessage = "An error occurred";
+        
+        // Extract error message from various API response formats
+        if (typeof data.message === 'string') {
+          errorMessage = data.message;
+        } else if (Array.isArray(data.message) && data.message.length > 0) {
+          errorMessage = typeof data.message[0] === 'string' 
+            ? data.message[0] 
+            : data.message[0]?.message || "Invalid input";
+        } else if (data.error && typeof data.error === 'string') {
+          errorMessage = data.error;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        }
+        
+        const error = new Error(errorMessage);
+        // Store original response data for debugging
+        (error as any).originalData = data;
+        (error as any).status = res.status;
+        return error;
+      } catch (jsonError) {
+        // If JSON parsing fails despite content-type being application/json
+        console.error("Failed to parse JSON despite content-type:", jsonError);
+        return new Error(`Failed to parse response: ${res.status} ${res.statusText}`);
+      }
+    } 
+    // Handle HTML responses (common source of the <!DOCTYPE error)
+    else if (contentType && contentType.includes("text/html")) {
+      // For HTML responses, don't try to include the entire HTML in the error message
+      const error = new Error(`Received HTML instead of JSON (status ${res.status})`);
+      (error as any).status = res.status;
+      (error as any).isHtmlResponse = true;
       
-      // Create a custom error object with a user-friendly message
-      let errorMessage = "An error occurred";
-      
-      // Extract error message from various API response formats
-      if (typeof data.message === 'string') {
-        errorMessage = data.message;
-      } else if (Array.isArray(data.message) && data.message.length > 0) {
-        errorMessage = typeof data.message[0] === 'string' 
-          ? data.message[0] 
-          : data.message[0]?.message || "Invalid input";
-      } else if (data.error && typeof data.error === 'string') {
-        errorMessage = data.error;
-      } else if (typeof data === 'string') {
-        errorMessage = data;
+      // Add specific messages for common status codes
+      if (res.status === 404) {
+        error.message = "API endpoint not found (404)";
+      } else if (res.status === 401) {
+        error.message = "Authentication required (401)";
+      } else if (res.status === 403) {
+        error.message = "Not authorized to access this resource (403)";
+      } else if (res.status === 500) {
+        error.message = "Server error occurred (500)";
       }
       
-      const error = new Error(errorMessage);
-      // Store original response data for debugging
-      (error as any).originalData = data;
-      (error as any).status = res.status;
       return error;
-    } else {
-      const text = await res.text();
-      return new Error(text || res.statusText);
+    } 
+    // Handle other response types
+    else {
+      try {
+        // Get the response text
+        const text = await res.text();
+        
+        // Check if the response is HTML despite content-type not being text/html
+        if (isLikelyHtmlResponse(text)) {
+          const error = new Error(`Received HTML instead of JSON (status ${res.status})`);
+          (error as any).status = res.status;
+          (error as any).isHtmlResponse = true;
+          return error;
+        }
+        
+        // For other text responses, truncate to a reasonable size
+        const truncatedText = text.length > 100 ? text.substring(0, 100) + "..." : text;
+        return new Error(truncatedText || res.statusText);
+      } catch (textError) {
+        return new Error(`${res.status}: ${res.statusText}`);
+      }
     }
   } catch (e) {
     return new Error(`${res.status}: ${res.statusText}`);
@@ -50,6 +103,39 @@ async function parseApiError(res: Response): Promise<Error> {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     throw await parseApiError(res);
+  }
+}
+
+// Safe JSON parsing that handles HTML responses
+async function safeJsonParse(res: Response): Promise<any> {
+  try {
+    // Check content type header first
+    const contentType = res.headers.get("content-type");
+    if (contentType && !contentType.includes("application/json")) {
+      // If not JSON content type, try to read as text to check for HTML
+      const text = await res.text();
+      
+      if (isLikelyHtmlResponse(text)) {
+        throw new Error(`Received HTML instead of JSON (status ${res.status})`);
+      }
+      
+      // Try to parse as JSON anyway, in case the content-type was misreported
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Response is not valid JSON: ${res.status} ${res.statusText}`);
+      }
+    }
+    
+    // Regular JSON parsing
+    return await res.json();
+  } catch (e) {
+    // If it's already our error from above, rethrow
+    if (e instanceof Error && e.message.includes("Received HTML")) {
+      throw e;
+    }
+    
+    throw new Error(`Failed to parse response: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
@@ -113,7 +199,9 @@ export const getQueryFn: <T>(options: {
       }
 
       await throwIfResNotOk(res);
-      return await res.json();
+      
+      // Use our safe JSON parsing to avoid HTML parsing errors
+      return await safeJsonParse(res);
     } catch (error: any) {
       // Skip error handling during logout or for expected 401s
       if (!(isLoggingOut && error?.status === 401) && 
