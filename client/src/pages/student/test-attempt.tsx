@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Layout } from '@/components/ui/layout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { safeFetch } from '@/lib/safeFetch';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -94,9 +95,7 @@ export default function StudentTestAttempt() {
       queryClient.prefetchQuery({
         queryKey: [`/api/test-attempts/${attemptId}`],
         queryFn: async () => {
-          const res = await fetch(`/api/test-attempts/${attemptId}`);
-          if (!res.ok) throw new Error('Failed to fetch test attempt');
-          return res.json();
+          return await safeFetch(`/api/test-attempts/${attemptId}`);
         }
       }).then(() => {
         // Only navigate once we have the latest data

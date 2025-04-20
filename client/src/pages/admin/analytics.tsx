@@ -66,6 +66,40 @@ interface AnalyticsData {
   };
 }
 
+// Secondary interface to handle potentially different response shapes
+interface ServerAnalyticsData {
+  counts: {
+    users: number;
+    courses: number;
+    tests: number;
+    sessions?: number;
+    doubtSessions?: number;
+    testAttempts: number;
+  };
+  performance?: {
+    avgScore: number;
+  };
+  testPerformance?: {
+    averageScore: number;
+    totalAttempts: number;
+    scoresByType: Array<{
+      type: string;
+      averageScore: number;
+      attemptCount: number;
+    }>;
+  };
+  enrollmentData?: Array<{
+    courseId: number;
+    courseName: string;
+    enrollmentCount: number;
+  }>;
+  performanceOverTime?: Array<{
+    month: string;
+    averageScore: number;
+    attemptCount: number;
+  }>;
+}
+
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF'];
 
@@ -74,7 +108,7 @@ export default function Analytics() {
   const [activeTab, setActiveTab] = useState('overview');
   
   // Fetch analytics data
-  const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery<AnalyticsData>({
+  const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery<ServerAnalyticsData>({
     queryKey: ['/api/analytics/overall'],
   });
   
