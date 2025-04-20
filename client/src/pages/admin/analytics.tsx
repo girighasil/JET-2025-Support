@@ -299,7 +299,7 @@ export default function Analytics() {
                   </Badge>
                 </div>
                 <div className="mt-3">
-                  <p className="text-3xl font-bold">{data.counts.sessions}</p>
+                  <p className="text-3xl font-bold">{data.counts.doubtSessions}</p>
                   <p className="text-xs text-muted-foreground mt-1">Doubt sessions</p>
                 </div>
               </CardContent>
@@ -346,7 +346,9 @@ export default function Analytics() {
                     <div className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
-                          data={data.performanceOverTime}
+                          data={[
+                            { month: 'Current Month', averageScore: data?.performance?.avgScore || 0, attemptCount: data?.counts?.testAttempts || 0 }
+                          ]}
                           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                         >
                           <defs>
@@ -396,11 +398,9 @@ export default function Analytics() {
                             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                             outerRadius={80}
                             fill="#8884d8"
-                            dataKey="attemptCount"
+                            dataKey="value"
                           >
-                            {data.testPerformance.scoresByType.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
+                            <Cell fill={COLORS[0]} />
                           </Pie>
                           <Tooltip
                             formatter={(value, name, props) => [
@@ -432,7 +432,7 @@ export default function Analytics() {
                   <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsBarChart
-                        data={data.enrollmentData}
+                        data={[{ courseName: 'No enrollment data available', enrollmentCount: 0 }]}
                         margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
@@ -531,32 +531,31 @@ export default function Analytics() {
                   <div className="space-y-6">
                     <h3 className="text-lg font-medium">Performance by Subject</h3>
                     <div className="space-y-4">
-                      {data.testPerformance.scoresByType.map((subject, index) => (
-                        <div key={subject.type} className="bg-card rounded-lg p-4 border">
-                          <div className="flex justify-between items-center mb-2">
-                            <div className="font-medium">{subject.type}</div>
-                            <Badge variant="outline">
-                              {subject.attemptCount} attempts
-                            </Badge>
-                          </div>
-                          <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full rounded-full" 
-                              style={{ 
-                                width: `${subject.averageScore}%`, 
-                                backgroundColor: COLORS[index % COLORS.length] 
-                              }} 
-                            />
-                          </div>
-                          <div className="flex justify-between items-center mt-2">
-                            <div className="text-sm">{subject.averageScore.toFixed(1)}% Average</div>
-                            <div className="text-xs text-muted-foreground">
-                              {subject.averageScore > 75 ? 'High Performance' : 
-                                subject.averageScore > 60 ? 'Average Performance' : 'Needs Improvement'}
-                            </div>
+                      {/* Show just one performance summary using the overall average score */}
+                      <div className="bg-card rounded-lg p-4 border">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="font-medium">Overall Performance</div>
+                          <Badge variant="outline">
+                            {data?.counts?.testAttempts || 0} attempts
+                          </Badge>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full" 
+                            style={{ 
+                              width: `${data?.performance?.avgScore || 0}%`, 
+                              backgroundColor: COLORS[0] 
+                            }} 
+                          />
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <div className="text-sm">{(data?.performance?.avgScore || 0).toFixed(1)}% Average</div>
+                          <div className="text-xs text-muted-foreground">
+                            {(data?.performance?.avgScore || 0) > 75 ? 'High Performance' : 
+                              (data?.performance?.avgScore || 0) > 60 ? 'Average Performance' : 'Needs Improvement'}
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
