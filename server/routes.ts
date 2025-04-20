@@ -251,8 +251,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Add more specific messaging based on what was updated
         if (courseData.richContent) {
           message = "Course content has been updated with new materials.";
-        } else if (courseData.videoUrl) {
+        } else if (courseData.videoUrls && courseData.videoUrls.length > 0) {
           message = "New video content has been added to the course.";
+        } else if (courseData.resourceLinks && courseData.resourceLinks.length > 0) {
+          message = "New resource links have been added to the course.";
         } else if (courseData.attachments) {
           message = "New course resources have been attached to the course.";
         }

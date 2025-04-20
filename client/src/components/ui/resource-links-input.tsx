@@ -1,28 +1,25 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  PlusCircle,
-  Trash2,
-  FileText,
-  ExternalLink,
-  FileCode,
-  BookOpen,
+import { 
+  AlertCircle, 
+  ExternalLink, 
+  FileText, 
+  Globe, 
+  Link2, 
+  Plus, 
+  Trash2 
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
-// Define the resource link interface
 export interface ResourceLink {
   url: string;
   type: string;
@@ -34,184 +31,173 @@ interface ResourceLinksInputProps {
   onChange: (values: ResourceLink[]) => void;
 }
 
-const resourceTypes = [
-  { value: "pdf", label: "PDF Document", icon: FileText },
-  { value: "webpage", label: "Web Page", icon: ExternalLink },
-  { value: "code", label: "Source Code", icon: FileCode },
-  { value: "reading", label: "Reading Material", icon: BookOpen },
-];
-
 export default function ResourceLinksInput({
   values = [],
   onChange,
 }: ResourceLinksInputProps) {
-  const [newResource, setNewResource] = useState<ResourceLink>({
+  const [newLink, setNewLink] = useState<ResourceLink>({
     url: "",
-    type: "",
+    type: "webpage",
     label: "",
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [error, setError] = useState<string | null>(null);
 
-  const validateUrl = (url: string) => {
-    try {
-      new URL(url);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
+  const handleAddLink = () => {
+    // Clear previous errors
+    setError(null);
 
-  const addResource = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!newResource.url.trim()) {
-      newErrors.url = "URL is required";
-    } else if (!validateUrl(newResource.url)) {
-      newErrors.url = "Please enter a valid URL";
-    }
-
-    if (!newResource.type) {
-      newErrors.type = "Resource type is required";
-    }
-
-    if (!newResource.label.trim()) {
-      newErrors.label = "Label is required";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    // Validate the URL
+    if (!newLink.url.trim()) {
+      setError("Please enter a resource URL");
       return;
     }
 
-    onChange([...values, { ...newResource }]);
-    setNewResource({ url: "", type: "", label: "" });
-    setErrors({});
+    // Validate URL format
+    try {
+      new URL(newLink.url);
+    } catch (e) {
+      setError("Please enter a valid URL including http:// or https://");
+      return;
+    }
+
+    // Validate label
+    if (!newLink.label.trim()) {
+      setError("Please enter a label for this resource");
+      return;
+    }
+
+    // Check for duplicates
+    if (values.some(link => link.url === newLink.url)) {
+      setError("This resource URL is already in the list");
+      return;
+    }
+
+    // Add the link to the list
+    onChange([...values, { ...newLink }]);
+    
+    // Reset the form
+    setNewLink({
+      url: "",
+      type: "webpage",
+      label: "",
+    });
   };
 
-  const removeResource = (index: number) => {
-    const updatedValues = [...values];
-    updatedValues.splice(index, 1);
-    onChange(updatedValues);
+  const handleRemoveLink = (index: number) => {
+    const newValues = [...values];
+    newValues.splice(index, 1);
+    onChange(newValues);
   };
 
+  // Get icon based on resource type
   const getResourceIcon = (type: string) => {
-    const resourceType = resourceTypes.find((rt) => rt.value === type);
-    const Icon = resourceType?.icon || ExternalLink;
-    return <Icon className="h-4 w-4" />;
+    switch (type) {
+      case "pdf":
+        return <FileText className="h-4 w-4" />;
+      case "webpage":
+        return <Globe className="h-4 w-4" />;
+      case "document":
+        return <FileText className="h-4 w-4" />;
+      default:
+        return <Link2 className="h-4 w-4" />;
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-4">
-        <div className="grid gap-2">
-          <Label htmlFor="resource-label">Resource Label</Label>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+        <div className="md:col-span-6">
           <Input
-            id="resource-label"
-            className={cn(errors.label && "border-destructive")}
-            placeholder="e.g., Class Notes, Reference Guide"
-            value={newResource.label}
-            onChange={(e) =>
-              setNewResource({ ...newResource, label: e.target.value })
-            }
+            type="url"
+            placeholder="https://example.com/resource"
+            value={newLink.url}
+            onChange={(e) => setNewLink({...newLink, url: e.target.value})}
           />
-          {errors.label && (
-            <p className="text-sm text-destructive">{errors.label}</p>
-          )}
         </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="resource-type">Resource Type</Label>
+        
+        <div className="md:col-span-3">
           <Select
-            value={newResource.type}
-            onValueChange={(value) =>
-              setNewResource({ ...newResource, type: value })
-            }
+            value={newLink.type}
+            onValueChange={(value) => setNewLink({...newLink, type: value})}
           >
-            <SelectTrigger
-              id="resource-type"
-              className={cn(errors.type && "border-destructive")}
-            >
-              <SelectValue placeholder="Select type" />
+            <SelectTrigger>
+              <SelectValue placeholder="Resource Type" />
             </SelectTrigger>
             <SelectContent>
-              {resourceTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  <div className="flex items-center">
-                    <type.icon className="mr-2 h-4 w-4" />
-                    <span>{type.label}</span>
-                  </div>
-                </SelectItem>
-              ))}
+              <SelectItem value="pdf">PDF Document</SelectItem>
+              <SelectItem value="webpage">Web Page</SelectItem>
+              <SelectItem value="document">Document</SelectItem>
+              <SelectItem value="other">Other Resource</SelectItem>
             </SelectContent>
           </Select>
-          {errors.type && (
-            <p className="text-sm text-destructive">{errors.type}</p>
-          )}
         </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="resource-url">Resource URL</Label>
+        
+        <div className="md:col-span-3 flex gap-2">
           <Input
-            id="resource-url"
-            className={cn(errors.url && "border-destructive")}
-            placeholder="https://"
-            value={newResource.url}
-            onChange={(e) =>
-              setNewResource({ ...newResource, url: e.target.value })
-            }
+            type="text"
+            placeholder="Resource Name"
+            value={newLink.label}
+            onChange={(e) => setNewLink({...newLink, label: e.target.value})}
+            className="flex-1"
           />
-          {errors.url && (
-            <p className="text-sm text-destructive">{errors.url}</p>
-          )}
+          <Button 
+            type="button" 
+            onClick={handleAddLink}
+            size="icon"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
-
-        <Button type="button" onClick={addResource}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Resource
-        </Button>
       </div>
 
-      {values.length > 0 && (
-        <div className="space-y-3">
-          <Label>Added Resources ({values.length})</Label>
-          <ScrollArea className="h-[250px] rounded-md border">
-            <div className="p-4 space-y-3">
-              {values.map((resource, index) => (
-                <Card key={index}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        {getResourceIcon(resource.type)}
-                        <span className="font-medium">{resource.label}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeResource(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="truncate text-sm text-muted-foreground">
-                      {resource.url}
-                    </div>
-                    <div className="mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => window.open(resource.url, "_blank")}
-                      >
-                        <ExternalLink className="h-3 w-3 mr-2" />
-                        Open Link
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+      {error && (
+        <Alert variant="destructive" className="py-2">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {values.length > 0 ? (
+        <div className="space-y-2 mt-2">
+          {values.map((link, index) => (
+            <div 
+              key={index} 
+              className="flex items-center gap-2 p-2 bg-muted/50 rounded border"
+            >
+              {getResourceIcon(link.type)}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{link.label}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {link.type}
+                  </Badge>
+                </div>
+                <a 
+                  href={link.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  {link.url.length > 50 ? `${link.url.substring(0, 50)}...` : link.url}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemoveLink(index)}
+                className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
-          </ScrollArea>
+          ))}
+        </div>
+      ) : (
+        <div className="text-sm text-muted-foreground italic py-2">
+          No resource links added yet
         </div>
       )}
     </div>

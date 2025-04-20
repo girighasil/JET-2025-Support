@@ -388,7 +388,8 @@ export default function ManageCourses() {
       thumbnail: course.thumbnail || "",
       isActive: course.isActive,
       richContent: course.richContent || "",
-      videoUrl: course.videoUrl || "",
+      videoUrls: course.videoUrls || [],
+      resourceLinks: course.resourceLinks || [],
       attachments: course.attachments || [],
     });
     setShowCourseDialog(true);
