@@ -135,14 +135,14 @@ export default function StudentCourseDetail() {
           {(() => {
             // Handle both old and new video URL formats safely
             let videoUrlsToDisplay: string[] = [];
-            
+
             if (course.videoUrls) {
               // Handle case where videoUrls is a JSON array
               if (Array.isArray(course.videoUrls)) {
                 videoUrlsToDisplay = course.videoUrls;
               }
               // Handle case where it's a string that needs parsing
-              else if (typeof course.videoUrls === 'string') {
+              else if (typeof course.videoUrls === "string") {
                 try {
                   const parsed = JSON.parse(course.videoUrls);
                   if (Array.isArray(parsed)) {
@@ -153,12 +153,12 @@ export default function StudentCourseDetail() {
                 }
               }
             }
-            
+
             // Fallback to legacy videoUrl if available
             if (videoUrlsToDisplay.length === 0 && course.videoUrl) {
               videoUrlsToDisplay = [course.videoUrl];
             }
-            
+
             console.log("Video URLs to display:", videoUrlsToDisplay);
 
             return videoUrlsToDisplay.length > 0 ? (
@@ -195,15 +195,19 @@ export default function StudentCourseDetail() {
           {/* Resource Links */}
           {(() => {
             // Safely parse resourceLinks
-            let resourceLinksToDisplay: Array<{url: string; type: string; label: string}> = [];
-            
+            let resourceLinksToDisplay: Array<{
+              url: string;
+              type: string;
+              label: string;
+            }> = [];
+
             if (course.resourceLinks) {
               // Handle if it's already an array
               if (Array.isArray(course.resourceLinks)) {
                 resourceLinksToDisplay = course.resourceLinks;
-              } 
+              }
               // Handle if it's a JSON string
-              else if (typeof course.resourceLinks === 'string') {
+              else if (typeof course.resourceLinks === "string") {
                 try {
                   const parsed = JSON.parse(course.resourceLinks);
                   if (Array.isArray(parsed)) {
@@ -214,9 +218,9 @@ export default function StudentCourseDetail() {
                 }
               }
             }
-            
+
             console.log("Resource links to display:", resourceLinksToDisplay);
-            
+
             return resourceLinksToDisplay.length > 0 ? (
               <div>
                 <div className="flex items-center gap-2 mb-4">
@@ -224,73 +228,73 @@ export default function StudentCourseDetail() {
                   <h3 className="text-lg font-medium">Resource Links</h3>
                 </div>
 
-              <div className="space-y-3">
-                {resourceLinksToDisplay.map((link, index) => {
-                  // Set icon based on resource type
-                  let Icon = FileText;
-                  if (link.type === "webpage") Icon = Globe;
-                  if (link.type === "video") Icon = Video;
+                <div className="space-y-3">
+                  {resourceLinksToDisplay.map((link, index) => {
+                    // Set icon based on resource type
+                    let Icon = FileText;
+                    if (link.type === "webpage") Icon = Globe;
+                    if (link.type === "video") Icon = Video;
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 border rounded-md bg-muted/10"
-                    >
-                      <div className="h-10 w-10 flex items-center justify-center bg-primary/10 rounded-md">
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">
-                          {link.label}
-                        </h4>
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          <span className="truncate">
-                            {link.url.length > 50
-                              ? `${link.url.substring(0, 50)}...`
-                              : link.url}
-                          </span>
-                          <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                        </a>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        asChild
-                        className="flex-shrink-0"
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-3 border rounded-md bg-muted/10"
                       >
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <div className="h-10 w-10 flex items-center justify-center bg-primary/10 rounded-md">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">
+                            {link.label}
+                          </h4>
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <span className="truncate">
+                              {link.url.length > 50
+                                ? `${link.url.substring(0, 50)}...`
+                                : link.url}
+                            </span>
+                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                          </a>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          asChild
+                          className="flex-shrink-0"
                         >
-                          Open
-                        </a>
-                      </Button>
-                    </div>
-                  );
-                })}
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Open
+                          </a>
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ) : null;
+            ) : null;
           })()}
 
           {/* Attachments */}
           {(() => {
             // Safely parse attachments
             let attachmentsToDisplay: Array<any> = [];
-            
+
             if (course?.attachments) {
               // Handle if it's already an array
               if (Array.isArray(course.attachments)) {
                 attachmentsToDisplay = course.attachments;
-              } 
+              }
               // Handle if it's a JSON string
-              else if (typeof course.attachments === 'string') {
+              else if (typeof course.attachments === "string") {
                 try {
                   const parsed = JSON.parse(course.attachments);
                   if (Array.isArray(parsed)) {
@@ -301,9 +305,9 @@ export default function StudentCourseDetail() {
                 }
               }
             }
-            
+
             console.log("Attachments to display:", attachmentsToDisplay);
-            
+
             return attachmentsToDisplay.length > 0 ? (
               <div>
                 <div className="flex items-center gap-2 mb-4">
