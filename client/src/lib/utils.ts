@@ -8,6 +8,22 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Validates if a string is a valid video URL (YouTube, Vimeo)
+ */
+export function isValidVideoUrl(url: string): boolean {
+  // YouTube URL patterns
+  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})(\S*)?$/;
+  
+  // Vimeo URL patterns
+  const vimeoRegex = /^(https?:\/\/)?(www\.)?(vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)(\S*)?$/;
+  
+  // Generic video URL pattern (for direct video files)
+  const genericVideoRegex = /^(https?:\/\/)(.+)\.(mp4|webm|ogg)(\?.*)?$/;
+  
+  return youtubeRegex.test(url) || vimeoRegex.test(url) || genericVideoRegex.test(url);
+}
+
+/**
  * User-friendly error messages for common validation errors
  */
 export const userFriendlyErrors: Record<string, string> = {

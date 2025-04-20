@@ -52,6 +52,8 @@ import FileUpload, { FileItem } from "@/components/ui/file-upload";
 import VideoEmbed from "@/components/ui/video-embed";
 import ImportExport from "@/components/ui/import-export";
 import MediaGallery from "@/components/ui/media-gallery";
+import MultipleVideoUrls from "@/components/ui/multiple-video-urls";
+import ResourceLinksInput from "@/components/ui/resource-links-input";
 
 // Define the Course type
 type Course = {
@@ -62,7 +64,12 @@ type Course = {
   thumbnail?: string;
   isActive: boolean;
   richContent?: string;
-  videoUrl?: string;
+  videoUrls?: string[];
+  resourceLinks?: {
+    url: string;
+    type: string;
+    label: string;
+  }[];
   attachments?: FileItem[];
   createdAt: string;
   updatedAt: string;
@@ -78,12 +85,14 @@ const courseSchema = z.object({
   thumbnail: z.string().optional(),
   isActive: z.boolean().default(true),
   richContent: z.string().optional(),
-  videoUrl: z
-    .string()
-    .url("Please enter a valid URL, including http:// or https://")
-    .or(z.literal(""))
-    .optional()
-    .transform((val) => (val === "" ? undefined : val)),
+  videoUrls: z.array(z.string().url("Please enter a valid URL")).optional(),
+  resourceLinks: z.array(
+    z.object({
+      url: z.string().url("Please enter a valid URL"),
+      type: z.string(),
+      label: z.string(),
+    })
+  ).optional(),
   attachments: z
     .array(
       z.object({
