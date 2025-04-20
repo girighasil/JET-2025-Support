@@ -41,7 +41,8 @@ export const courses = pgTable("courses", {
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   richContent: text("rich_content"), // Rich text content with HTML formatting
-  videoUrl: text("video_url"), // External video URL (YouTube, Vimeo, etc.)
+  videoUrls: jsonb("video_urls"), // Array of external video URLs (YouTube, Vimeo, etc.)
+  resourceLinks: jsonb("resource_links"), // Array of resource links with type and metadata
   attachments: jsonb("attachments"), // Array of file attachments with metadata
 });
 
@@ -53,7 +54,12 @@ export const insertCourseSchema = createInsertSchema(courses)
   .extend({
     // Make these fields optional with appropriate validation
     richContent: z.string().optional(),
-    videoUrl: z.string().url().optional(),
+    videoUrls: z.array(z.string().url()).optional(),
+    resourceLinks: z.array(z.object({
+      url: z.string().url(),
+      type: z.string(),
+      label: z.string()
+    })).optional(),
     attachments: z
       .array(
         z.object({

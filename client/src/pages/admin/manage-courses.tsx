@@ -234,7 +234,8 @@ export default function ManageCourses() {
       thumbnail: "",
       isActive: true,
       richContent: "",
-      videoUrl: "",
+      videoUrls: [],
+      resourceLinks: [],
       attachments: [],
     },
   });
@@ -361,7 +362,8 @@ export default function ManageCourses() {
       thumbnail: "",
       isActive: true,
       richContent: "",
-      videoUrl: "",
+      videoUrls: [],
+      resourceLinks: [],
       attachments: [],
     });
     setShowCourseDialog(true);
@@ -876,11 +878,21 @@ export default function ManageCourses() {
                   </p>
 
                   <EnhancedFormField
-                    name="videoUrl"
+                    name="videoUrls"
                     label="Video Content (Optional)"
                     render={({ field }) => (
-                      <VideoEmbed
-                        value={field.value || ""}
+                      <MultipleVideoUrls
+                        values={field.value || []}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                  <EnhancedFormField
+                    name="resourceLinks"
+                    label="Resource Links (Optional)"
+                    render={({ field }) => (
+                      <ResourceLinksInput
+                        values={field.value || []}
                         onChange={field.onChange}
                       />
                     )}

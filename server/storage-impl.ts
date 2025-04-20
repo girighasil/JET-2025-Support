@@ -151,9 +151,7 @@ export interface IStorage {
   ): Promise<StudyTime | undefined>;
 
   // Analytics Methods
-  getStudentProgress(
-    userId: number,
-  ): Promise<{
+  getStudentProgress(userId: number): Promise<{
     courseProgress: number;
     testPerformance: number;
     studyTimeThisWeek: number;
@@ -329,9 +327,7 @@ export class DatabaseStorage implements IStorage {
 
   // User Methods
   async getUser(id: number): Promise<User | undefined> {
-    console.log(`Looking up user with ID: ${id}`);
     const [user] = await this.db.select().from(users).where(eq(users.id, id));
-    console.log("Found user:", user ? { id: user.id, username: user.username, fullName: user.fullName } : "No user found");
     return user;
   }
 
@@ -384,7 +380,7 @@ export class DatabaseStorage implements IStorage {
     if (createdBy !== undefined) {
       query = query.where(eq(courses.createdBy, createdBy));
     }
-
+    query = query.orderBy(desc(courses.createdAt));
     return await query;
   }
 
@@ -850,9 +846,7 @@ export class DatabaseStorage implements IStorage {
   // The correct implementation is at the beginning of this class
 
   // Analytics Methods
-  async getStudentProgress(
-    userId: number,
-  ): Promise<{
+  async getStudentProgress(userId: number): Promise<{
     courseProgress: number;
     testPerformance: number;
     studyTimeThisWeek: number;
