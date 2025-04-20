@@ -82,6 +82,26 @@ export function handleApiError(error: any, showToast = true) {
   if (error instanceof z.ZodError) {
     errorMessage = formatZodError(error);
   }
+  // Handle HTML responses - common source of the "<!DOCTYPE is not valid JSON" error
+  else if (error.isHtmlResponse || 
+          (error.message && (
+            error.message.includes('<!DOCTYPE') || 
+            error.message.includes('<html') || 
+            error.message.includes('Received HTML instead of JSON')
+          ))) {
+    // Map status codes to user-friendly messages
+    if (error.status === 404) {
+      errorMessage = "The requested resource or API endpoint was not found.";
+    } else if (error.status === 401) {
+      errorMessage = "Your session might have expired. Please log in again.";
+    } else if (error.status === 403) {
+      errorMessage = "You don't have permission to access this feature.";
+    } else if (error.status === 500) {
+      errorMessage = "A server error occurred. Please try again later.";
+    } else {
+      errorMessage = "The server returned an unexpected response. Please try again later.";
+    }
+  }
   // Handle server responses with error data
   else if (error.response) {
     try {
@@ -149,6 +169,12 @@ export function handleApiError(error: any, showToast = true) {
     // Handle URL validation errors from fetch API
     else if (error.message.includes('Invalid URL')) {
       errorMessage = 'The provided URL is invalid.';
+    }
+    // Handle common JSON parsing errors
+    else if (error.message.includes('Unexpected token') || 
+             error.message.includes('is not valid JSON') ||
+             error.message.includes('JSON.parse')) {
+      errorMessage = 'The server returned a response in an unexpected format.';
     }
     // Check for JSON-formatted error messages (from our custom API errors)
     else if (error.message.startsWith('{') && error.message.endsWith('}')) {
