@@ -53,6 +53,19 @@ import {
   Legend
 } from 'recharts';
 
+interface AnalyticsData {
+  counts: {
+    users: number;
+    courses: number;
+    tests: number;
+    doubtSessions: number;
+    testAttempts: number;
+  };
+  performance: {
+    avgScore: number;
+  };
+}
+
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF'];
 
@@ -61,8 +74,8 @@ export default function Analytics() {
   const [activeTab, setActiveTab] = useState('overview');
   
   // Fetch analytics data
-  const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery({
-    queryKey: ['/api/analytics/overall', timeRange],
+  const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery<AnalyticsData>({
+    queryKey: ['/api/analytics/overall'],
   });
   
   // Fetch course enrollment data
@@ -376,7 +389,7 @@ export default function Analytics() {
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
                           <Pie
-                            data={data.testPerformance.scoresByType}
+                            data={[{ name: 'Overall Score', value: data?.performance?.avgScore || 0 }]}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
@@ -482,7 +495,7 @@ export default function Analytics() {
                         </div>
                       </div>
                       <p className="text-muted-foreground text-sm">Average Score</p>
-                      <h3 className="text-3xl font-bold mt-1">{data.testPerformance.averageScore.toFixed(1)}%</h3>
+                      <h3 className="text-3xl font-bold mt-1">{data?.performance?.avgScore.toFixed(1)}%</h3>
                       <p className="text-xs text-muted-foreground mt-2">
                         Across all test attempts
                       </p>
@@ -495,7 +508,7 @@ export default function Analytics() {
                         </div>
                       </div>
                       <p className="text-muted-foreground text-sm">Total Attempts</p>
-                      <h3 className="text-3xl font-bold mt-1">{data.testPerformance.totalAttempts}</h3>
+                      <h3 className="text-3xl font-bold mt-1">{data?.counts?.testAttempts || 0}</h3>
                       <p className="text-xs text-muted-foreground mt-2">
                         Test attempts in selected period
                       </p>

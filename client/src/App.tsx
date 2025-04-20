@@ -39,68 +39,144 @@ function App() {
         <Route path="/register">
           <Redirect to="/auth" />
         </Route>
-          
+
         {/* Student Routes */}
         <Route path="/student/dashboard">
-          <ProtectedRoute path="/student/dashboard" component={StudentDashboard} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/dashboard"
+            component={StudentDashboard}
+            roles={["student"]}
+          />
         </Route>
         <Route path="/student/courses">
-          <ProtectedRoute path="/student/courses" component={StudentCourses} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/courses"
+            component={StudentCourses}
+            roles={["student"]}
+          />
         </Route>
         <Route path="/student/courses/:id">
-          <ProtectedRoute path="/student/courses/:id" component={StudentCourseDetail} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/courses/:id"
+            component={StudentCourseDetail}
+            roles={["student"]}
+          />
         </Route>
         <Route path="/student/tests">
-          <ProtectedRoute path="/student/tests" component={StudentTests} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/tests"
+            component={StudentTests}
+            roles={["student"]}
+          />
         </Route>
         <Route path="/student/test-attempt">
-          <ProtectedRoute path="/student/test-attempt" component={StudentTestAttempt} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/test-attempt"
+            component={StudentTestAttempt}
+            roles={["student"]}
+          />
         </Route>
         <Route path="/student/tests/result/:attemptId">
-          <ProtectedRoute path="/student/tests/result/:attemptId" component={StudentTestResult} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/tests/result/:attemptId"
+            component={StudentTestResult}
+            roles={["student"]}
+          />
         </Route>
         <Route path="/student/doubts">
-          <ProtectedRoute path="/student/doubts" component={StudentDoubts} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/doubts"
+            component={StudentDoubts}
+            roles={["student"]}
+          />
         </Route>
         <Route path="/student/profile">
-          <ProtectedRoute path="/student/profile" component={StudentProfile} roles={["student"]} />
+          <ProtectedRoute
+            path="/student/profile"
+            component={StudentProfile}
+            roles={["student"]}
+          />
         </Route>
 
         {/* Admin Routes */}
         <Route path="/admin/dashboard">
-          <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/dashboard"
+            component={AdminDashboard}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/manage-courses">
-          <ProtectedRoute path="/admin/manage-courses" component={ManageCourses} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/manage-courses"
+            component={ManageCourses}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/manage-tests">
-          <ProtectedRoute path="/admin/manage-tests" component={ManageTests} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/manage-tests"
+            component={ManageTests}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/test-creator">
-          <ProtectedRoute path="/admin/test-creator" component={TestCreator} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/test-creator"
+            component={TestCreator}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/test-creator/:id">
-          <ProtectedRoute path="/admin/test-creator/:id" component={TestCreator} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/test-creator/:id"
+            component={TestCreator}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/tests/:id/questions">
-          <ProtectedRoute path="/admin/tests/:id/questions" component={QuestionManager} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/tests/:id/questions"
+            component={QuestionManager}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/manage-students">
-          <ProtectedRoute path="/admin/manage-students" component={ManageStudents} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/manage-students"
+            component={ManageStudents}
+            roles={["admin"]}
+          />
         </Route>
         <Route path="/admin/manage-enrollments">
-          <ProtectedRoute path="/admin/manage-enrollments" component={ManageEnrollments} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/manage-enrollments"
+            component={ManageEnrollments}
+            roles={["admin"]}
+          />
         </Route>
         <Route path="/admin/session-schedule">
-          <ProtectedRoute path="/admin/session-schedule" component={SessionSchedule} roles={["admin", "teacher"]} />
+          <ProtectedRoute
+            path="/admin/session-schedule"
+            component={SessionSchedule}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/analytics">
-          <ProtectedRoute path="/admin/analytics" component={Analytics} roles={["admin"]} />
+          <ProtectedRoute
+            path="/admin/analytics"
+            component={Analytics}
+            roles={["admin", "teacher"]}
+          />
         </Route>
         <Route path="/admin/analytics-dashboard">
-          <ProtectedRoute path="/admin/analytics-dashboard" component={AnalyticsDashboard} roles={["admin"]} />
+          <ProtectedRoute
+            path="/admin/analytics-dashboard"
+            component={AnalyticsDashboard}
+            roles={["admin"]}
+          />
         </Route>
-          
+
         <Route component={NotFound} />
       </Switch>
       <Toaster />

@@ -305,24 +305,30 @@ export default function ManageCourses() {
             >
               <Trash className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/admin/manage-enrollments?courseId=${course.id}`)}
-              className="text-primary hover:text-primary-dark p-0 h-auto"
-            >
-              View Enrollments
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleOpenEnrollDialog(course)}
-              title="Enroll Students in this Course"
-              className="text-green-600 flex items-center gap-1"
-            >
-              <UserPlus className="h-3.5 w-3.5" />
-              <span>Enroll Students</span>
-            </Button>
+            {user?.role !== "teacher" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  navigate(`/admin/manage-enrollments?courseId=${course.id}`)
+                }
+                className="text-primary hover:text-primary-dark p-0.5 h-auto"
+              >
+                View Enrollments
+              </Button>
+            )}
+            {user?.role !== "teacher" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleOpenEnrollDialog(course)}
+                title="Enroll Students in this Course"
+                className="text-green-600 flex items-center flex gap-1 p-0.5 h-auto"
+              >
+                <UserPlus className="h-1.5 w-1.5" />
+                <span>Enroll Students</span>
+              </Button>
+            )}
           </div>
         );
       },
