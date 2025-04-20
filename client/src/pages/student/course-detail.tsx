@@ -133,13 +133,33 @@ export default function StudentCourseDetail() {
         <div className="flex flex-col space-y-6">
           {/* Video Content */}
           {(() => {
-            // Handle both old and new video URL formats
-            const videoUrlsToDisplay =
-              course.videoUrls && course.videoUrls.length > 0
-                ? course.videoUrls
-                : course.videoUrl
-                  ? [course.videoUrl]
-                  : [];
+            // Handle both old and new video URL formats safely
+            let videoUrlsToDisplay: string[] = [];
+            
+            if (course.videoUrls) {
+              // Handle case where videoUrls is a JSON array
+              if (Array.isArray(course.videoUrls)) {
+                videoUrlsToDisplay = course.videoUrls;
+              }
+              // Handle case where it's a string that needs parsing
+              else if (typeof course.videoUrls === 'string') {
+                try {
+                  const parsed = JSON.parse(course.videoUrls);
+                  if (Array.isArray(parsed)) {
+                    videoUrlsToDisplay = parsed;
+                  }
+                } catch (e) {
+                  console.error("Error parsing videoUrls:", e);
+                }
+              }
+            }
+            
+            // Fallback to legacy videoUrl if available
+            if (videoUrlsToDisplay.length === 0 && course.videoUrl) {
+              videoUrlsToDisplay = [course.videoUrl];
+            }
+            
+            console.log("Video URLs to display:", videoUrlsToDisplay);
 
             return videoUrlsToDisplay.length > 0 ? (
               <div>
@@ -173,15 +193,39 @@ export default function StudentCourseDetail() {
           })()}
 
           {/* Resource Links */}
-          {course.resourceLinks && course.resourceLinks.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-medium">Resource Links</h3>
-              </div>
+          {(() => {
+            // Safely parse resourceLinks
+            let resourceLinksToDisplay: Array<{url: string; type: string; label: string}> = [];
+            
+            if (course.resourceLinks) {
+              // Handle if it's already an array
+              if (Array.isArray(course.resourceLinks)) {
+                resourceLinksToDisplay = course.resourceLinks;
+              } 
+              // Handle if it's a JSON string
+              else if (typeof course.resourceLinks === 'string') {
+                try {
+                  const parsed = JSON.parse(course.resourceLinks);
+                  if (Array.isArray(parsed)) {
+                    resourceLinksToDisplay = parsed;
+                  }
+                } catch (e) {
+                  console.error("Error parsing resourceLinks:", e);
+                }
+              }
+            }
+            
+            console.log("Resource links to display:", resourceLinksToDisplay);
+            
+            return resourceLinksToDisplay.length > 0 ? (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-medium">Resource Links</h3>
+                </div>
 
               <div className="space-y-3">
-                {course.resourceLinks.map((link, index) => {
+                {resourceLinksToDisplay.map((link, index) => {
                   // Set icon based on resource type
                   let Icon = FileText;
                   if (link.type === "webpage") Icon = Globe;
@@ -232,29 +276,55 @@ export default function StudentCourseDetail() {
                 })}
               </div>
             </div>
-          )}
+          ) : null;
+          })()}
 
           {/* Attachments */}
-          {course.attachments && course.attachments.length > 0 ? (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-medium">Course Materials</h3>
-              </div>
+          {(() => {
+            // Safely parse attachments
+            let attachmentsToDisplay: Array<any> = [];
+            
+            if (course?.attachments) {
+              // Handle if it's already an array
+              if (Array.isArray(course.attachments)) {
+                attachmentsToDisplay = course.attachments;
+              } 
+              // Handle if it's a JSON string
+              else if (typeof course.attachments === 'string') {
+                try {
+                  const parsed = JSON.parse(course.attachments);
+                  if (Array.isArray(parsed)) {
+                    attachmentsToDisplay = parsed;
+                  }
+                } catch (e) {
+                  console.error("Error parsing attachments:", e);
+                }
+              }
+            }
+            
+            console.log("Attachments to display:", attachmentsToDisplay);
+            
+            return attachmentsToDisplay.length > 0 ? (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-medium">Course Materials</h3>
+                </div>
 
-              <MediaGallery files={course.attachments} />
-            </div>
-          ) : (
-            <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border">
-              <FileText className="h-10 w-10 text-gray-400 mb-3 mx-auto" />
-              <h3 className="text-lg font-medium mb-1">
-                No Attachments Available
-              </h3>
-              <p className="text-gray-500">
-                The instructor hasn't added any downloadable materials yet.
-              </p>
-            </div>
-          )}
+                <MediaGallery files={attachmentsToDisplay} />
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                <FileText className="h-10 w-10 text-gray-400 mb-3 mx-auto" />
+                <h3 className="text-lg font-medium mb-1">
+                  No Attachments Available
+                </h3>
+                <p className="text-gray-500">
+                  The instructor hasn't added any downloadable materials yet.
+                </p>
+              </div>
+            );
+          })()}
         </div>
       );
     } catch (error) {

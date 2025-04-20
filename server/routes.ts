@@ -180,29 +180,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Course not found" });
       }
 
-      // Handle backward compatibility for videoUrl/videoUrls
-      // If course has a legacy videoUrl field but no videoUrls array, create one
-      if (course.videoUrl && (!course.videoUrls || !Array.isArray(course.videoUrls))) {
-        console.log("Converting legacy videoUrl to videoUrls array for course:", courseId);
-        course.videoUrls = [course.videoUrl];
+      // Create a safe copy we can modify
+      const safeResponse = { ...course };
+
+      // Handle backward compatibility for old videoUrl data format
+      // This is for legacy support where some courses might have videoUrl instead of videoUrls
+      if ('videoUrl' in safeResponse) {
+        const videoUrl = (safeResponse as any).videoUrl;
+        if (videoUrl && (!safeResponse.videoUrls || 
+            (typeof safeResponse.videoUrls === 'object' && 
+             Object.keys(safeResponse.videoUrls).length === 0))) {
+          console.log("Converting legacy videoUrl to videoUrls array for course:", courseId);
+          safeResponse.videoUrls = [videoUrl];
+        }
       }
 
-      // Ensure resourceLinks is always an array if missing
-      if (!course.resourceLinks) {
-        course.resourceLinks = [];
+      // Ensure resourceLinks is always a valid array
+      if (!safeResponse.resourceLinks || 
+          (typeof safeResponse.resourceLinks === 'object' && 
+           Object.keys(safeResponse.resourceLinks).length === 0)) {
+        safeResponse.resourceLinks = [];
       }
 
       // Add debug logging to see what's in the response
       console.log("Course data sent to client:", {
-        id: course.id,
-        title: course.title,
-        hasVideoUrls: !!course.videoUrls,
-        videoUrlsLength: course.videoUrls ? course.videoUrls.length : 0,
-        hasResourceLinks: !!course.resourceLinks,
-        resourceLinksLength: course.resourceLinks ? course.resourceLinks.length : 0
+        id: safeResponse.id,
+        title: safeResponse.title,
+        videoUrls: safeResponse.videoUrls,
+        resourceLinks: safeResponse.resourceLinks
       });
       
-      res.json(course);
+      res.json(safeResponse);
     } catch (error) {
       console.error("Error getting course:", error);
       res.status(500).json({ message: "Server error" });
