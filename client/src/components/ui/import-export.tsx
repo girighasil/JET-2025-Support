@@ -10,6 +10,7 @@ import {
 import { Button } from './button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { safeFetch } from '@/lib/safeFetch';
 import {
   Dialog,
   DialogContent,
@@ -91,34 +92,25 @@ const ImportExport: React.FC<ImportExportProps> = ({
       const formData = new FormData();
       formData.append('file', importFile);
       
-      const response = await fetch(`/api/import-export/${resourceType.toLowerCase()}s/import`, {
+      const result = await safeFetch(`/api/import-export/${resourceType.toLowerCase()}s/import`, {
         method: 'POST',
         body: formData,
       });
       
-      const result = await response.json();
+      setUploadResult({
+        success: true,
+        message: result.message,
+        errors: result.results?.errors,
+      });
       
-      if (response.ok) {
-        setUploadResult({
-          success: true,
-          message: result.message,
-          errors: result.results?.errors,
-        });
-        
-        if (onImportSuccess) {
-          onImportSuccess();
-        }
-      } else {
-        setUploadResult({
-          success: false,
-          message: result.error || 'Import failed',
-        });
+      if (onImportSuccess) {
+        onImportSuccess();
       }
     } catch (error: any) {
       console.error('Import error:', error);
       setUploadResult({
         success: false,
-        message: error.message || 'Import failed unexpectedly',
+        message: error.message || 'Import failed',
       });
     } finally {
       setIsUploading(false);
