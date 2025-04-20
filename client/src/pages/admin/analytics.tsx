@@ -333,7 +333,7 @@ export default function Analytics() {
                   </Badge>
                 </div>
                 <div className="mt-3">
-                  <p className="text-3xl font-bold">{data.counts.doubtSessions}</p>
+                  <p className="text-3xl font-bold">{data.counts.doubtSessions || data.counts.sessions || 0}</p>
                   <p className="text-xs text-muted-foreground mt-1">Doubt sessions</p>
                 </div>
               </CardContent>
@@ -381,7 +381,7 @@ export default function Analytics() {
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
                           data={[
-                            { month: 'Current Month', averageScore: data?.performance?.avgScore || 0, attemptCount: data?.counts?.testAttempts || 0 }
+                            { month: 'Current Month', averageScore: data?.performance?.avgScore || data?.testPerformance?.averageScore || 0, attemptCount: data?.counts?.testAttempts || 0 }
                           ]}
                           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                         >
@@ -425,7 +425,7 @@ export default function Analytics() {
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
                           <Pie
-                            data={[{ name: 'Overall Score', value: data?.performance?.avgScore || 0 }]}
+                            data={[{ name: 'Overall Score', value: data?.performance?.avgScore || data?.testPerformance?.averageScore || 0 }]}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
@@ -529,7 +529,7 @@ export default function Analytics() {
                         </div>
                       </div>
                       <p className="text-muted-foreground text-sm">Average Score</p>
-                      <h3 className="text-3xl font-bold mt-1">{data?.performance?.avgScore.toFixed(1)}%</h3>
+                      <h3 className="text-3xl font-bold mt-1">{(data?.performance?.avgScore || data?.testPerformance?.averageScore || 0).toFixed(1)}%</h3>
                       <p className="text-xs text-muted-foreground mt-2">
                         Across all test attempts
                       </p>
@@ -577,16 +577,16 @@ export default function Analytics() {
                           <div 
                             className="h-full rounded-full" 
                             style={{ 
-                              width: `${data?.performance?.avgScore || 0}%`, 
+                              width: `${data?.performance?.avgScore || data?.testPerformance?.averageScore || 0}%`, 
                               backgroundColor: COLORS[0] 
                             }} 
                           />
                         </div>
                         <div className="flex justify-between items-center mt-2">
-                          <div className="text-sm">{(data?.performance?.avgScore || 0).toFixed(1)}% Average</div>
+                          <div className="text-sm">{(data?.performance?.avgScore || data?.testPerformance?.averageScore || 0).toFixed(1)}% Average</div>
                           <div className="text-xs text-muted-foreground">
-                            {(data?.performance?.avgScore || 0) > 75 ? 'High Performance' : 
-                              (data?.performance?.avgScore || 0) > 60 ? 'Average Performance' : 'Needs Improvement'}
+                            {(data?.performance?.avgScore || data?.testPerformance?.averageScore || 0) > 75 ? 'High Performance' : 
+                              (data?.performance?.avgScore || data?.testPerformance?.averageScore || 0) > 60 ? 'Average Performance' : 'Needs Improvement'}
                           </div>
                         </div>
                       </div>
