@@ -28,19 +28,6 @@ export default function StudentCourseDetail() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Remove beforeunload event listener when component unmounts
-  React.useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Since this is a read-only view, we don't need to show the warning
-      return;
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-
   // Fetch course details
   const {
     data: course,
