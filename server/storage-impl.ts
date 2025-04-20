@@ -47,7 +47,8 @@ export interface IStorage {
   
   // Course Methods
   getCourse(id: number): Promise<Course | undefined>;
-  listCourses(isActive?: boolean): Promise<Course[]>;
+  // Add an overloaded method allowing createdBy filtering
+  listCourses(isActive?: boolean, createdBy?: number): Promise<Course[]>;
   createCourse(course: InsertCourse): Promise<Course>;
   updateCourse(id: number, course: Partial<InsertCourse>): Promise<Course | undefined>;
   deleteCourse(id: number): Promise<boolean>;
@@ -288,11 +289,18 @@ export class DatabaseStorage implements IStorage {
     return course;
   }
 
-  async listCourses(isActive?: boolean): Promise<Course[]> {
+  async listCourses(isActive?: boolean, createdBy?: number): Promise<Course[]> {
+    let query = this.db.select().from(courses);
+
     if (isActive !== undefined) {
-      return await this.db.select().from(courses).where(eq(courses.isActive, isActive));
+      query = query.where(eq(courses.isActive, isActive));
     }
-    return await this.db.select().from(courses);
+
+    if (createdBy !== undefined) {
+      query = query.where(eq(courses.createdBy, createdBy));
+    }
+
+    return await query;
   }
 
   async createCourse(course: InsertCourse): Promise<Course> {

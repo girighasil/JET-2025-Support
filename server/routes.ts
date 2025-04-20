@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Course Routes
-  app.get("/api/courses", async (req, res) => {
+  app.get("/api/courses", isAuthenticated, async (req, res) => {
     try {
       const isActive =
         req.query.isActive === "true"
@@ -136,9 +136,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? false
             : undefined;
 
-      const courses = await storage.listCourses(isActive);
+      let courses;
+      // Using the negation pattern that avoids TypeScript errors
+      if (req.user.role === 'teacher') {
+        // Teachers see only courses they created
+        courses = await storage.listCourses(isActive, req.user.id);
+      } else {
+        // Admin or other roles see all courses
+        courses = await storage.listCourses(isActive);
+      }
+
       res.json(courses);
     } catch (error) {
+      console.error("Error fetching courses:", error);
       res.status(500).json({ message: "Server error" });
     }
   });

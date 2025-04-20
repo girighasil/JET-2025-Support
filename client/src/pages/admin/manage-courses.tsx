@@ -103,6 +103,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function ManageCourses() {
   const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation(); // Add useLocation hook to get navigate function
