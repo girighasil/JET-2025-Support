@@ -160,7 +160,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }),
       );
-      console.log("Sending enriched courses data with creator info");
+      // Log the first few courses to verify data
+      console.log("First few enriched courses:", coursesWithCreatorInfo.slice(0, 3).map(c => 
+        ({ id: c.id, title: c.title, creatorName: c.creatorName, createdBy: c.createdBy }))
+      );
       res.json(coursesWithCreatorInfo);
     } catch (error) {
       console.error("Error fetching courses:", error);
