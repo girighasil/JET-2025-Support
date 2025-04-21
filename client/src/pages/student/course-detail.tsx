@@ -198,8 +198,8 @@ export default function StudentCourseDetail() {
             }
             
             // Fallback to legacy videoUrl if available
-            if (videoUrlsToDisplay.length === 0 && (course as any).videoUrl) {
-              videoUrlsToDisplay = [(course as any).videoUrl];
+            if (videoUrlsToDisplay.length === 0 && courseItem.videoUrl) {
+              videoUrlsToDisplay = [courseItem.videoUrl];
             }
             
             console.log("Video URLs to display:", videoUrlsToDisplay);
@@ -536,11 +536,11 @@ export default function StudentCourseDetail() {
                 </div>
               </div>
 
-              {course.richContent && (
+              {courseItem?.richContent && (
                 <div className="prose dark:prose-invert max-w-none">
                   <h2 className="text-xl font-bold mb-4">Course Information</h2>
                   <div
-                    dangerouslySetInnerHTML={renderHTML(course.richContent)}
+                    dangerouslySetInnerHTML={renderHTML(courseItem.richContent)}
                   />
                 </div>
               )}
@@ -622,10 +622,10 @@ export default function StudentCourseDetail() {
 
             {/* Content Tab */}
             <TabsContent value="content" className="py-4 space-y-4">
-              {course.richContent ? (
+              {courseItem?.richContent ? (
                 <div className="prose dark:prose-invert max-w-none">
                   <div
-                    dangerouslySetInnerHTML={renderHTML(course.richContent)}
+                    dangerouslySetInnerHTML={renderHTML(courseItem.richContent)}
                   />
                 </div>
               ) : (
