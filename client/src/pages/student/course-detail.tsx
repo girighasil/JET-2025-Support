@@ -129,36 +129,58 @@ export default function StudentCourseDetail() {
   // Add error handling for media rendering
   const renderMediaContent = () => {
     try {
+      // Safely access the course object
+      if (!course) {
+        console.log("Course data is not loaded yet");
+        return <div>Loading course content...</div>;
+      }
+
+      console.log("Full course data:", course);
+      
       return (
         <div className="flex flex-col space-y-6">
           {/* Video Content */}
           {(() => {
             // Handle both old and new video URL formats safely
             let videoUrlsToDisplay: string[] = [];
-
+            
+            // First check if videoUrls field exists and is populated
             if (course.videoUrls) {
-              // Handle case where videoUrls is a JSON array
+              // If it's already an array, use it directly
               if (Array.isArray(course.videoUrls)) {
                 videoUrlsToDisplay = course.videoUrls;
               }
-              // Handle case where it's a string that needs parsing
-              else if (typeof course.videoUrls === "string") {
+              // If it's an object but not an array, it might be a parsed JSON object
+              else if (typeof course.videoUrls === 'object') {
+                const values = Object.values(course.videoUrls);
+                if (values.length > 0) {
+                  videoUrlsToDisplay = values.map(v => String(v));
+                }
+              }
+              // If it's a string, try to parse it as JSON
+              else if (typeof course.videoUrls === 'string') {
                 try {
                   const parsed = JSON.parse(course.videoUrls);
                   if (Array.isArray(parsed)) {
                     videoUrlsToDisplay = parsed;
+                  } else if (typeof parsed === 'object') {
+                    videoUrlsToDisplay = Object.values(parsed).map(v => String(v));
                   }
                 } catch (e) {
+                  // If it doesn't parse as JSON but is a single URL, use it
+                  if (typeof course.videoUrls === 'string' && course.videoUrls.includes('http')) {
+                    videoUrlsToDisplay = [course.videoUrls];
+                  }
                   console.error("Error parsing videoUrls:", e);
                 }
               }
             }
-
+            
             // Fallback to legacy videoUrl if available
-            if (videoUrlsToDisplay.length === 0 && course.videoUrl) {
-              videoUrlsToDisplay = [course.videoUrl];
+            if (videoUrlsToDisplay.length === 0 && (course as any).videoUrl) {
+              videoUrlsToDisplay = [(course as any).videoUrl];
             }
-
+            
             console.log("Video URLs to display:", videoUrlsToDisplay);
 
             return videoUrlsToDisplay.length > 0 ? (
@@ -206,12 +228,21 @@ export default function StudentCourseDetail() {
               if (Array.isArray(course.resourceLinks)) {
                 resourceLinksToDisplay = course.resourceLinks;
               }
+              // If it's an object but not an array, it might be a parsed JSON object
+              else if (typeof course.resourceLinks === 'object') {
+                const values = Object.values(course.resourceLinks);
+                if (values.length > 0) {
+                  resourceLinksToDisplay = values;
+                }
+              }
               // Handle if it's a JSON string
               else if (typeof course.resourceLinks === "string") {
                 try {
                   const parsed = JSON.parse(course.resourceLinks);
                   if (Array.isArray(parsed)) {
                     resourceLinksToDisplay = parsed;
+                  } else if (typeof parsed === 'object') {
+                    resourceLinksToDisplay = Object.values(parsed);
                   }
                 } catch (e) {
                   console.error("Error parsing resourceLinks:", e);
@@ -293,12 +324,21 @@ export default function StudentCourseDetail() {
               if (Array.isArray(course.attachments)) {
                 attachmentsToDisplay = course.attachments;
               }
+              // If it's an object but not an array
+              else if (typeof course.attachments === 'object') {
+                const values = Object.values(course.attachments);
+                if (values.length > 0) {
+                  attachmentsToDisplay = values;
+                }
+              }
               // Handle if it's a JSON string
               else if (typeof course.attachments === "string") {
                 try {
                   const parsed = JSON.parse(course.attachments);
                   if (Array.isArray(parsed)) {
                     attachmentsToDisplay = parsed;
+                  } else if (typeof parsed === 'object') {
+                    attachmentsToDisplay = Object.values(parsed);
                   }
                 } catch (e) {
                   console.error("Error parsing attachments:", e);
