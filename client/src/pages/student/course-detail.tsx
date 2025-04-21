@@ -325,6 +325,10 @@ export default function StudentCourseDetail() {
                     let Icon = FileText;
                     if (link.type === "webpage") Icon = Globe;
                     if (link.type === "video") Icon = Video;
+                    
+                    // Generate proxy URL for students, show actual URL for admins/teachers
+                    const isStudent = user?.role === "student";
+                    const resourceProxyUrl = `/api/resource-proxy/${index}?courseId=${courseId}`;
 
                     return (
                       <div
@@ -338,19 +342,28 @@ export default function StudentCourseDetail() {
                           <h4 className="font-medium text-sm truncate">
                             {link.label}
                           </h4>
-                          <a
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                          >
-                            <span className="truncate">
-                              {link.url.length > 50
-                                ? `${link.url.substring(0, 50)}...`
-                                : link.url}
-                            </span>
-                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                          </a>
+                          {isStudent ? (
+                            // For students: Show only the resource name, hide URL
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              <span className="truncate">Resource #{index + 1}</span>
+                              <Link2 className="h-3 w-3 flex-shrink-0" />
+                            </div>
+                          ) : (
+                            // For teachers/admins: Show the actual URL
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              <span className="truncate">
+                                {link.url.length > 50
+                                  ? `${link.url.substring(0, 50)}...`
+                                  : link.url}
+                              </span>
+                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                            </a>
+                          )}
                         </div>
                         <Button
                           size="sm"
@@ -358,13 +371,25 @@ export default function StudentCourseDetail() {
                           asChild
                           className="flex-shrink-0"
                         >
-                          <a
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Open
-                          </a>
+                          {isStudent ? (
+                            // For students: Open through the proxy
+                            <a
+                              href={resourceProxyUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open
+                            </a>
+                          ) : (
+                            // For teachers/admins: Open direct URL
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open
+                            </a>
+                          )}
                         </Button>
                       </div>
                     );
