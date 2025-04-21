@@ -369,7 +369,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
           variant="outline" 
           size="sm" 
           className="mt-2"
-          onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+          type="button" // Explicitly set button type to avoid form submission
+          onClick={(e) => {
+            e.preventDefault(); // Prevent any default form submission
+            document.querySelector<HTMLInputElement>('input[type="file"]')?.click();
+          }}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Add More Files
