@@ -7,6 +7,7 @@ import { storage } from "./storage-impl";
 import { setupAuth } from "./auth";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
+import fetch from "node-fetch";
 import {
   insertUserSchema,
   insertCourseSchema,
@@ -1856,6 +1857,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register routes for notifications
   registerNotificationRoutes(app);
+
+  // Proxy endpoint for resource links (to hide actual URLs from students)
+  app.get("/api/resource-proxy/:resourceId", isAuthenticated, async (req, res) => {
+    try {
+      const resourceId = req.params.resourceId;
+      const { courseId } = req.query;
+      
+      if (!courseId) {
+        return res.status(400).json({ message: "Course ID is required" });
+      }
+      
+      // Fetch the course to get the resource links
+      const course = await storage.getCourse(parseInt(courseId as string));
+      
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Ensure resource links exist
+      if (!course.resourceLinks || !Array.isArray(course.resourceLinks)) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      
+      // Find the resource by its index
+      const resourceIndex = parseInt(resourceId);
+      if (isNaN(resourceIndex) || resourceIndex < 0 || resourceIndex >= course.resourceLinks.length) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      
+      const resource = course.resourceLinks[resourceIndex];
+      
+      if (!resource || !resource.url) {
+        return res.status(404).json({ message: "Resource not found or invalid" });
+      }
+      
+      // Handle different resource types
+      if (resource.type === "webpage") {
+        // For webpages, redirect to the original URL
+        return res.redirect(resource.url);
+      } else if (resource.type === "pdf" || resource.type === "document") {
+        // For PDFs and documents, proxy the content
+        try {
+          const response = await fetch(resource.url);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch resource: ${response.statusText}`);
+          }
+          
+          // Forward the content type and other relevant headers
+          res.set('Content-Type', response.headers.get('Content-Type') || 'application/octet-stream');
+          res.set('Content-Disposition', `inline; filename="${resource.label || 'resource'}"`);
+          
+          // Pipe the response body to our response
+          const buffer = await response.buffer();
+          res.send(buffer);
+        } catch (error) {
+          console.error("Error proxying resource:", error);
+          return res.status(500).json({ message: "Failed to fetch resource" });
+        }
+      } else {
+        // For other types, redirect to the URL
+        return res.redirect(resource.url);
+      }
+    } catch (error) {
+      console.error("Error accessing resource:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

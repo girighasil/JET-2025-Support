@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import MediaGallery from "@/components/ui/media-gallery";
 import { FileItem } from "@/components/ui/file-upload";
 import {
@@ -20,6 +21,8 @@ import {
   ChevronLeft,
   ExternalLink,
   Globe,
+  Link2,
+  ArrowUpRight,
 } from "lucide-react";
 
 export default function StudentCourseDetail() {
@@ -27,6 +30,7 @@ export default function StudentCourseDetail() {
   const courseId = parseInt(id || "0");
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const { user } = useAuth(); // Get the user to check role
 
   // Fetch course details
   const {
