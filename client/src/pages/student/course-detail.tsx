@@ -77,6 +77,9 @@ export default function StudentCourseDetail() {
       queryKey: ["/api/modules", { courseId }],
       enabled: courseId > 0,
     });
+    
+  // Handle course data that might be returned as an array
+  const courseItem = Array.isArray(course) ? course[0] : course;
 
   // Handle error state
   if (isError) {
@@ -241,8 +244,8 @@ export default function StudentCourseDetail() {
               label: string;
             }> = [];
 
-            // Try both direct access and via courseData
-            const resourceLinks = courseData.resourceLinks || course.resourceLinks;
+            // Use courseItem which is the first item from the course array
+            const resourceLinks = courseItem.resourceLinks;
             
             if (resourceLinks) {
               // Handle if it's already an array
@@ -348,8 +351,8 @@ export default function StudentCourseDetail() {
             // Safely parse attachments
             let attachmentsToDisplay: Array<any> = [];
 
-            // Try both direct access and via courseData
-            const attachments = courseData.attachments || course?.attachments;
+            // Use courseItem which is the first item from the course array
+            const attachments = courseItem.attachments;
             
             if (attachments) {
               // Handle if it's already an array
@@ -418,8 +421,8 @@ export default function StudentCourseDetail() {
   };
   return (
     <Layout
-      title={course?.title || "Course Details"}
-      description={course?.description}
+      title={courseItem?.title || "Course Details"}
+      description={courseItem?.description}
     >
       <Button asChild variant="ghost" size="sm" className="mb-4">
         <a href="/student/courses">
@@ -427,36 +430,36 @@ export default function StudentCourseDetail() {
           Back to Courses
         </a>
       </Button>
-      {course && (
+      {courseItem && (
         <div className="flex flex-col space-y-6">
           {/* Course Header */}
           <div className="flex flex-col md:flex-row items-start gap-6 pb-6 border-b">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary">{course.category}</Badge>
+                <Badge variant="secondary">{courseItem.category}</Badge>
                 <Badge
-                  variant={course.isActive ? "secondary" : "outline"}
+                  variant={courseItem.isActive ? "secondary" : "outline"}
                   className={
-                    course.isActive
+                    courseItem.isActive
                       ? "bg-green-100 text-green-800 hover:bg-green-100"
                       : ""
                   }
                 >
-                  {course.isActive ? "Active" : "Inactive"}
+                  {courseItem.isActive ? "Active" : "Inactive"}
                 </Badge>
               </div>
 
               <h1 className="text-2xl md:text-3xl font-bold mb-4">
-                {course.title}
+                {courseItem.title}
               </h1>
-              <p className="text-gray-600 mb-4">{course.description}</p>
+              <p className="text-gray-600 mb-4">{courseItem.description}</p>
 
-              {course.instructor && (
+              {courseItem.instructor && (
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage
-                      src={course.instructor.avatar}
-                      alt={course.instructor.name}
+                      src={courseItem.instructor.avatar}
+                      alt={courseItem.instructor.name}
                     />
                     <AvatarFallback>
                       <UserCircle className="h-6 w-6" />
@@ -465,18 +468,18 @@ export default function StudentCourseDetail() {
                   <span className="text-sm">
                     Instructor:{" "}
                     <span className="font-medium">
-                      {course.instructor.name}
+                      {courseItem.instructor.name}
                     </span>
                   </span>
                 </div>
               )}
             </div>
 
-            {course.thumbnail && (
+            {courseItem.thumbnail && (
               <div className="w-full md:w-1/3 rounded-lg overflow-hidden">
                 <img
-                  src={course.thumbnail}
-                  alt={course.title}
+                  src={courseItem.thumbnail}
+                  alt={courseItem.title}
                   className="w-full h-auto object-cover"
                 />
               </div>
@@ -524,7 +527,7 @@ export default function StudentCourseDetail() {
                     <h3 className="font-medium">Enrolled On</h3>
                   </div>
                   <p className="text-lg font-medium">
-                    {new Date(course.createdAt).toLocaleDateString("en-US", {
+                    {new Date(courseItem.createdAt).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
