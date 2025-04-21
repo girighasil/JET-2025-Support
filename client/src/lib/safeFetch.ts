@@ -82,18 +82,26 @@ export async function safeFetch<T = any>(
     // Extract our custom options
     const { allowNotFound, ...fetchOptions } = options || {};
     
+    // Log the fetch for debugging
+    console.debug(`SafeFetch request: ${url}`);
+    
     const response = await fetch(url, {
-      credentials: 'include',
+      credentials: 'include', // Always include credentials for authentication
       ...fetchOptions
     });
     
+    // Log response status
+    console.debug(`SafeFetch response from ${url}: ${response.status}`);
+    
     // Special case for 404 when allowNotFound is true
     if (allowNotFound && response.status === 404) {
+      console.debug(`Resource not found at ${url}, returning null as configured`);
       return null;
     }
     
     // Special case for 401 when it's an auth check
     if (allowNotFound && response.status === 401) {
+      console.debug(`Authentication required for ${url}, returning null as configured`);
       return null;
     }
     
@@ -113,6 +121,7 @@ export async function safeFetch<T = any>(
           } else if (errorData.error) {
             errorMessage = errorData.error;
           }
+          console.error(`API error data:`, errorData);
         } else {
           // For HTML or other responses, create a more user-friendly message
           // based on status code
@@ -139,15 +148,20 @@ export async function safeFetch<T = any>(
         console.error("Error parsing error response:", parseError);
       }
       
+      console.error(`API error for ${url}: ${errorMessage}`);
+      
       const error = new Error(errorMessage);
       (error as any).status = response.status;
       throw error;
     }
     
     // Parse the response safely
-    return await safeJsonParse(response);
+    const data = await safeJsonParse(response);
+    console.debug(`Successfully parsed data from ${url}`);
+    return data;
   } catch (error) {
     // Log and handle the error
+    console.error(`SafeFetch error for ${url}:`, error);
     handleApiError(error);
     throw error;
   }

@@ -158,6 +158,10 @@ export async function apiRequest(
       headers["Content-Type"] = "application/json";
     }
 
+    // Log request details for debugging
+    console.debug(`API Request: ${useMethod} ${url}`, 
+      isFormData ? "With FormData" : (data ? "With data payload" : "No data"));
+    
     const res = await fetch(url, {
       method: useMethod,
       headers,
@@ -166,14 +170,20 @@ export async function apiRequest(
         : data
           ? JSON.stringify(data)
           : undefined,
-      credentials: "include",
+      credentials: "include", // Always include credentials
     });
 
+    // Log response status for debugging
+    console.debug(`API Response: ${useMethod} ${url} - Status: ${res.status}`);
+    
     await throwIfResNotOk(res);
     return res;
   } catch (error: any) {
     // Skip error handling for 401s during logout
     if (!(isLoggingOut && error?.status === 401)) {
+      // Log detailed error information
+      console.error(`API Error in ${method} ${url}:`, error);
+      
       // Handle API errors with user-friendly messages
       handleApiError(error);
     } else {
@@ -190,22 +200,32 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     try {
+      // Log the request for debugging
+      console.debug(`Fetching data from ${queryKey[0]} with credentials included`);
+      
       const res = await fetch(queryKey[0] as string, {
-        credentials: "include",
+        credentials: "include", // Always include credentials
       });
 
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.debug(`401 Unauthorized from ${queryKey[0]}, returning null as configured`);
         return null;
       }
 
       await throwIfResNotOk(res);
       
       // Use our safe JSON parsing to avoid HTML parsing errors
-      return await safeJsonParse(res);
+      const data = await safeJsonParse(res);
+      
+      // Debug log successful data fetch
+      console.debug(`Successfully fetched data from ${queryKey[0]}`);
+      
+      return data;
     } catch (error: any) {
       // Skip error handling during logout or for expected 401s
       if (!(isLoggingOut && error?.status === 401) && 
           !(error instanceof Error && error.message?.includes("401"))) {
+        console.error(`Error fetching ${queryKey[0]}:`, error);
         handleApiError(error);
       } else if (isLoggingOut && error?.status === 401) {
         console.log("Suppressing 401 error in query during logout");
