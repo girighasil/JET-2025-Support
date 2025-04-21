@@ -58,6 +58,18 @@ export default function StudentCourseDetail() {
   }>({
     queryKey: [`/api/courses/${courseId}`],
     enabled: courseId > 0,
+    // Use includedCredentials to ensure auth cookies are sent
+    queryFn: async ({ queryKey }) => {
+      const response = await fetch(queryKey[0] as string, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching course: ${response.status}`);
+      }
+      
+      return response.json();
+    }
   });
 
   // Define the Module type
