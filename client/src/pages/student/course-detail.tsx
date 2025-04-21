@@ -88,6 +88,18 @@ export default function StudentCourseDetail() {
     useQuery<Module[]>({
       queryKey: [`/api/courses/${courseId}/modules`],
       enabled: courseId > 0,
+      // Use includedCredentials to ensure auth cookies are sent
+      queryFn: async ({ queryKey }) => {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching modules: ${response.status}`);
+        }
+        
+        return response.json();
+      }
     });
     
   // Handle course data that might be returned as an array
