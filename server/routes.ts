@@ -151,7 +151,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const coursesWithCreatorInfo = await Promise.all(
         courses.map(async (course) => {
           const creator = await storage.getUser(course.createdBy);
-          console.log("Course creator data:", { courseId: course.id, createdBy: course.createdBy, creator });
+          console.log("Course creator data:", {
+            courseId: course.id,
+            createdBy: course.createdBy,
+            creator,
+          });
           return {
             ...course,
             creatorName: creator
@@ -161,8 +165,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       );
       // Log the first few courses to verify data
-      console.log("First few enriched courses:", coursesWithCreatorInfo.slice(0, 3).map(c => 
-        ({ id: c.id, title: c.title, creatorName: c.creatorName, createdBy: c.createdBy }))
+      console.log(
+        "First few enriched courses:",
+        coursesWithCreatorInfo
+          .slice(0, 3)
+          .map((c) => ({
+            id: c.id,
+            title: c.title,
+            creatorName: c.creatorName,
+            createdBy: c.createdBy,
+          })),
       );
       res.json(coursesWithCreatorInfo);
     } catch (error) {
@@ -170,8 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
-
-  app.get("/api/courses/:id", async (req, res) => {
+  app.get("/api/courses/:id", isAuthenticated, async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
       const course = await storage.getCourse(courseId);
@@ -185,20 +196,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle backward compatibility for old videoUrl data format
       // This is for legacy support where some courses might have videoUrl instead of videoUrls
-      if ('videoUrl' in safeResponse) {
+      if ("videoUrl" in safeResponse) {
         const videoUrl = (safeResponse as any).videoUrl;
-        if (videoUrl && (!safeResponse.videoUrls || 
-            (typeof safeResponse.videoUrls === 'object' && 
-             Object.keys(safeResponse.videoUrls).length === 0))) {
-          console.log("Converting legacy videoUrl to videoUrls array for course:", courseId);
+        if (
+          videoUrl &&
+          (!safeResponse.videoUrls ||
+            (typeof safeResponse.videoUrls === "object" &&
+              Object.keys(safeResponse.videoUrls).length === 0))
+        ) {
+          console.log(
+            "Converting legacy videoUrl to videoUrls array for course:",
+            courseId,
+          );
           safeResponse.videoUrls = [videoUrl];
         }
       }
 
       // Ensure resourceLinks is always a valid array
-      if (!safeResponse.resourceLinks || 
-          (typeof safeResponse.resourceLinks === 'object' && 
-           Object.keys(safeResponse.resourceLinks).length === 0)) {
+      if (
+        !safeResponse.resourceLinks ||
+        (typeof safeResponse.resourceLinks === "object" &&
+          Object.keys(safeResponse.resourceLinks).length === 0)
+      ) {
         safeResponse.resourceLinks = [];
       }
 
@@ -207,9 +226,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: safeResponse.id,
         title: safeResponse.title,
         videoUrls: safeResponse.videoUrls,
-        resourceLinks: safeResponse.resourceLinks
+        resourceLinks: safeResponse.resourceLinks,
       });
-      
+
       res.json(safeResponse);
     } catch (error) {
       console.error("Error getting course:", error);
@@ -259,24 +278,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Course not found" });
         }
         console.log("Existing course:", existingCourse);
-        
-        // Debug permission checks
-        console.log("⭐ PERMISSION CHECK DETAILS ⭐");
-        console.log("User ID:", req.user.id);
-        console.log("User Role:", req.user.role);
-        console.log("Course Creator ID:", existingCourse.createdBy);
-        console.log("Is Creator Check:", existingCourse.createdBy === req.user.id);
-        console.log("Is Admin Check:", req.user.role === "admin");
-        
+
         if (
           existingCourse.createdBy !== req.user.id &&
           req.user.role !== "admin"
         ) {
-          console.log("❌ PERMISSION DENIED: User is not the creator and not an admin");
           return res.status(403).json({ message: "Forbidden" });
         }
-        
-        console.log("✅ PERMISSION GRANTED: User is either the creator or an admin");
+
         console.log("About to update course");
         const updatedCourse = await storage.updateCourse(courseId, courseData);
         console.log("Updated course result:", updatedCourse);
@@ -294,7 +303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message = "Course content has been updated with new materials.";
         } else if (courseData.videoUrls && courseData.videoUrls.length > 0) {
           message = "New video content has been added to the course.";
-        } else if (courseData.resourceLinks && courseData.resourceLinks.length > 0) {
+        } else if (
+          courseData.resourceLinks &&
+          courseData.resourceLinks.length > 0
+        ) {
           message = "New resource links have been added to the course.";
         } else if (courseData.attachments) {
           message = "New course resources have been attached to the course.";
@@ -325,32 +337,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req, res) => {
       try {
         const courseId = parseInt(req.params.id);
-        console.log("⭐ DELETE COURSE DETAILS ⭐");
-        console.log("User ID:", req.user.id);
-        console.log("User Role:", req.user.role);
-        console.log("Course ID to delete:", courseId);
-        
-        // First check if the course exists
-        const existingCourse = await storage.getCourse(courseId);
-        if (!existingCourse) {
-          console.log("❌ Course not found for deletion");
-          return res.status(404).json({ message: "Course not found" });
-        }
-        
-        console.log("Course to delete:", existingCourse);
-        console.log("Course Creator ID:", existingCourse.createdBy);
-        console.log("✅ Permission OK: User has admin role, proceeding with deletion");
-        
         const deleted = await storage.deleteCourse(courseId);
 
         if (!deleted) {
           return res.status(404).json({ message: "Course not found" });
         }
 
-        console.log("✅ Course deleted successfully");
         res.json({ message: "Course deleted successfully" });
       } catch (error) {
-        console.error("❌ Error deleting course:", error);
         res.status(500).json({ message: "Server error" });
       }
     },

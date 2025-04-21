@@ -86,13 +86,15 @@ const courseSchema = z.object({
   isActive: z.boolean().default(true),
   richContent: z.string().optional(),
   videoUrls: z.array(z.string().url("Please enter a valid URL")).optional(),
-  resourceLinks: z.array(
-    z.object({
-      url: z.string().url("Please enter a valid URL"),
-      type: z.string(),
-      label: z.string(),
-    })
-  ).optional(),
+  resourceLinks: z
+    .array(
+      z.object({
+        url: z.string().url("Please enter a valid URL"),
+        type: z.string(),
+        label: z.string(),
+      }),
+    )
+    .optional(),
   attachments: z
     .array(
       z.object({
@@ -940,6 +942,9 @@ export default function ManageCourses() {
                               [".pptx"],
                             "image/jpeg": [".jpg", ".jpeg"],
                             "image/png": [".png"],
+                            "video/mp4": [".mp4"],
+                            "video/webm": [".webm"],
+                            "video/ogg": [".ogg"],
                           }}
                           maxFiles={5}
                         />

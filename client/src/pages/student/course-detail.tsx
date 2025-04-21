@@ -136,6 +136,21 @@ export default function StudentCourseDetail() {
       }
 
       console.log("Full course data:", course);
+      // Check if course data is nested in a 'data' property (common with some API responses)
+      const courseData = (course as any).data || course;
+      
+      // Direct access to first element in course array if it's an array
+      const courseItem = Array.isArray(course) ? course[0] : course;
+      
+      console.log("Using course item:", courseItem);
+      console.log("Course item props:", Object.keys(courseItem));
+      
+      // Add debug info for data types
+      console.log("Data types:", {
+        videoUrls: courseItem.videoUrls ? typeof courseItem.videoUrls : 'undefined',
+        resourceLinks: courseItem.resourceLinks ? typeof courseItem.resourceLinks : 'undefined',
+        attachments: courseItem.attachments ? typeof courseItem.attachments : 'undefined'
+      });
       
       return (
         <div className="flex flex-col space-y-6">
@@ -145,22 +160,25 @@ export default function StudentCourseDetail() {
             let videoUrlsToDisplay: string[] = [];
             
             // First check if videoUrls field exists and is populated
-            if (course.videoUrls) {
+            // Use courseItem which is the first item from the course array
+            const videoUrls = courseItem.videoUrls;
+            
+            if (videoUrls) {
               // If it's already an array, use it directly
-              if (Array.isArray(course.videoUrls)) {
-                videoUrlsToDisplay = course.videoUrls;
+              if (Array.isArray(videoUrls)) {
+                videoUrlsToDisplay = videoUrls;
               }
               // If it's an object but not an array, it might be a parsed JSON object
-              else if (typeof course.videoUrls === 'object') {
-                const values = Object.values(course.videoUrls);
+              else if (typeof videoUrls === 'object') {
+                const values = Object.values(videoUrls);
                 if (values.length > 0) {
                   videoUrlsToDisplay = values.map(v => String(v));
                 }
               }
               // If it's a string, try to parse it as JSON
-              else if (typeof course.videoUrls === 'string') {
+              else if (typeof videoUrls === 'string') {
                 try {
-                  const parsed = JSON.parse(course.videoUrls);
+                  const parsed = JSON.parse(videoUrls);
                   if (Array.isArray(parsed)) {
                     videoUrlsToDisplay = parsed;
                   } else if (typeof parsed === 'object') {
@@ -168,8 +186,8 @@ export default function StudentCourseDetail() {
                   }
                 } catch (e) {
                   // If it doesn't parse as JSON but is a single URL, use it
-                  if (typeof course.videoUrls === 'string' && course.videoUrls.includes('http')) {
-                    videoUrlsToDisplay = [course.videoUrls];
+                  if (typeof videoUrls === 'string' && videoUrls.includes('http')) {
+                    videoUrlsToDisplay = [videoUrls];
                   }
                   console.error("Error parsing videoUrls:", e);
                 }
@@ -223,26 +241,37 @@ export default function StudentCourseDetail() {
               label: string;
             }> = [];
 
-            if (course.resourceLinks) {
+            // Try both direct access and via courseData
+            const resourceLinks = courseData.resourceLinks || course.resourceLinks;
+            
+            if (resourceLinks) {
               // Handle if it's already an array
-              if (Array.isArray(course.resourceLinks)) {
-                resourceLinksToDisplay = course.resourceLinks;
+              if (Array.isArray(resourceLinks)) {
+                resourceLinksToDisplay = resourceLinks;
               }
               // If it's an object but not an array, it might be a parsed JSON object
-              else if (typeof course.resourceLinks === 'object') {
-                const values = Object.values(course.resourceLinks);
+              else if (typeof resourceLinks === 'object') {
+                const values = Object.values(resourceLinks).map(item => item as {
+                  url: string;
+                  type: string;
+                  label: string;
+                });
                 if (values.length > 0) {
                   resourceLinksToDisplay = values;
                 }
               }
               // Handle if it's a JSON string
-              else if (typeof course.resourceLinks === "string") {
+              else if (typeof resourceLinks === "string") {
                 try {
-                  const parsed = JSON.parse(course.resourceLinks);
+                  const parsed = JSON.parse(resourceLinks);
                   if (Array.isArray(parsed)) {
                     resourceLinksToDisplay = parsed;
                   } else if (typeof parsed === 'object') {
-                    resourceLinksToDisplay = Object.values(parsed);
+                    resourceLinksToDisplay = Object.values(parsed).map(item => item as {
+                      url: string;
+                      type: string;
+                      label: string;
+                    });
                   }
                 } catch (e) {
                   console.error("Error parsing resourceLinks:", e);
@@ -319,22 +348,25 @@ export default function StudentCourseDetail() {
             // Safely parse attachments
             let attachmentsToDisplay: Array<any> = [];
 
-            if (course?.attachments) {
+            // Try both direct access and via courseData
+            const attachments = courseData.attachments || course?.attachments;
+            
+            if (attachments) {
               // Handle if it's already an array
-              if (Array.isArray(course.attachments)) {
-                attachmentsToDisplay = course.attachments;
+              if (Array.isArray(attachments)) {
+                attachmentsToDisplay = attachments;
               }
               // If it's an object but not an array
-              else if (typeof course.attachments === 'object') {
-                const values = Object.values(course.attachments);
+              else if (typeof attachments === 'object') {
+                const values = Object.values(attachments);
                 if (values.length > 0) {
                   attachmentsToDisplay = values;
                 }
               }
               // Handle if it's a JSON string
-              else if (typeof course.attachments === "string") {
+              else if (typeof attachments === "string") {
                 try {
-                  const parsed = JSON.parse(course.attachments);
+                  const parsed = JSON.parse(attachments);
                   if (Array.isArray(parsed)) {
                     attachmentsToDisplay = parsed;
                   } else if (typeof parsed === 'object') {
@@ -355,7 +387,7 @@ export default function StudentCourseDetail() {
                   <h3 className="text-lg font-medium">Course Materials</h3>
                 </div>
 
-                <MediaGallery files={attachmentsToDisplay} />
+                <MediaGallery files={Array.isArray(attachmentsToDisplay) ? attachmentsToDisplay : []} />
               </div>
             ) : (
               <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border">
