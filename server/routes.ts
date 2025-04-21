@@ -351,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Module Routes
-  app.get("/api/courses/:courseId/modules", async (req, res) => {
+  app.get("/api/courses/:courseId/modules", isAuthenticated, async (req, res) => {
     try {
       const courseId = parseInt(req.params.courseId);
       const modules = await storage.listModules(courseId);
@@ -361,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/modules/:id", async (req, res) => {
+  app.get("/api/modules/:id", isAuthenticated, async (req, res) => {
     try {
       const moduleId = parseInt(req.params.id);
       const module = await storage.getModule(moduleId);
@@ -501,7 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Test Routes
-  app.get("/api/tests", async (req, res) => {
+  app.get("/api/tests", isAuthenticated, async (req, res) => {
     try {
       const courseId = req.query.courseId
         ? parseInt(req.query.courseId as string)
@@ -534,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/tests/:id", async (req, res) => {
+  app.get("/api/tests/:id", isAuthenticated, async (req, res) => {
     try {
       const testId = parseInt(req.params.id);
       const test = await storage.getTest(testId);
@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Question Routes
-  app.get("/api/tests/:testId/questions", async (req, res) => {
+  app.get("/api/tests/:testId/questions", isAuthenticated, async (req, res) => {
     try {
       const testId = parseInt(req.params.testId);
       const questions = await storage.listQuestions(testId);
@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  app.get("/api/questions/:id", async (req, res) => {
+  app.get("/api/questions/:id", isAuthenticated, async (req, res) => {
     try {
       const questionId = parseInt(req.params.id);
       const question = await storage.getQuestion(questionId);
