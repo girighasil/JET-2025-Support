@@ -56,7 +56,7 @@ export default function StudentCourseDetail() {
       avatar?: string;
     };
   }>({
-    queryKey: ["/api/courses", courseId],
+    queryKey: [`/api/courses/${courseId}`],
     enabled: courseId > 0,
   });
 
@@ -74,7 +74,7 @@ export default function StudentCourseDetail() {
   // Fetch modules for this course
   const { data: modules = [] as Module[], isLoading: isModulesLoading } =
     useQuery<Module[]>({
-      queryKey: ["/api/modules", { courseId }],
+      queryKey: [`/api/courses/${courseId}/modules`],
       enabled: courseId > 0,
     });
     
