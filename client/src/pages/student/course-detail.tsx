@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import MediaGallery from "@/components/ui/media-gallery";
-import { ResourceViewer } from "@/components/ui/resource-viewer";
+import { DirectResourceViewer } from "@/components/ui/direct-resource-viewer";
 import { FileItem } from "@/components/ui/file-upload";
 import {
   BookOpen,
@@ -413,7 +413,7 @@ export default function StudentCourseDetail() {
                           )}
                         </div>
                         {isStudent ? (
-                          // For students: Use ResourceViewer to open content in-app
+                          // For students: Use DirectResourceViewer to open content in-app
                           <Button
                             size="sm"
                             variant="ghost"
@@ -814,7 +814,7 @@ export default function StudentCourseDetail() {
       )}
       {/* Resource Viewer Component */}
       {selectedResource && (
-        <ResourceViewer
+        <DirectResourceViewer
           isOpen={viewerOpen}
           onClose={() => setViewerOpen(false)}
           resourceUrl={selectedResource.url}

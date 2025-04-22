@@ -1,0 +1,417 @@
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ExternalLink,
+  X,
+  AlertTriangle,
+  FileText,
+  Globe,
+  Video,
+  Download,
+  RefreshCw,
+  Youtube,
+  Image as ImageIcon,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { EnhancedVideoPlayer } from "@/components/ui/enhanced-video-player";
+
+interface DirectResourceViewerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  resourceUrl: string;
+  resourceType: string;
+  resourceTitle: string;
+  courseId: number;
+  resourceIndex: number;
+}
+
+// Type guard to check if a URL is from YouTube
+function isYouTubeUrl(url: string): boolean {
+  return /youtube\.com|youtu\.be/.test(url);
+}
+
+// Type guard to check if a URL is from Vimeo
+function isVimeoUrl(url: string): boolean {
+  return /vimeo\.com/.test(url);
+}
+
+// Convert YouTube URL to embed URL
+function getYouTubeEmbedUrl(url: string): string {
+  if (url.includes('youtu.be/')) {
+    // Short youtu.be links
+    const videoId = url.split('youtu.be/')[1].split('?')[0];
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  } else if (url.includes('youtube.com/watch')) {
+    // Regular youtube.com links
+    const videoId = new URL(url).searchParams.get('v');
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  }
+  return url;
+}
+
+// Convert Vimeo URL to embed URL
+function getVimeoEmbedUrl(url: string): string {
+  if (url.includes('vimeo.com/')) {
+    const videoId = url.split('vimeo.com/')[1].split('?')[0].split('/')[0];
+    return `https://player.vimeo.com/video/${videoId}?autoplay=1`;
+  }
+  return url;
+}
+
+// Determine if a URL is a direct media file
+function isDirectMediaFile(url: string): boolean {
+  return /\.(mp4|webm|ogg|mp3|wav|jpg|jpeg|png|gif|pdf)$/i.test(url);
+}
+
+// Get file extension from URL
+function getFileExtension(url: string): string {
+  return url.split('.').pop()?.toLowerCase() || '';
+}
+
+// Get media type from URL
+function getMediaType(url: string): 'video' | 'audio' | 'image' | 'pdf' | 'webpage' | 'unknown' {
+  const extension = getFileExtension(url);
+  if (['mp4', 'webm', 'ogg', 'mov'].includes(extension)) return 'video';
+  if (['mp3', 'wav', 'ogg'].includes(extension)) return 'audio';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
+  if (extension === 'pdf') return 'pdf';
+  if (isYouTubeUrl(url) || isVimeoUrl(url)) return 'video';
+  return 'webpage';
+}
+
+export function DirectResourceViewer({
+  isOpen,
+  onClose,
+  resourceUrl,
+  resourceType,
+  resourceTitle,
+  courseId,
+  resourceIndex,
+}: DirectResourceViewerProps) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"viewer" | "external">("viewer");
+  const { toast } = useToast();
+  
+  // Determine the correct media type based on URL analysis, not just the provided resourceType
+  const [mediaType, setMediaType] = useState<'video' | 'audio' | 'image' | 'pdf' | 'webpage' | 'unknown'>('unknown');
+  
+  // Setup load timeout
+  useEffect(() => {
+    if (isOpen) {
+      setLoading(true);
+      setError(null);
+      setActiveTab("viewer");
+      
+      // Determine the media type based on URL
+      const detectedType = getMediaType(resourceUrl);
+      setMediaType(detectedType);
+      
+      // Set timeout to detect loading issues
+      const timeout = setTimeout(() => {
+        if (loading) {
+          console.log("Resource loading timeout");
+          setLoading(false);
+          setError("Resource loading timed out. The content might be blocked or unavailable.");
+        }
+      }, 10000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isOpen, resourceUrl, loading]);
+  
+  // Handle load complete
+  const handleLoadComplete = () => {
+    console.log("Resource loaded successfully");
+    setLoading(false);
+  };
+  
+  // Handle load error
+  const handleLoadError = () => {
+    console.log("Resource load error");
+    setLoading(false);
+    setError("Failed to load the resource. Try opening it externally.");
+  };
+  
+  // Handle direct download
+  const handleDownload = () => {
+    window.open(resourceUrl, '_blank');
+    toast({
+      title: "Download Started",
+      description: "Your download should begin in a new tab.",
+    });
+  };
+  
+  // Get appropriate icon based on resource type
+  const getResourceIcon = () => {
+    switch (mediaType) {
+      case "webpage":
+        return <Globe className="h-5 w-5" />;
+      case "video":
+        return isYouTubeUrl(resourceUrl) ? <Youtube className="h-5 w-5" /> : <Video className="h-5 w-5" />;
+      case "image":
+        return <ImageIcon className="h-5 w-5" />;
+      case "pdf":
+        return <FileText className="h-5 w-5" />;
+      default:
+        return <FileText className="h-5 w-5" />;
+    }
+  };
+
+  // Render YouTube or Vimeo embed
+  const renderVideoEmbed = () => {
+    let embedUrl = resourceUrl;
+    
+    if (isYouTubeUrl(resourceUrl)) {
+      embedUrl = getYouTubeEmbedUrl(resourceUrl);
+    } else if (isVimeoUrl(resourceUrl)) {
+      embedUrl = getVimeoEmbedUrl(resourceUrl);
+    }
+    
+    return (
+      <iframe 
+        src={embedUrl}
+        className="w-full h-[70vh] border-0"
+        title={resourceTitle}
+        allowFullScreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        onLoad={handleLoadComplete}
+        onError={handleLoadError}
+      />
+    );
+  };
+  
+  // Render direct video file
+  const renderDirectVideo = () => {
+    return (
+      <EnhancedVideoPlayer 
+        src={resourceUrl}
+        title={resourceTitle}
+        onLoadComplete={handleLoadComplete}
+        onError={handleLoadError}
+        onDownload={handleDownload}
+        className="rounded-md overflow-hidden"
+      />
+    );
+  };
+  
+  // Render direct image
+  const renderImage = () => {
+    return (
+      <div className="flex flex-col items-center justify-center p-4 bg-black h-[70vh]">
+        <img 
+          src={resourceUrl} 
+          alt={resourceTitle}
+          className="max-w-full max-h-[calc(70vh-40px)] object-contain"
+          onLoad={handleLoadComplete}
+          onError={handleLoadError}
+        />
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            onClick={handleDownload}
+          >
+            <Download className="h-4 w-4 mr-2" /> Download Image
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render PDF
+  const renderPDF = () => {
+    return (
+      <div className="relative h-[70vh]">
+        <iframe 
+          src={resourceUrl}
+          className="w-full h-full border-0"
+          title={resourceTitle}
+          onLoad={handleLoadComplete}
+          onError={handleLoadError}
+        />
+        <div className="absolute top-2 right-2">
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            onClick={handleDownload}
+            className="bg-white/80 backdrop-blur-sm"
+          >
+            <Download className="h-4 w-4 mr-2" /> Download PDF
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render website
+  const renderWebsite = () => {
+    return (
+      <iframe 
+        src={resourceUrl}
+        className="w-full h-[70vh] border-0"
+        title={resourceTitle}
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+        onLoad={handleLoadComplete}
+        onError={handleLoadError}
+      />
+    );
+  };
+  
+  // Render loading state
+  const renderLoading = () => {
+    return (
+      <div className="flex items-center justify-center p-10 h-[70vh]">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-16 w-16 bg-gray-200 rounded-full mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render error state
+  const renderError = () => {
+    return (
+      <div className="flex flex-col items-center justify-center p-10 text-center h-[70vh]">
+        <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+        <h3 className="text-lg font-medium mb-2">Resource Loading Error</h3>
+        <p className="text-gray-500 mb-4">{error}</p>
+        
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Button
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              // Force reload by updating the activeTab
+              setActiveTab("external");
+              setTimeout(() => setActiveTab("viewer"), 100);
+            }}
+            variant="outline"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+          </Button>
+          <Button
+            onClick={handleDownload}
+            variant="outline"
+          >
+            <Download className="mr-2 h-4 w-4" /> Open in New Tab
+          </Button>
+        </div>
+        
+        <p className="text-gray-400 text-xs mt-6 max-w-md">
+          Some external resources may have restrictions that prevent embedding.
+          Try opening the resource in a new tab, or contact your instructor if the problem persists.
+        </p>
+      </div>
+    );
+  };
+  
+  // Render the main content based on state and media type
+  const renderContent = () => {
+    if (loading) {
+      return renderLoading();
+    }
+    
+    if (error) {
+      return renderError();
+    }
+    
+    // Render based on media type
+    switch (mediaType) {
+      case 'video':
+        if (isYouTubeUrl(resourceUrl) || isVimeoUrl(resourceUrl)) {
+          return renderVideoEmbed();
+        } else {
+          return renderDirectVideo();
+        }
+      case 'image':
+        return renderImage();
+      case 'pdf':
+        return renderPDF();
+      case 'webpage':
+      default:
+        return renderWebsite();
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl w-full">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {getResourceIcon()}
+              <DialogTitle className="text-xl">{resourceTitle}</DialogTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {mediaType === 'video' && isYouTubeUrl(resourceUrl) 
+              ? 'YouTube video player' 
+              : `Viewing a ${mediaType} resource`}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) =>
+            setActiveTab(value as "viewer" | "external")
+          }
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="viewer">In-App Viewer</TabsTrigger>
+            <TabsTrigger value="external">External Link</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="viewer" className="pt-4">
+            <div className="border rounded-md overflow-hidden bg-gray-50">
+              {renderContent()}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="external" className="pt-4">
+            <div className="p-8 text-center border rounded-md">
+              <ExternalLink className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-medium mb-2">External Resource</h3>
+              <p className="text-gray-500 mb-6">
+                This will open the resource in a new browser tab.
+              </p>
+              <Button onClick={() => window.open(resourceUrl, "_blank")}>
+                Open External Link <ExternalLink className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
+          <div className="flex items-center justify-between w-full">
+            <div className="text-sm text-gray-500">
+              Resource #{resourceIndex + 1}
+            </div>
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
