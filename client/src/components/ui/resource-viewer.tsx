@@ -47,25 +47,56 @@ export function ResourceViewer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Resource proxy URL for secure viewing
+  // Create both direct and proxy URLs
   const proxyUrl = `/api/resource-proxy/${resourceIndex}?courseId=${courseId}`;
-
+  const directUrl = resourceUrl; // Original URL for fallback
+  const [useFallbackUrl, setUseFallbackUrl] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [currentUrl, setCurrentUrl] = useState(proxyUrl);
+  
   // Reset states when dialog opens and set a timeout to detect failed loads
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
       setError(null);
       setActiveTab("viewer");
+      setAttemptCount(0);
+      setUseFallbackUrl(false);
+      setCurrentUrl(proxyUrl);
       
       // Set a timeout to detect if loading takes too long
       // This handles cases where the iframe doesn't trigger onLoad/onError events
       loadTimeoutRef.current = setTimeout(() => {
         if (loading) {
           console.log("Resource loading timeout - might be blocked or unavailable");
+          
+          // First timeout - try fallback if we haven't already
+          if (!useFallbackUrl && attemptCount < 1) {
+            console.log("Trying direct URL fallback");
+            setAttemptCount(prev => prev + 1);
+            setUseFallbackUrl(true);
+            // For YouTube and web content, try direct URL
+            if (resourceType === "video" || resourceType === "webpage") {
+              setCurrentUrl(directUrl);
+              // Reset the timeout for the fallback attempt
+              if (loadTimeoutRef.current) {
+                clearTimeout(loadTimeoutRef.current);
+              }
+              loadTimeoutRef.current = setTimeout(() => {
+                if (loading) {
+                  setLoading(false);
+                  setError("Resource loading timed out even with fallback method. The content might be blocked by the provider or unavailable.");
+                }
+              }, 8000); // 8-second timeout for fallback
+              return;
+            }
+          }
+          
+          // Give up after second attempt or for non-web/video content
           setLoading(false);
           setError("Resource loading timed out. The content might be blocked by the provider or unavailable.");
         }
-      }, 10000); // 10-second timeout
+      }, 12000); // 12-second timeout
     }
 
     // Clean up timeout on component unmount or dialog close
@@ -74,7 +105,16 @@ export function ResourceViewer({
         clearTimeout(loadTimeoutRef.current);
       }
     };
-  }, [isOpen, loading]);
+  }, [isOpen, loading, directUrl, proxyUrl, resourceType]);
+
+  // Handle URL changes (when switching between proxy and direct)
+  useEffect(() => {
+    if (useFallbackUrl) {
+      setCurrentUrl(directUrl);
+    } else {
+      setCurrentUrl(proxyUrl);
+    }
+  }, [useFallbackUrl, directUrl, proxyUrl]);
 
   // Handle load complete
   const handleLoadComplete = () => {
@@ -93,6 +133,14 @@ export function ResourceViewer({
   const handleLoadError = () => {
     console.log("Resource load error");
     
+    // Try fallback URL if not already using it
+    if (!useFallbackUrl && attemptCount < 1) {
+      console.log("Load error - trying direct URL fallback");
+      setAttemptCount(prev => prev + 1);
+      setUseFallbackUrl(true);
+      return;
+    }
+    
     // Clear the timeout since we already know there's an error
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
@@ -103,26 +151,36 @@ export function ResourceViewer({
     setError("Failed to load the resource. Try opening it externally.");
   };
 
-  // Try reloading the resource
+  // Try reloading the resource with optional URL switching
   const handleRetry = () => {
     setLoading(true);
     setError(null);
     
+    // Toggle between proxy and direct URL if we've already tried once
+    if (attemptCount > 0) {
+      setUseFallbackUrl(!useFallbackUrl);
+      toast({
+        title: "Trying different method...",
+        description: useFallbackUrl ? "Switching to proxy server method." : "Switching to direct URL method.",
+      });
+    } else {
+      // First retry with same method
+      toast({
+        title: "Retrying...",
+        description: "Attempting to load the resource again.",
+      });
+    }
+    
     // Force reload by updating the iframe src
     if (iframeRef.current) {
-      const currentSrc = iframeRef.current.src;
       iframeRef.current.src = '';
       setTimeout(() => {
+        setAttemptCount(prev => prev + 1);
         if (iframeRef.current) {
-          iframeRef.current.src = currentSrc;
+          iframeRef.current.src = useFallbackUrl ? directUrl : proxyUrl;
         }
       }, 100);
     }
-    
-    toast({
-      title: "Retrying...",
-      description: "Attempting to load the resource again.",
-    });
   };
 
   // Handle direct download
@@ -175,12 +233,29 @@ export function ResourceViewer({
           <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
           <h3 className="text-lg font-medium mb-2">Resource Loading Error</h3>
           <p className="text-gray-500 mb-4">{error}</p>
+          
+          {/* Current method indicator */}
+          <div className="bg-gray-100 py-2 px-4 rounded-md mb-4 text-sm flex items-center">
+            <span className="font-medium mr-2">Current method:</span>
+            {useFallbackUrl ? (
+              <span className="text-blue-600">Direct URL</span>
+            ) : (
+              <span className="text-green-600">Proxy Server</span>
+            )}
+            {attemptCount > 0 && (
+              <span className="text-gray-500 ml-2">
+                (Attempt {attemptCount}/2)
+              </span>
+            )}
+          </div>
+          
           <div className="flex flex-wrap gap-3 justify-center">
             <Button
               onClick={handleRetry}
               variant="outline"
             >
-              <RefreshCw className="mr-2 h-4 w-4" /> Retry
+              <RefreshCw className="mr-2 h-4 w-4" /> 
+              {attemptCount > 0 ? "Try Different Method" : "Retry"}
             </Button>
             <Button
               onClick={handleDownload}
@@ -189,12 +264,18 @@ export function ResourceViewer({
               <Download className="mr-2 h-4 w-4" /> Download
             </Button>
             <Button
-              onClick={() => window.open(proxyUrl, "_blank")}
+              onClick={() => window.open(useFallbackUrl ? directUrl : proxyUrl, "_blank")}
               variant="outline"
             >
               Open Externally <ExternalLink className="ml-2 h-4 w-4" />
             </Button>
           </div>
+          
+          {/* Help text */}
+          <p className="text-gray-400 text-xs mt-6 max-w-md">
+            Try opening the resource externally if it doesn't load in the viewer. 
+            Some external resources may have restrictions that prevent embedding.
+          </p>
         </div>
       );
     }
@@ -202,7 +283,7 @@ export function ResourceViewer({
     // Common iframe props
     const commonIframeProps = {
       ref: iframeRef,
-      src: proxyUrl,
+      src: currentUrl, // Use the dynamic URL that can switch between proxy and direct
       className: "w-full h-[70vh] border-0",
       title: resourceTitle,
       onLoad: handleLoadComplete,
@@ -242,7 +323,7 @@ export function ResourceViewer({
           // Direct video file with enhanced player
           return (
             <EnhancedVideoPlayer 
-              src={proxyUrl}
+              src={currentUrl}
               title={resourceTitle}
               onLoadComplete={handleLoadComplete}
               onError={handleLoadError}
@@ -312,7 +393,7 @@ export function ResourceViewer({
               <p className="text-gray-500 mb-6">
                 This will open the resource in a new browser tab.
               </p>
-              <Button onClick={() => window.open(proxyUrl, "_blank")}>
+              <Button onClick={() => window.open(useFallbackUrl ? directUrl : proxyUrl, "_blank")}>
                 Open External Link <ExternalLink className="ml-2 h-4 w-4" />
               </Button>
             </div>
