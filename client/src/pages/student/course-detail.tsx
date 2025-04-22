@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import MediaGallery from "@/components/ui/media-gallery";
+import { ResourceViewer } from "@/components/ui/resource-viewer";
 import { FileItem } from "@/components/ui/file-upload";
 import {
   BookOpen,
@@ -23,6 +24,7 @@ import {
   Globe,
   Link2,
   ArrowUpRight,
+  Hash,
 } from "lucide-react";
 
 export default function StudentCourseDetail() {
@@ -31,6 +33,15 @@ export default function StudentCourseDetail() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth(); // Get the user to check role
+  
+  // State for resource viewer dialog
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<{
+    url: string;
+    type: string;
+    label: string;
+    index: number;
+  } | null>(null);
 
   // Fetch course details
   const {
@@ -65,15 +76,15 @@ export default function StudentCourseDetail() {
     // Use includedCredentials to ensure auth cookies are sent
     queryFn: async ({ queryKey }) => {
       const response = await fetch(queryKey[0] as string, {
-        credentials: 'include'
+        credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error fetching course: ${response.status}`);
       }
-      
+
       return response.json();
-    }
+    },
   });
 
   // Define the Module type
@@ -95,17 +106,17 @@ export default function StudentCourseDetail() {
       // Use includedCredentials to ensure auth cookies are sent
       queryFn: async ({ queryKey }) => {
         const response = await fetch(queryKey[0] as string, {
-          credentials: 'include'
+          credentials: "include",
         });
-        
+
         if (!response.ok) {
           throw new Error(`Error fetching modules: ${response.status}`);
         }
-        
+
         return response.json();
-      }
+      },
     });
-    
+
   // Handle course data that might be returned as an array
   const courseItem = Array.isArray(course) ? course[0] : course;
 
@@ -169,67 +180,78 @@ export default function StudentCourseDetail() {
       console.log("Full course data:", course);
       // Check if course data is nested in a 'data' property (common with some API responses)
       const courseData = (course as any).data || course;
-      
+
       // Direct access to first element in course array if it's an array
       const courseItem = Array.isArray(course) ? course[0] : course;
-      
+
       console.log("Using course item:", courseItem);
       console.log("Course item props:", Object.keys(courseItem));
-      
+
       // Add debug info for data types
       console.log("Data types:", {
-        videoUrls: courseItem.videoUrls ? typeof courseItem.videoUrls : 'undefined',
-        resourceLinks: courseItem.resourceLinks ? typeof courseItem.resourceLinks : 'undefined',
-        attachments: courseItem.attachments ? typeof courseItem.attachments : 'undefined'
+        videoUrls: courseItem.videoUrls
+          ? typeof courseItem.videoUrls
+          : "undefined",
+        resourceLinks: courseItem.resourceLinks
+          ? typeof courseItem.resourceLinks
+          : "undefined",
+        attachments: courseItem.attachments
+          ? typeof courseItem.attachments
+          : "undefined",
       });
-      
+
       return (
         <div className="flex flex-col space-y-6">
           {/* Video Content */}
           {(() => {
             // Handle both old and new video URL formats safely
             let videoUrlsToDisplay: string[] = [];
-            
+
             // First check if videoUrls field exists and is populated
             // Use courseItem which is the first item from the course array
             const videoUrls = courseItem.videoUrls;
-            
+
             if (videoUrls) {
               // If it's already an array, use it directly
               if (Array.isArray(videoUrls)) {
                 videoUrlsToDisplay = videoUrls;
               }
               // If it's an object but not an array, it might be a parsed JSON object
-              else if (typeof videoUrls === 'object') {
+              else if (typeof videoUrls === "object") {
                 const values = Object.values(videoUrls);
                 if (values.length > 0) {
-                  videoUrlsToDisplay = values.map(v => String(v));
+                  videoUrlsToDisplay = values.map((v) => String(v));
                 }
               }
               // If it's a string, try to parse it as JSON
-              else if (typeof videoUrls === 'string') {
+              else if (typeof videoUrls === "string") {
                 try {
                   const parsed = JSON.parse(videoUrls);
                   if (Array.isArray(parsed)) {
                     videoUrlsToDisplay = parsed;
-                  } else if (typeof parsed === 'object') {
-                    videoUrlsToDisplay = Object.values(parsed).map(v => String(v));
+                  } else if (typeof parsed === "object") {
+                    videoUrlsToDisplay = Object.values(parsed).map((v) =>
+                      String(v),
+                    );
                   }
                 } catch (e) {
                   // If it doesn't parse as JSON but is a single URL, use it
-                  if (typeof videoUrls === 'string' && videoUrls.includes('http')) {
+                  if (
+                    typeof videoUrls === "string" &&
+                    videoUrls.includes("http")
+                  ) {
                     videoUrlsToDisplay = [videoUrls];
                   }
                   console.error("Error parsing videoUrls:", e);
                 }
               }
             }
-            
+
             // Fallback to legacy videoUrl if available
             if (videoUrlsToDisplay.length === 0 && courseItem.videoUrl) {
               videoUrlsToDisplay = [courseItem.videoUrl];
             }
-            
+
             console.log("Video URLs to display:", videoUrlsToDisplay);
 
             return videoUrlsToDisplay.length > 0 ? (
@@ -274,19 +296,22 @@ export default function StudentCourseDetail() {
 
             // Use courseItem which is the first item from the course array
             const resourceLinks = courseItem.resourceLinks;
-            
+
             if (resourceLinks) {
               // Handle if it's already an array
               if (Array.isArray(resourceLinks)) {
                 resourceLinksToDisplay = resourceLinks;
               }
               // If it's an object but not an array, it might be a parsed JSON object
-              else if (typeof resourceLinks === 'object') {
-                const values = Object.values(resourceLinks).map(item => item as {
-                  url: string;
-                  type: string;
-                  label: string;
-                });
+              else if (typeof resourceLinks === "object") {
+                const values = Object.values(resourceLinks).map(
+                  (item) =>
+                    item as {
+                      url: string;
+                      type: string;
+                      label: string;
+                    },
+                );
                 if (values.length > 0) {
                   resourceLinksToDisplay = values;
                 }
@@ -297,12 +322,15 @@ export default function StudentCourseDetail() {
                   const parsed = JSON.parse(resourceLinks);
                   if (Array.isArray(parsed)) {
                     resourceLinksToDisplay = parsed;
-                  } else if (typeof parsed === 'object') {
-                    resourceLinksToDisplay = Object.values(parsed).map(item => item as {
-                      url: string;
-                      type: string;
-                      label: string;
-                    });
+                  } else if (typeof parsed === "object") {
+                    resourceLinksToDisplay = Object.values(parsed).map(
+                      (item) =>
+                        item as {
+                          url: string;
+                          type: string;
+                          label: string;
+                        },
+                    );
                   }
                 } catch (e) {
                   console.error("Error parsing resourceLinks:", e);
@@ -325,7 +353,7 @@ export default function StudentCourseDetail() {
                     let Icon = FileText;
                     if (link.type === "webpage") Icon = Globe;
                     if (link.type === "video") Icon = Video;
-                    
+
                     // Generate proxy URL for students, show actual URL for admins/teachers
                     const isStudent = user?.role === "student";
                     const resourceProxyUrl = `/api/resource-proxy/${index}?courseId=${courseId}`;
@@ -345,7 +373,9 @@ export default function StudentCourseDetail() {
                           {isStudent ? (
                             // For students: Show only the resource name, hide URL
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
-                              <span className="truncate">Resource #{index + 1}</span>
+                              <span className="truncate">
+                                Resource #{index + 1}
+                              </span>
                               <Link2 className="h-3 w-3 flex-shrink-0" />
                             </div>
                           ) : (
@@ -406,14 +436,14 @@ export default function StudentCourseDetail() {
 
             // Use courseItem which is the first item from the course array
             const attachments = courseItem.attachments;
-            
+
             if (attachments) {
               // Handle if it's already an array
               if (Array.isArray(attachments)) {
                 attachmentsToDisplay = attachments;
               }
               // If it's an object but not an array
-              else if (typeof attachments === 'object') {
+              else if (typeof attachments === "object") {
                 const values = Object.values(attachments);
                 if (values.length > 0) {
                   attachmentsToDisplay = values;
@@ -425,7 +455,7 @@ export default function StudentCourseDetail() {
                   const parsed = JSON.parse(attachments);
                   if (Array.isArray(parsed)) {
                     attachmentsToDisplay = parsed;
-                  } else if (typeof parsed === 'object') {
+                  } else if (typeof parsed === "object") {
                     attachmentsToDisplay = Object.values(parsed);
                   }
                 } catch (e) {
@@ -443,7 +473,13 @@ export default function StudentCourseDetail() {
                   <h3 className="text-lg font-medium">Course Materials</h3>
                 </div>
 
-                <MediaGallery files={Array.isArray(attachmentsToDisplay) ? attachmentsToDisplay : []} />
+                <MediaGallery
+                  files={
+                    Array.isArray(attachmentsToDisplay)
+                      ? attachmentsToDisplay
+                      : []
+                  }
+                />
               </div>
             ) : (
               <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border">
@@ -580,11 +616,14 @@ export default function StudentCourseDetail() {
                     <h3 className="font-medium">Enrolled On</h3>
                   </div>
                   <p className="text-lg font-medium">
-                    {new Date(courseItem.createdAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    {new Date(courseItem.createdAt).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      },
+                    )}
                   </p>
                 </div>
               </div>

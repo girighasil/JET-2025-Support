@@ -1858,11 +1858,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register routes for notifications
   registerNotificationRoutes(app);
 
-  // Proxy endpoint for resource links (to hide actual URLs from students)
+  // Enhanced proxy endpoint for resource links (to hide URLs and embed content)
   app.get("/api/resource-proxy/:resourceId", isAuthenticated, async (req, res) => {
     try {
       const resourceId = req.params.resourceId;
       const { courseId } = req.query;
+      const { accept } = req.headers;  // Get Accept header to determine preferred format
       
       if (!courseId) {
         return res.status(400).json({ message: "Course ID is required" });
@@ -1892,12 +1893,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Resource not found or invalid" });
       }
       
-      // Handle different resource types
-      if (resource.type === "webpage") {
-        // For webpages, redirect to the original URL
+      console.log(`Proxying resource: ${resource.label} (${resource.type}) - ${resource.url}`);
+      
+      // Special case for YouTube/Vimeo videos - redirect for embedding
+      if ((resource.type === "video" || resource.url.includes("youtube.com") || resource.url.includes("youtu.be") || 
+           resource.url.includes("vimeo.com")) && 
+          !accept?.includes("application/json")) {
+        console.log("Redirecting to video URL for embedding");
         return res.redirect(resource.url);
-      } else if (resource.type === "pdf" || resource.type === "document") {
-        // For PDFs and documents, proxy the content
+      }
+      
+      // For HTML content request (coming from iframe), check if resource is embeddable
+      if (accept?.includes("text/html") && resource.type === "webpage") {
+        try {
+          // For webpages, create embedded viewer with appropriate headers for security
+          const viewerHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>${resource.label || "Resource"}</title>
+              <style>
+                body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+                iframe { width: 100%; height: 100%; border: 0; }
+                .error-container { 
+                  display: flex; flex-direction: column; align-items: center; justify-content: center; 
+                  height: 100%; padding: 20px; text-align: center; font-family: system-ui, sans-serif;
+                }
+                .error-container h1 { margin-bottom: 10px; }
+                .error-container p { margin-bottom: 20px; color: #666; }
+                .error-container a { 
+                  display: inline-block; padding: 10px 20px; background: #0070f3; color: white;
+                  text-decoration: none; border-radius: 5px; font-weight: 500;
+                }
+              </style>
+            </head>
+            <body>
+              <iframe 
+                src="${resource.url}" 
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                referrerpolicy="no-referrer"
+                onerror="document.getElementById('error-fallback').style.display = 'flex';"
+              ></iframe>
+              <div id="error-fallback" class="error-container" style="display: none;">
+                <h1>Unable to display content</h1>
+                <p>This website cannot be embedded due to security restrictions.</p>
+                <a href="${resource.url}" target="_blank" rel="noopener noreferrer">Open resource in new tab</a>
+              </div>
+              <script>
+                window.addEventListener('error', function(e) {
+                  document.getElementById('error-fallback').style.display = 'flex';
+                }, true);
+              </script>
+            </body>
+            </html>
+          `;
+          
+          // Set Content-Security-Policy to enhance security
+          res.set({
+            'Content-Type': 'text/html',
+            'Content-Security-Policy': "frame-ancestors 'self'",
+            'X-Frame-Options': 'SAMEORIGIN',
+          });
+          
+          return res.send(viewerHtml);
+        } catch (error) {
+          console.error("Error creating HTML viewer:", error);
+          return res.redirect(resource.url);
+        }
+      }
+      
+      // Handle resources that need to be fetched and proxied
+      if (resource.type === "pdf" || resource.type === "document" || resource.url.endsWith('.pdf')) {
         try {
           const response = await fetch(resource.url);
           
@@ -1905,21 +1973,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error(`Failed to fetch resource: ${response.statusText}`);
           }
           
+          // Get content type from response or guess based on URL
+          let contentType = response.headers.get('Content-Type');
+          if (!contentType) {
+            if (resource.url.endsWith('.pdf')) contentType = 'application/pdf';
+            else if (resource.url.endsWith('.doc') || resource.url.endsWith('.docx')) 
+              contentType = 'application/msword';
+            else contentType = 'application/octet-stream';
+          }
+          
           // Forward the content type and other relevant headers
-          res.set('Content-Type', response.headers.get('Content-Type') || 'application/octet-stream');
+          res.set('Content-Type', contentType);
           res.set('Content-Disposition', `inline; filename="${resource.label || 'resource'}"`);
           
-          // Pipe the response body to our response
+          // Add cache headers to improve performance
+          res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+          
+          // Send the file data
           const buffer = await response.buffer();
-          res.send(buffer);
+          return res.send(buffer);
         } catch (error) {
           console.error("Error proxying resource:", error);
-          return res.status(500).json({ message: "Failed to fetch resource" });
+          // If proxy fails, redirect to the original resource
+          return res.redirect(resource.url);
         }
-      } else {
-        // For other types, redirect to the URL
-        return res.redirect(resource.url);
       }
+      
+      // For other types, redirect to the URL
+      return res.redirect(resource.url);
     } catch (error) {
       console.error("Error accessing resource:", error);
       res.status(500).json({ message: "Server error" });
