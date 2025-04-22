@@ -795,6 +795,18 @@ export default function StudentCourseDetail() {
           </Tabs>
         </div>
       )}
+      {/* Resource Viewer Component */}
+      {selectedResource && (
+        <ResourceViewer
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          resourceUrl={selectedResource.url}
+          resourceType={selectedResource.type}
+          resourceTitle={selectedResource.label}
+          courseId={courseId}
+          resourceIndex={selectedResource.index}
+        />
+      )}
     </Layout>
   );
 }
