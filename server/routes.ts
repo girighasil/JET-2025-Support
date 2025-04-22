@@ -2077,16 +2077,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.set("Content-Type", contentType);
           res.set("Content-Disposition", `inline; filename="${resource.label || "resource"}"`);
           
-          // Add security headers
+          // Add security headers but allow framing from same origin
           res.set("X-Frame-Options", "SAMEORIGIN");
           res.set("Content-Security-Policy", "frame-ancestors 'self'");
+          
+          // Set CORS headers to allow embedding
+          res.set("Access-Control-Allow-Origin", "*");
+          res.set("Access-Control-Allow-Methods", "GET");
+          res.set("Access-Control-Allow-Headers", "Content-Type");
           
           // Cache for better performance
           res.set("Cache-Control", "public, max-age=3600"); // 1 hour
           
           // Stream the response directly to the client
-          const buffer = await response.buffer();
-          return res.send(buffer);
+          try {
+            // First try using the buffer method
+            const buffer = await response.buffer();
+            return res.send(buffer);
+          } catch (bufferError) {
+            // If buffer() is not available, use arrayBuffer instead
+            console.log("Falling back to arrayBuffer method");
+            const arrayBuffer = await response.arrayBuffer();
+            return res.send(Buffer.from(arrayBuffer));
+          }
         } catch (error) {
           console.error("Error proxying resource:", error);
           // Only as fallback, redirect to the original URL
