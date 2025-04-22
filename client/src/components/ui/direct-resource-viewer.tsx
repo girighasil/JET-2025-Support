@@ -36,33 +36,58 @@ interface DirectResourceViewerProps {
 
 // Type guard to check if a URL is from YouTube
 function isYouTubeUrl(url: string): boolean {
-  return /youtube\.com|youtu\.be/.test(url);
+  // More comprehensive check for YouTube URLs with proper domain boundaries
+  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(url);
 }
 
 // Type guard to check if a URL is from Vimeo
 function isVimeoUrl(url: string): boolean {
-  return /vimeo\.com/.test(url);
+  // More comprehensive check for Vimeo URLs with proper domain boundaries
+  return /^(https?:\/\/)?(www\.)?vimeo\.com\//i.test(url);
 }
 
 // Convert YouTube URL to embed URL
 function getYouTubeEmbedUrl(url: string): string {
-  if (url.includes('youtu.be/')) {
-    // Short youtu.be links
-    const videoId = url.split('youtu.be/')[1].split('?')[0];
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-  } else if (url.includes('youtube.com/watch')) {
-    // Regular youtube.com links
-    const videoId = new URL(url).searchParams.get('v');
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  try {
+    if (url.includes('youtu.be/')) {
+      // Short youtu.be links
+      const videoId = url.split('youtu.be/')[1].split('?')[0];
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&enablejsapi=1&modestbranding=1&rel=0`;
+      }
+    } else if (url.includes('youtube.com/watch')) {
+      // Regular youtube.com links
+      const urlObj = new URL(url);
+      const videoId = urlObj.searchParams.get('v');
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&enablejsapi=1&modestbranding=1&rel=0`;
+      }
+    } else if (url.includes('youtube.com/embed/')) {
+      // Already an embed URL, but let's ensure it has our additional parameters
+      const videoId = url.split('youtube.com/embed/')[1].split('?')[0];
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&enablejsapi=1&modestbranding=1&rel=0`;
+      }
+    }
+  } catch (e) {
+    console.error('Error parsing YouTube URL:', e);
   }
   return url;
 }
 
 // Convert Vimeo URL to embed URL
 function getVimeoEmbedUrl(url: string): string {
-  if (url.includes('vimeo.com/')) {
-    const videoId = url.split('vimeo.com/')[1].split('?')[0].split('/')[0];
-    return `https://player.vimeo.com/video/${videoId}?autoplay=1`;
+  try {
+    // Extract Vimeo ID using regex for more reliable parsing
+    const vimeoRegex = /vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|)(\d+)(?:$|\/|\?)/;
+    const match = url.match(vimeoRegex);
+    
+    if (match && match[1]) {
+      // Create a well-formed embed URL with appropriate parameters
+      return `https://player.vimeo.com/video/${match[1]}?autoplay=0&portrait=0&dnt=1&title=0&byline=0`;
+    }
+  } catch (e) {
+    console.error("Error parsing Vimeo URL:", e);
   }
   return url;
 }
@@ -105,7 +130,7 @@ export function DirectResourceViewer({
   // Determine the correct media type based on URL analysis, not just the provided resourceType
   const [mediaType, setMediaType] = useState<'video' | 'audio' | 'image' | 'pdf' | 'webpage' | 'unknown'>('unknown');
   
-  // Setup load timeout
+  // Setup initial state and type detection
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
@@ -116,18 +141,34 @@ export function DirectResourceViewer({
       const detectedType = getMediaType(resourceUrl);
       setMediaType(detectedType);
       
-      // Set timeout to detect loading issues
+      // For websites and PDFs, don't even try to load them in the iframe
+      // Just show the appropriate info screens immediately
+      if (detectedType === 'webpage') {
+        // Websites generally can't be embedded due to CORS, so skip loading
+        setLoading(false);
+      } else if (resourceType === 'other' && !isYouTubeUrl(resourceUrl) && !isVimeoUrl(resourceUrl)) {
+        // For "other" type that's not a video, also skip the loading process
+        setLoading(false);
+      }
+    }
+  }, [isOpen, resourceUrl, resourceType]);
+  
+  // Set a separate short timeout for any resource still loading
+  useEffect(() => {
+    if (isOpen && loading) {
       const timeout = setTimeout(() => {
-        if (loading) {
-          console.log("Resource loading timeout");
-          setLoading(false);
+        console.log("Resource loading timeout");
+        setLoading(false);
+        
+        // Don't show error for YouTube/Vimeo - they might still be loading but visible
+        if (!(mediaType === 'video' && (isYouTubeUrl(resourceUrl) || isVimeoUrl(resourceUrl)))) {
           setError("Resource loading timed out. The content might be blocked or unavailable.");
         }
-      }, 10000);
+      }, 5000); // Shorter timeout of 5 seconds
       
       return () => clearTimeout(timeout);
     }
-  }, [isOpen, resourceUrl, loading]);
+  }, [isOpen, loading, mediaType, resourceUrl]);
   
   // Handle load complete
   const handleLoadComplete = () => {
@@ -167,6 +208,18 @@ export function DirectResourceViewer({
     }
   };
 
+  // Video embed auto-detection
+  useEffect(() => {
+    if (isOpen && mediaType === 'video' && (isYouTubeUrl(resourceUrl) || isVimeoUrl(resourceUrl))) {
+      // Mark as loaded after a short delay for video embeds
+      const timer = setTimeout(() => {
+        handleLoadComplete();
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, resourceUrl, mediaType]);
+  
   // Render YouTube or Vimeo embed
   const renderVideoEmbed = () => {
     let embedUrl = resourceUrl;
@@ -177,16 +230,35 @@ export function DirectResourceViewer({
       embedUrl = getVimeoEmbedUrl(resourceUrl);
     }
     
+    // For YouTube and Vimeo, we'll use a custom container with error handling
     return (
-      <iframe 
-        src={embedUrl}
-        className="w-full h-[70vh] border-0"
-        title={resourceTitle}
-        allowFullScreen
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        onLoad={handleLoadComplete}
-        onError={handleLoadError}
-      />
+      <div className="w-full h-[70vh] bg-black relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+          </div>
+        )}
+        
+        <iframe 
+          src={embedUrl}
+          className="w-full h-full border-0"
+          title={resourceTitle}
+          allowFullScreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        />
+        
+        {/* Overlay with external link button */}
+        <div className="absolute bottom-4 right-4">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="bg-black/60 hover:bg-black/80 text-white"
+            onClick={() => window.open(resourceUrl, "_blank")}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" /> Open on {isYouTubeUrl(resourceUrl) ? 'YouTube' : 'Vimeo'}
+          </Button>
+        </div>
+      </div>
     );
   };
   
@@ -253,17 +325,20 @@ export function DirectResourceViewer({
     );
   };
   
-  // Render website
+  // Render website - with special handling for websites that might block embedding
   const renderWebsite = () => {
+    // For external websites that might block embedding, just show an info screen
     return (
-      <iframe 
-        src={resourceUrl}
-        className="w-full h-[70vh] border-0"
-        title={resourceTitle}
-        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-        onLoad={handleLoadComplete}
-        onError={handleLoadError}
-      />
+      <div className="flex flex-col items-center justify-center p-10 h-[70vh] text-center bg-gray-50">
+        <Globe className="h-12 w-12 text-blue-500 mb-4" />
+        <h3 className="text-lg font-medium mb-2">External Website</h3>
+        <p className="text-gray-500 mb-6 max-w-md">
+          Due to security restrictions, many websites cannot be displayed directly in the app viewer.
+        </p>
+        <Button onClick={() => window.open(resourceUrl, "_blank")} variant="default">
+          Open Website <ExternalLink className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     );
   };
   
