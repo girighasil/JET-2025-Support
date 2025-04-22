@@ -45,6 +45,8 @@ A comprehensive online learning platform built with modern web technologies, des
 - React Query for data fetching
 - Recharts for analytics visualization
 - TipTap for rich text editing
+- React Hook Form for form handling
+- Zod for validation
 
 ### Backend
 - Express.js
@@ -52,6 +54,7 @@ A comprehensive online learning platform built with modern web technologies, des
 - TypeScript
 - WebSocket support
 - Multer for file uploads
+- JWT for authentication
 
 ### Database
 - PostgreSQL (via Neon Database)
@@ -76,13 +79,15 @@ For detailed schema information, refer to `shared/schema.ts`
 
 The application exposes various API endpoints:
 
-- `/api/user` - User management
+- `/api/auth` - Authentication & authorization
+- `/api/users` - User management
 - `/api/courses` - Course operations
 - `/api/tests` - Test management
 - `/api/enrollments` - Enrollment handling
 - `/api/doubt-sessions` - Doubt session management
 - `/api/notifications` - Notification system
 - `/api/analytics` - Analytics data
+- `/api/files` - File upload & management
 
 ## Getting Started
 
@@ -121,6 +126,14 @@ The application exposes various API endpoints:
 - `npm run start` - Start production server
 - `npm run check` - TypeScript type checking
 - `npm run db:push` - Update database schema
+
+## Deployment
+
+The application is configured for deployment on Replit with:
+- Automatic builds using `npm run build`
+- Production server using `npm run start`
+- Port 5000 forwarded to 80/443 in production
+- Support for environment variables through Replit Secrets
 
 ## Contributing
 
