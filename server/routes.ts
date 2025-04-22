@@ -168,14 +168,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the first few courses to verify data
       console.log(
         "First few enriched courses:",
-        coursesWithCreatorInfo
-          .slice(0, 3)
-          .map((c) => ({
-            id: c.id,
-            title: c.title,
-            creatorName: c.creatorName,
-            createdBy: c.createdBy,
-          })),
+        coursesWithCreatorInfo.slice(0, 3).map((c) => ({
+          id: c.id,
+          title: c.title,
+          creatorName: c.creatorName,
+          createdBy: c.createdBy,
+        })),
       );
       res.json(coursesWithCreatorInfo);
     } catch (error) {
@@ -352,15 +350,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Module Routes
-  app.get("/api/courses/:courseId/modules", isAuthenticated, async (req, res) => {
-    try {
-      const courseId = parseInt(req.params.courseId);
-      const modules = await storage.listModules(courseId);
-      res.json(modules);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
+  app.get(
+    "/api/courses/:courseId/modules",
+    isAuthenticated,
+    async (req, res) => {
+      try {
+        const courseId = parseInt(req.params.courseId);
+        const modules = await storage.listModules(courseId);
+        res.json(modules);
+      } catch (error) {
+        res.status(500).json({ message: "Server error" });
+      }
+    },
+  );
 
   app.get("/api/modules/:id", isAuthenticated, async (req, res) => {
     try {
@@ -1859,55 +1861,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerNotificationRoutes(app);
 
   // Enhanced proxy endpoint for resource links (to hide URLs and embed content)
-  app.get("/api/resource-proxy/:resourceId", isAuthenticated, async (req, res) => {
-    try {
-      const resourceId = req.params.resourceId;
-      const { courseId } = req.query;
-      const { accept } = req.headers;  // Get Accept header to determine preferred format
-      
-      if (!courseId) {
-        return res.status(400).json({ message: "Course ID is required" });
-      }
-      
-      // Fetch the course to get the resource links
-      const course = await storage.getCourse(parseInt(courseId as string));
-      
-      if (!course) {
-        return res.status(404).json({ message: "Course not found" });
-      }
-      
-      // Ensure resource links exist
-      if (!course.resourceLinks || !Array.isArray(course.resourceLinks)) {
-        return res.status(404).json({ message: "Resource not found" });
-      }
-      
-      // Find the resource by its index
-      const resourceIndex = parseInt(resourceId);
-      if (isNaN(resourceIndex) || resourceIndex < 0 || resourceIndex >= course.resourceLinks.length) {
-        return res.status(404).json({ message: "Resource not found" });
-      }
-      
-      const resource = course.resourceLinks[resourceIndex];
-      
-      if (!resource || !resource.url) {
-        return res.status(404).json({ message: "Resource not found or invalid" });
-      }
-      
-      console.log(`Proxying resource: ${resource.label} (${resource.type}) - ${resource.url}`);
-      
-      // Special case for YouTube/Vimeo videos - redirect for embedding
-      if ((resource.type === "video" || resource.url.includes("youtube.com") || resource.url.includes("youtu.be") || 
-           resource.url.includes("vimeo.com")) && 
-          !accept?.includes("application/json")) {
-        console.log("Redirecting to video URL for embedding");
-        return res.redirect(resource.url);
-      }
-      
-      // For HTML content request (coming from iframe), check if resource is embeddable
-      if (accept?.includes("text/html") && resource.type === "webpage") {
-        try {
-          // For webpages, create embedded viewer with appropriate headers for security
-          const viewerHtml = `
+  app.get(
+    "/api/resource-proxy/:resourceId",
+    isAuthenticated,
+    async (req, res) => {
+      try {
+        const resourceId = req.params.resourceId;
+        const { courseId } = req.query;
+        const { accept } = req.headers; // Get Accept header to determine preferred format
+
+        if (!courseId) {
+          return res.status(400).json({ message: "Course ID is required" });
+        }
+
+        // Fetch the course to get the resource links
+        const course = await storage.getCourse(parseInt(courseId as string));
+
+        if (!course) {
+          return res.status(404).json({ message: "Course not found" });
+        }
+
+        // Ensure resource links exist
+        if (!course.resourceLinks || !Array.isArray(course.resourceLinks)) {
+          return res.status(404).json({ message: "Resource not found" });
+        }
+
+        // Find the resource by its index
+        const resourceIndex = parseInt(resourceId);
+        if (
+          isNaN(resourceIndex) ||
+          resourceIndex < 0 ||
+          resourceIndex >= course.resourceLinks.length
+        ) {
+          return res.status(404).json({ message: "Resource not found" });
+        }
+
+        const resource = course.resourceLinks[resourceIndex];
+
+        if (!resource || !resource.url) {
+          return res
+            .status(404)
+            .json({ message: "Resource not found or invalid" });
+        }
+
+        console.log(
+          `Proxying resource: ${resource.label} (${resource.type}) - ${resource.url}`,
+        );
+
+        // Special case for YouTube/Vimeo videos - create proper embed URL
+        if (
+          (resource.type === "video" ||
+            resource.url.includes("youtube.com") ||
+            resource.url.includes("youtu.be") ||
+            resource.url.includes("vimeo.com")) &&
+          !accept?.includes("application/json")
+        ) {
+          console.log("Creating embed URL for video");
+
+          // Transform YouTube URLs to embed format
+          let embedUrl = resource.url;
+
+          // YouTube URL handling
+          if (
+            resource.url.includes("youtube.com") ||
+            resource.url.includes("youtu.be")
+          ) {
+            let videoId = "";
+
+            // Extract video ID from different YouTube URL formats
+            if (resource.url.includes("youtube.com/watch?v=")) {
+              videoId = resource.url.split("watch?v=")[1].split("&")[0];
+            } else if (resource.url.includes("youtu.be/")) {
+              videoId = resource.url.split("youtu.be/")[1].split("?")[0];
+            } else if (resource.url.includes("youtube.com/embed/")) {
+              videoId = resource.url
+                .split("youtube.com/embed/")[1]
+                .split("?")[0];
+            }
+
+            if (videoId) {
+              // Create safe embed URL
+              embedUrl = `https://www.youtube.com/embed/${videoId}`;
+              console.log(`Transformed YouTube URL to: ${embedUrl}`);
+            }
+          }
+
+          return res.redirect(embedUrl);
+        }
+
+        // For HTML content request (coming from iframe), check if resource is embeddable
+        if (accept?.includes("text/html") && resource.type === "webpage") {
+          try {
+            // For webpages, create embedded viewer with appropriate headers for security
+            const viewerHtml = `
             <!DOCTYPE html>
             <html>
             <head>
@@ -1949,63 +1995,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
             </body>
             </html>
           `;
-          
-          // Set Content-Security-Policy to enhance security
-          res.set({
-            'Content-Type': 'text/html',
-            'Content-Security-Policy': "frame-ancestors 'self'",
-            'X-Frame-Options': 'SAMEORIGIN',
-          });
-          
-          return res.send(viewerHtml);
-        } catch (error) {
-          console.error("Error creating HTML viewer:", error);
-          return res.redirect(resource.url);
+
+            // Set Content-Security-Policy to enhance security
+            res.set({
+              "Content-Type": "text/html",
+              "Content-Security-Policy": "frame-ancestors 'self'",
+              "X-Frame-Options": "SAMEORIGIN",
+            });
+
+            return res.send(viewerHtml);
+          } catch (error) {
+            console.error("Error creating HTML viewer:", error);
+            return res.redirect(resource.url);
+          }
         }
-      }
-      
-      // Handle resources that need to be fetched and proxied
-      if (resource.type === "pdf" || resource.type === "document" || resource.url.endsWith('.pdf')) {
+
+        // Handle resources that need to be fetched and proxied
+        if (
+          resource.type === "pdf" ||
+          resource.type === "document" ||
+          resource.url.endsWith(".pdf")
+        ) {
+          try {
+            const response = await fetch(resource.url);
+
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch resource: ${response.statusText}`,
+              );
+            }
+
+            // Get content type from response or guess based on URL
+            let contentType = response.headers.get("Content-Type");
+            if (!contentType) {
+              if (resource.url.endsWith(".pdf"))
+                contentType = "application/pdf";
+              else if (
+                resource.url.endsWith(".doc") ||
+                resource.url.endsWith(".docx")
+              )
+                contentType = "application/msword";
+              else contentType = "application/octet-stream";
+            }
+
+            // Forward the content type and other relevant headers
+            res.set("Content-Type", contentType);
+            res.set(
+              "Content-Disposition",
+              `inline; filename="${resource.label || "resource"}"`,
+            );
+
+            // Add cache headers to improve performance
+            res.set("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
+
+            // Send the file data
+            const buffer = await response.buffer();
+            return res.send(buffer);
+          } catch (error) {
+            console.error("Error proxying resource:", error);
+            // If proxy fails, redirect to the original resource
+            return res.redirect(resource.url);
+          }
+        }
+
+        // For all other content types, proxy the content through server instead of redirecting
         try {
+          console.log(`Proxying content directly for: ${resource.label}`);
+          
+          // Fetch the resource content
           const response = await fetch(resource.url);
           
           if (!response.ok) {
-            throw new Error(`Failed to fetch resource: ${response.statusText}`);
+            console.error(`Failed to fetch resource: ${response.status} ${response.statusText}`);
+            return res.status(response.status).send(response.statusText);
           }
           
-          // Get content type from response or guess based on URL
-          let contentType = response.headers.get('Content-Type');
-          if (!contentType) {
-            if (resource.url.endsWith('.pdf')) contentType = 'application/pdf';
-            else if (resource.url.endsWith('.doc') || resource.url.endsWith('.docx')) 
-              contentType = 'application/msword';
-            else contentType = 'application/octet-stream';
-          }
+          // Get content type from response or infer from URL
+          let contentType = response.headers.get("content-type") || "application/octet-stream";
           
-          // Forward the content type and other relevant headers
-          res.set('Content-Type', contentType);
-          res.set('Content-Disposition', `inline; filename="${resource.label || 'resource'}"`);
+          // Set appropriate content type header
+          res.set("Content-Type", contentType);
+          res.set("Content-Disposition", `inline; filename="${resource.label || "resource"}"`);
           
-          // Add cache headers to improve performance
-          res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+          // Add security headers
+          res.set("X-Frame-Options", "SAMEORIGIN");
+          res.set("Content-Security-Policy", "frame-ancestors 'self'");
           
-          // Send the file data
+          // Cache for better performance
+          res.set("Cache-Control", "public, max-age=3600"); // 1 hour
+          
+          // Stream the response directly to the client
           const buffer = await response.buffer();
           return res.send(buffer);
         } catch (error) {
           console.error("Error proxying resource:", error);
-          // If proxy fails, redirect to the original resource
+          // Only as fallback, redirect to the original URL
           return res.redirect(resource.url);
         }
+      } catch (error) {
+        console.error("Error accessing resource:", error);
+        res.status(500).json({ message: "Server error" });
       }
-      
-      // For other types, redirect to the URL
-      return res.redirect(resource.url);
-    } catch (error) {
-      console.error("Error accessing resource:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
+    },
+  );
 
   const httpServer = createServer(app);
   return httpServer;

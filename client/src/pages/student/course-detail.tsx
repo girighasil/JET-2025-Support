@@ -33,7 +33,7 @@ export default function StudentCourseDetail() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth(); // Get the user to check role
-  
+
   // State for resource viewer dialog
   const [viewerOpen, setViewerOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<{
@@ -261,26 +261,40 @@ export default function StudentCourseDetail() {
                   <h3 className="text-lg font-medium">Video Content</h3>
                 </div>
 
-                {videoUrlsToDisplay.map((videoUrl, index) => (
-                  <div
-                    key={index}
-                    className="aspect-video w-full overflow-hidden rounded-lg bg-black mb-4"
-                  >
-                    {videoUrl.includes("youtube.com") ||
-                    videoUrl.includes("youtu.be") ? (
+                {videoUrlsToDisplay.map((videoUrl, index) => {
+                  // Extract video ID and create proper embed URL
+                  let embedUrl = videoUrl;
+
+                  // Process YouTube URLs
+                  if (
+                    videoUrl.includes("youtube.com") ||
+                    videoUrl.includes("youtu.be")
+                  ) {
+                    let videoId = "";
+                    if (videoUrl.includes("youtube.com/watch?v=")) {
+                      videoId = videoUrl.split("watch?v=")[1].split("&")[0];
+                    } else if (videoUrl.includes("youtu.be/")) {
+                      videoId = videoUrl.split("youtu.be/")[1].split("?")[0];
+                    }
+
+                    if (videoId) {
+                      embedUrl = `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&enablejsapi=1`;
+                    }
+                  }
+
+                  return (
+                    <div key={index} className="aspect-video mb-4">
                       <iframe
-                        src={videoUrl.replace("watch?v=", "embed/")}
-                        title={`Course Video ${index + 1}`}
-                        className="w-full h-full"
+                        src={embedUrl}
+                        className="w-full h-full rounded-md"
+                        title={`Video ${index + 1}`}
                         allowFullScreen
-                      ></iframe>
-                    ) : (
-                      <video src={videoUrl} controls className="w-full h-full">
-                        Your browser does not support the video tag.
-                      </video>
-                    )}
-                  </div>
-                ))}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ) : null;
           })()}
@@ -364,7 +378,9 @@ export default function StudentCourseDetail() {
                         className="flex items-center gap-3 p-3 border rounded-md bg-muted/10"
                       >
                         <div className="h-10 w-10 flex items-center justify-center bg-primary/10 rounded-md relative">
-                          <span className="text-primary font-semibold">{index + 1}</span>
+                          <span className="text-primary font-semibold">
+                            {index + 1}
+                          </span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">
@@ -374,7 +390,8 @@ export default function StudentCourseDetail() {
                             // For students: Show resource type instead of number (since the number is already in the icon)
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <span className="truncate">
-                                {link.type.charAt(0).toUpperCase() + link.type.slice(1)}
+                                {link.type.charAt(0).toUpperCase() +
+                                  link.type.slice(1)}
                               </span>
                               <Link2 className="h-3 w-3 flex-shrink-0" />
                             </div>
@@ -406,7 +423,7 @@ export default function StudentCourseDetail() {
                                 url: link.url,
                                 type: link.type,
                                 label: link.label || `Resource ${index + 1}`,
-                                index
+                                index,
                               });
                               setViewerOpen(true);
                             }}
