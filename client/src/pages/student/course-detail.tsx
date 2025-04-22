@@ -363,18 +363,18 @@ export default function StudentCourseDetail() {
                         key={index}
                         className="flex items-center gap-3 p-3 border rounded-md bg-muted/10"
                       >
-                        <div className="h-10 w-10 flex items-center justify-center bg-primary/10 rounded-md">
-                          <Icon className="h-5 w-5 text-primary" />
+                        <div className="h-10 w-10 flex items-center justify-center bg-primary/10 rounded-md relative">
+                          <span className="text-primary font-semibold">{index + 1}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">
                             {link.label}
                           </h4>
                           {isStudent ? (
-                            // For students: Show only the resource name, hide URL
+                            // For students: Show resource type instead of number (since the number is already in the icon)
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <span className="truncate">
-                                Resource #{index + 1}
+                                {link.type.charAt(0).toUpperCase() + link.type.slice(1)}
                               </span>
                               <Link2 className="h-3 w-3 flex-shrink-0" />
                             </div>
@@ -395,23 +395,32 @@ export default function StudentCourseDetail() {
                             </a>
                           )}
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          asChild
-                          className="flex-shrink-0"
-                        >
-                          {isStudent ? (
-                            // For students: Open through the proxy
-                            <a
-                              href={resourceProxyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Open
-                            </a>
-                          ) : (
-                            // For teachers/admins: Open direct URL
+                        {isStudent ? (
+                          // For students: Use ResourceViewer to open content in-app
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="flex-shrink-0"
+                            onClick={() => {
+                              setSelectedResource({
+                                url: link.url,
+                                type: link.type,
+                                label: link.label || `Resource ${index + 1}`,
+                                index
+                              });
+                              setViewerOpen(true);
+                            }}
+                          >
+                            View Resource
+                          </Button>
+                        ) : (
+                          // For teachers/admins: Direct URL access
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            asChild
+                            className="flex-shrink-0"
+                          >
                             <a
                               href={link.url}
                               target="_blank"
@@ -419,8 +428,8 @@ export default function StudentCourseDetail() {
                             >
                               Open
                             </a>
-                          )}
-                        </Button>
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
