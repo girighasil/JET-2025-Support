@@ -1908,7 +1908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `Proxying resource: ${resource.label} (${resource.type}) - ${resource.url}`,
         );
 
-        // Special case for YouTube/Vimeo videos - create proper embed URL
+        // Special case for YouTube/Vimeo videos - return HTML with embedded player
         if (
           (resource.type === "video" ||
             resource.url.includes("youtube.com") ||
@@ -1940,19 +1940,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             if (videoId) {
-              // Create safe embed URL
-              embedUrl = `https://www.youtube.com/embed/${videoId}`;
+              // Create safe embed URL with additional parameters for better embedding
+              embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1`;
               console.log(`Transformed YouTube URL to: ${embedUrl}`);
             }
           }
-
-          return res.redirect(embedUrl);
+          
+          // Vimeo URL handling
+          if (resource.url.includes("vimeo.com")) {
+            const vimeoRegex = /vimeo\.com\/(?:video\/)?(\d+)/;
+            const match = resource.url.match(vimeoRegex);
+            
+            if (match && match[1]) {
+              embedUrl = `https://player.vimeo.com/video/${match[1]}?autoplay=0&portrait=0`;
+              console.log(`Transformed Vimeo URL to: ${embedUrl}`);
+            }
+          }
+          
+          // Provide a direct HTML page with the embedded video
+          const videoHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>${resource.label || "Video Resource"}</title>
+            <style>
+              body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #000; }
+              .video-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+              iframe { width: 100%; height: 100%; border: 0; }
+              .error-message { display: none; color: white; text-align: center; padding: 20px; }
+              .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; }
+              .loading div { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; animation: loading 1.2s linear infinite; }
+              .loading div:nth-child(1) { top: 8px; left: 8px; animation-delay: 0s; }
+              .loading div:nth-child(2) { top: 8px; left: 32px; animation-delay: -0.4s; }
+              .loading div:nth-child(3) { top: 8px; left: 56px; animation-delay: -0.8s; }
+              .loading div:nth-child(4) { top: 32px; left: 8px; animation-delay: -0.4s; }
+              .loading div:nth-child(5) { top: 32px; left: 32px; animation-delay: -0.8s; }
+              .loading div:nth-child(6) { top: 32px; left: 56px; animation-delay: -1.2s; }
+              .loading div:nth-child(7) { top: 56px; left: 8px; animation-delay: -0.8s; }
+              .loading div:nth-child(8) { top: 56px; left: 32px; animation-delay: -1.2s; }
+              .loading div:nth-child(9) { top: 56px; left: 56px; animation-delay: -1.6s; }
+              @keyframes loading { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+              .controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; display: flex; gap: 10px; }
+              .controls a { color: white; text-decoration: none; display: flex; align-items: center; padding: 5px 10px; border-radius: 4px; background: rgba(255,255,255,0.2); }
+              .controls a:hover { background: rgba(255,255,255,0.3); }
+            </style>
+          </head>
+          <body>
+            <div class="video-container">
+              <div id="loading" class="loading">
+                <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+              </div>
+              <div id="error-message" class="error-message">
+                Unable to load the video. Please try the external link.
+              </div>
+              <iframe 
+                id="video-frame"
+                src="${embedUrl}" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+                onload="document.getElementById('loading').style.display = 'none';"
+                onerror="handleError()"
+              ></iframe>
+              <div class="controls">
+                <a href="${resource.url}" target="_blank">Open original source</a>
+              </div>
+            </div>
+            <script>
+              function handleError() {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('video-frame').style.display = 'none';
+              }
+              
+              // Handle iframe loading errors
+              window.addEventListener('error', function(e) {
+                if (e.target.tagName === 'IFRAME') {
+                  handleError();
+                }
+              }, true);
+              
+              // Set a timeout to check if video loads
+              setTimeout(function() {
+                if (document.getElementById('loading').style.display !== 'none') {
+                  handleError();
+                }
+              }, 10000);
+            </script>
+          </body>
+          </html>
+          `;
+          
+          // Set proper headers
+          res.set({
+            "Content-Type": "text/html",
+            "Content-Security-Policy": "frame-ancestors 'self'",
+            "X-Frame-Options": "SAMEORIGIN",
+          });
+          
+          return res.send(videoHtml);
         }
 
-        // For HTML content request (coming from iframe), check if resource is embeddable
-        if (accept?.includes("text/html") && resource.type === "webpage") {
+        // For HTML content request (coming from iframe), handle webpage embedding
+        if ((accept?.includes("text/html") && resource.type === "webpage") || resource.type === "webpage") {
           try {
-            // For webpages, create embedded viewer with appropriate headers for security
+            // A more robust way to handle webpage embedding with fallback options
             const viewerHtml = `
             <!DOCTYPE html>
             <html>
@@ -1964,49 +2058,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
                 iframe { width: 100%; height: 100%; border: 0; }
                 .error-container { 
-                  display: flex; flex-direction: column; align-items: center; justify-content: center; 
-                  height: 100%; padding: 20px; text-align: center; font-family: system-ui, sans-serif;
+                  display: none;
+                  flex-direction: column; 
+                  align-items: center; 
+                  justify-content: center; 
+                  height: 100%; 
+                  padding: 20px; 
+                  text-align: center; 
+                  font-family: system-ui, sans-serif;
                 }
-                .error-container h1 { margin-bottom: 10px; }
+                .error-container h1 { margin-bottom: 10px; font-size: 1.5rem; }
                 .error-container p { margin-bottom: 20px; color: #666; }
                 .error-container a { 
-                  display: inline-block; padding: 10px 20px; background: #0070f3; color: white;
-                  text-decoration: none; border-radius: 5px; font-weight: 500;
+                  display: inline-block; 
+                  padding: 10px 20px; 
+                  background: #0070f3; 
+                  color: white;
+                  text-decoration: none; 
+                  border-radius: 5px; 
+                  font-weight: 500;
+                  margin: 5px;
+                }
+                .loading-container {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  right: 0;
+                  bottom: 0;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  flex-direction: column;
+                  background-color: #f9f9f9;
+                }
+                .spinner {
+                  width: 40px;
+                  height: 40px;
+                  border: 4px solid rgba(0, 0, 0, 0.1);
+                  border-left-color: #0070f3;
+                  border-radius: 50%;
+                  animation: spin 1s linear infinite;
+                  margin-bottom: 20px;
+                }
+                .loading-text {
+                  color: #666;
+                  font-family: system-ui, sans-serif;
+                }
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
                 }
               </style>
             </head>
             <body>
+              <div id="loading-container" class="loading-container">
+                <div class="spinner"></div>
+                <div class="loading-text">Loading resource...</div>
+              </div>
+              
+              <div id="error-container" class="error-container">
+                <h1>Unable to Display Content</h1>
+                <p>This website cannot be embedded due to security restrictions or cross-origin policies.</p>
+                <div>
+                  <a href="${resource.url}" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
+                  <a href="#" onclick="tryAlternateEmbed(); return false;">Try Alternate View</a>
+                </div>
+              </div>
+              
               <iframe 
-                src="${resource.url}" 
+                id="content-frame"
+                style="display:none;"
                 sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                 referrerpolicy="no-referrer"
-                onerror="document.getElementById('error-fallback').style.display = 'flex';"
               ></iframe>
-              <div id="error-fallback" class="error-container" style="display: none;">
-                <h1>Unable to display content</h1>
-                <p>This website cannot be embedded due to security restrictions.</p>
-                <a href="${resource.url}" target="_blank" rel="noopener noreferrer">Open resource in new tab</a>
-              </div>
+              
               <script>
-                window.addEventListener('error', function(e) {
-                  document.getElementById('error-fallback').style.display = 'flex';
-                }, true);
+                // Track loading state
+                let isLoading = true;
+                let embedAttempt = 0;
+                const maxAttempts = 2;
+                
+                // Error handling function
+                function showError() {
+                  document.getElementById('loading-container').style.display = 'none';
+                  document.getElementById('content-frame').style.display = 'none';
+                  document.getElementById('error-container').style.display = 'flex';
+                  isLoading = false;
+                }
+                
+                // Try embedding with different techniques
+                function tryEmbed() {
+                  const frame = document.getElementById('content-frame');
+                  
+                  if (embedAttempt === 0) {
+                    // First attempt - direct embed
+                    console.log('Trying direct embed');
+                    frame.src = "${resource.url}";
+                  } else if (embedAttempt === 1) {
+                    // Second attempt - use srcdoc with a simplified iframe 
+                    console.log('Trying srcdoc embed');
+                    frame.removeAttribute('src');
+                    frame.srcdoc = '<html><head><meta http-equiv="refresh" content="0;url=${resource.url}"></head><body></body></html>';
+                  } else {
+                    // Give up
+                    showError();
+                    return;
+                  }
+                  
+                  embedAttempt++;
+                  frame.style.display = 'block';
+                }
+                
+                // Function to try alternate embedding method
+                function tryAlternateEmbed() {
+                  if (embedAttempt < maxAttempts) {
+                    document.getElementById('error-container').style.display = 'none';
+                    document.getElementById('loading-container').style.display = 'flex';
+                    tryEmbed();
+                  } else {
+                    alert('Unable to display this content in the embedded viewer. Please use the "Open in New Tab" option.');
+                  }
+                }
+                
+                // Handle iframe load success
+                document.getElementById('content-frame').addEventListener('load', function() {
+                  try {
+                    // Check if we can access the iframe content (will throw error if cross-origin)
+                    const iframeDoc = this.contentDocument || this.contentWindow.document;
+                    
+                    // If we get here, the iframe loaded successfully
+                    document.getElementById('loading-container').style.display = 'none';
+                    isLoading = false;
+                  } catch (e) {
+                    // Cross-origin error or other issue
+                    if (embedAttempt < maxAttempts) {
+                      // Try next embedding method
+                      tryEmbed();
+                    } else {
+                      showError();
+                    }
+                  }
+                });
+                
+                // Handle iframe load errors
+                document.getElementById('content-frame').addEventListener('error', function() {
+                  if (embedAttempt < maxAttempts) {
+                    // Try next embedding method
+                    tryEmbed();
+                  } else {
+                    showError();
+                  }
+                });
+                
+                // Set timeout for loading
+                setTimeout(function() {
+                  if (isLoading) {
+                    if (embedAttempt < maxAttempts) {
+                      // Try next embedding method
+                      tryEmbed();
+                    } else {
+                      showError();
+                    }
+                  }
+                }, 8000);
+                
+                // Initial embed attempt
+                tryEmbed();
               </script>
             </body>
             </html>
           `;
 
-            // Set Content-Security-Policy to enhance security
+            // Set appropriate headers
             res.set({
               "Content-Type": "text/html",
               "Content-Security-Policy": "frame-ancestors 'self'",
               "X-Frame-Options": "SAMEORIGIN",
+              "Cache-Control": "no-cache, no-store, must-revalidate", // Prevent caching of error states
+              "Pragma": "no-cache",
+              "Expires": "0"
             });
 
             return res.send(viewerHtml);
           } catch (error) {
             console.error("Error creating HTML viewer:", error);
-            return res.redirect(resource.url);
+            // Return a simple error page instead of redirecting
+            const errorHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Error Loading Resource</title>
+              <style>
+                body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+                .container { max-width: 500px; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+                h1 { color: #e53e3e; margin-top: 0; }
+                p { color: #4a5568; margin-bottom: 25px; }
+                a { display: inline-block; padding: 10px 20px; background: #0070f3; color: white; text-decoration: none; border-radius: 5px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Error Loading Resource</h1>
+                <p>There was a problem loading this content in the embedded viewer.</p>
+                <a href="${resource.url}" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
+              </div>
+            </body>
+            </html>
+            `;
+            res.set("Content-Type", "text/html");
+            return res.send(errorHtml);
           }
         }
 
@@ -2058,52 +2318,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // For all other content types, proxy the content through server instead of redirecting
+        // For all other content types, proxy the content through server with better error handling
         try {
-          console.log(`Proxying content directly for: ${resource.label}`);
+          console.log(`Proxying content directly for: ${resource.label} at URL: ${resource.url}`);
           
-          // Fetch the resource content
-          const response = await fetch(resource.url);
+          // Enhanced fetch with timeout to prevent hanging requests
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
           
-          if (!response.ok) {
-            console.error(`Failed to fetch resource: ${response.status} ${response.statusText}`);
-            return res.status(response.status).send(response.statusText);
-          }
-          
-          // Get content type from response or infer from URL
-          let contentType = response.headers.get("content-type") || "application/octet-stream";
-          
-          // Set appropriate content type header
-          res.set("Content-Type", contentType);
-          res.set("Content-Disposition", `inline; filename="${resource.label || "resource"}"`);
-          
-          // Add security headers but allow framing from same origin
-          res.set("X-Frame-Options", "SAMEORIGIN");
-          res.set("Content-Security-Policy", "frame-ancestors 'self'");
-          
-          // Set CORS headers to allow embedding
-          res.set("Access-Control-Allow-Origin", "*");
-          res.set("Access-Control-Allow-Methods", "GET");
-          res.set("Access-Control-Allow-Headers", "Content-Type");
-          
-          // Cache for better performance
-          res.set("Cache-Control", "public, max-age=3600"); // 1 hour
-          
-          // Stream the response directly to the client
           try {
-            // First try using the buffer method
-            const buffer = await response.buffer();
-            return res.send(buffer);
-          } catch (bufferError) {
-            // If buffer() is not available, use arrayBuffer instead
-            console.log("Falling back to arrayBuffer method");
-            const arrayBuffer = await response.arrayBuffer();
-            return res.send(Buffer.from(arrayBuffer));
+            // Fetch the resource content with timeout
+            const response = await fetch(resource.url, { 
+              signal: controller.signal,
+              headers: {
+                // Add user-agent to avoid bot detection blocks
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                // Add referer to avoid referer-based blocks
+                'Referer': 'https://mathsmagic.com/',
+                // Accept multiple content types
+                'Accept': 'text/html,application/xhtml+xml,application/xml,application/pdf,image/*,video/*,*/*'
+              }
+            });
+            
+            // Clear timeout
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+              console.error(`Failed to fetch resource: ${response.status} ${response.statusText}`);
+              
+              // Create a more user-friendly error response
+              const errorHtml = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <title>Resource Error</title>
+                <style>
+                  body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+                  .container { max-width: 500px; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+                  h1 { color: #e53e3e; margin-top: 0; }
+                  p { color: #4a5568; margin-bottom: 25px; }
+                  .status { font-family: monospace; background: #f7f7f7; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+                  .url { font-family: monospace; word-break: break-all; background: #f7f7f7; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 12px; }
+                  .actions { display: flex; gap: 10px; justify-content: center; }
+                  .actions a { display: inline-block; padding: 10px 20px; background: #0070f3; color: white; text-decoration: none; border-radius: 5px; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <h1>Resource Unavailable</h1>
+                  <p>The external resource could not be loaded.</p>
+                  <div class="status">Error: ${response.status} ${response.statusText}</div>
+                  <div class="url">${resource.url}</div>
+                  <div class="actions">
+                    <a href="${resource.url}" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
+                  </div>
+                </div>
+              </body>
+              </html>
+              `;
+              res.set("Content-Type", "text/html");
+              return res.send(errorHtml);
+            }
+            
+            // Get content type from response or infer from URL
+            let contentType = response.headers.get("content-type") || "application/octet-stream";
+            
+            // Auto-detect content type based on URL if not specified
+            if (contentType === "application/octet-stream" || contentType === "binary/octet-stream") {
+              const url = resource.url.toLowerCase();
+              if (url.endsWith('.jpg') || url.endsWith('.jpeg')) contentType = 'image/jpeg';
+              else if (url.endsWith('.png')) contentType = 'image/png';
+              else if (url.endsWith('.gif')) contentType = 'image/gif';
+              else if (url.endsWith('.svg')) contentType = 'image/svg+xml';
+              else if (url.endsWith('.mp4')) contentType = 'video/mp4';
+              else if (url.endsWith('.webm')) contentType = 'video/webm';
+              else if (url.endsWith('.mp3')) contentType = 'audio/mpeg';
+              else if (url.endsWith('.wav')) contentType = 'audio/wav';
+              else if (url.endsWith('.pdf')) contentType = 'application/pdf';
+              else if (url.endsWith('.doc') || url.endsWith('.docx')) contentType = 'application/msword';
+              else if (url.endsWith('.xls') || url.endsWith('.xlsx')) contentType = 'application/vnd.ms-excel';
+              else if (url.endsWith('.ppt') || url.endsWith('.pptx')) contentType = 'application/vnd.ms-powerpoint';
+              else if (url.endsWith('.html') || url.endsWith('.htm')) contentType = 'text/html';
+              else if (url.endsWith('.txt')) contentType = 'text/plain';
+            }
+            
+            // For image content, provide a better viewer
+            if (contentType.startsWith('image/')) {
+              const imageHtml = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <title>${resource.label || "Image Viewer"}</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                  body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #0e0e0e; color: white; font-family: system-ui, sans-serif; }
+                  .viewer { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+                  .image-container { flex: 1; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+                  img { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.3s; }
+                  .controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; display: flex; gap: 10px; z-index: 10; }
+                  .controls button, .controls a { color: white; text-decoration: none; display: flex; align-items: center; padding: 5px 10px; border-radius: 4px; background: rgba(255,255,255,0.2); border: none; cursor: pointer; font-size: 14px; }
+                  .controls button:hover, .controls a:hover { background: rgba(255,255,255,0.3); }
+                  .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
+                  @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg) } }
+                  .error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+                </style>
+              </head>
+              <body>
+                <div class="viewer">
+                  <div class="image-container">
+                    <div id="loader" class="loader"></div>
+                    <div id="error" class="error" style="display: none;">Unable to load image</div>
+                    <img 
+                      id="image" 
+                      src="${resource.url}" 
+                      alt="${resource.label || "Image"}" 
+                      style="display: none;"
+                      onload="onImageLoad()"
+                      onerror="onImageError()"
+                    />
+                  </div>
+                  <div class="controls">
+                    <button id="zoomIn">Zoom In</button>
+                    <button id="zoomOut">Zoom Out</button>
+                    <button id="resetZoom">Reset</button>
+                    <a href="${resource.url}" download="${resource.label || "image"}">Download</a>
+                  </div>
+                </div>
+                <script>
+                  let scale = 1;
+                  const image = document.getElementById('image');
+                  const loader = document.getElementById('loader');
+                  const error = document.getElementById('error');
+                  
+                  function onImageLoad() {
+                    loader.style.display = 'none';
+                    image.style.display = 'block';
+                  }
+                  
+                  function onImageError() {
+                    loader.style.display = 'none';
+                    error.style.display = 'block';
+                  }
+                  
+                  document.getElementById('zoomIn').addEventListener('click', () => {
+                    scale *= 1.2;
+                    image.style.transform = \`scale(\${scale})\`;
+                  });
+                  
+                  document.getElementById('zoomOut').addEventListener('click', () => {
+                    scale /= 1.2;
+                    image.style.transform = \`scale(\${scale})\`;
+                  });
+                  
+                  document.getElementById('resetZoom').addEventListener('click', () => {
+                    scale = 1;
+                    image.style.transform = 'scale(1)';
+                  });
+                  
+                  // Set a timeout to check if image loads
+                  setTimeout(() => {
+                    if (loader.style.display !== 'none') {
+                      onImageError();
+                    }
+                  }, 10000);
+                </script>
+              </body>
+              </html>
+              `;
+              
+              res.set("Content-Type", "text/html");
+              return res.send(imageHtml);
+            }
+            
+            // Set appropriate content type header
+            res.set("Content-Type", contentType);
+            res.set("Content-Disposition", `inline; filename="${resource.label || "resource"}"`);
+            
+            // Add security headers but allow framing from same origin
+            res.set("X-Frame-Options", "SAMEORIGIN");
+            res.set("Content-Security-Policy", "frame-ancestors 'self'");
+            
+            // Set CORS headers to allow embedding
+            res.set("Access-Control-Allow-Origin", "*");
+            res.set("Access-Control-Allow-Methods", "GET");
+            res.set("Access-Control-Allow-Headers", "Content-Type");
+            
+            // Cache for better performance
+            res.set("Cache-Control", "public, max-age=3600"); // 1 hour
+            
+            // Stream the response directly to the client
+            try {
+              // First try using the buffer method
+              const buffer = await response.buffer();
+              return res.send(buffer);
+            } catch (bufferError) {
+              // If buffer() is not available, use arrayBuffer instead
+              console.log("Falling back to arrayBuffer method");
+              const arrayBuffer = await response.arrayBuffer();
+              return res.send(Buffer.from(arrayBuffer));
+            }
+          } finally {
+            // Ensure timeout is cleared even if error occurs
+            clearTimeout(timeoutId);
           }
         } catch (error) {
           console.error("Error proxying resource:", error);
-          // Only as fallback, redirect to the original URL
-          return res.redirect(resource.url);
+          
+          // Create a user-friendly error page
+          const errorHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Error Loading Resource</title>
+            <style>
+              body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+              .container { max-width: 500px; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+              h1 { color: #e53e3e; margin-top: 0; }
+              p { color: #4a5568; margin-bottom: 25px; }
+              .error-details { font-family: monospace; font-size: 12px; background: #f7f7f7; padding: 10px; border-radius: 5px; text-align: left; margin-bottom: 20px; white-space: pre-wrap; word-break: break-all; max-height: 100px; overflow-y: auto; }
+              a { display: inline-block; padding: 10px 20px; background: #0070f3; color: white; text-decoration: none; border-radius: 5px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Error Loading Resource</h1>
+              <p>There was a problem loading this content. The resource might be unavailable or the server might be blocking our access.</p>
+              <div class="error-details">${String(error).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+              <a href="${resource.url}" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
+            </div>
+          </body>
+          </html>
+          `;
+          
+          res.set("Content-Type", "text/html");
+          return res.send(errorHtml);
         }
       } catch (error) {
         console.error("Error accessing resource:", error);
