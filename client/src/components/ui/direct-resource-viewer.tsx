@@ -456,13 +456,10 @@ export function DirectResourceViewer({
         </div>
 
         <DialogFooter>
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-end w-full">
             <div className="text-sm text-gray-500">
               Resource #{resourceIndex + 1}
             </div>
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
           </div>
         </DialogFooter>
       </DialogContent>
