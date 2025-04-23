@@ -49,24 +49,27 @@ function isVimeoUrl(url: string): boolean {
 // Convert YouTube URL to embed URL
 function getYouTubeEmbedUrl(url: string): string {
   try {
+    // Parameters to keep only play/pause, playback speed, and fullscreen buttons
+    const params = `origin=${window.location.origin}&controls=1&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&fs=1&disablekb=0&loop=0&color=white&cc_load_policy=0&playsinline=1&channel=0`;
+    
     if (url.includes("youtu.be/")) {
       // Short youtu.be links
       const videoId = url.split("youtu.be/")[1].split("?")[0];
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&enablejsapi=1&modestbranding=1&rel=0`;
+        return `https://www.youtube.com/embed/${videoId}?${params}`;
       }
     } else if (url.includes("youtube.com/watch")) {
       // Regular youtube.com links
       const urlObj = new URL(url);
       const videoId = urlObj.searchParams.get("v");
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&enablejsapi=1&modestbranding=1&rel=0`;
+        return `https://www.youtube.com/embed/${videoId}?${params}`;
       }
     } else if (url.includes("youtube.com/embed/")) {
       // Already an embed URL, but let's ensure it has our additional parameters
       const videoId = url.split("youtube.com/embed/")[1].split("?")[0];
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&enablejsapi=1&modestbranding=1&rel=0`;
+        return `https://www.youtube.com/embed/${videoId}?${params}`;
       }
     }
   } catch (e) {
@@ -263,13 +266,20 @@ export function DirectResourceViewer({
           </div>
         )}
 
-        <iframe
-          src={embedUrl}
-          className="w-full h-full border-0"
-          title={resourceTitle}
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        />
+        <div className="relative w-full h-full">
+          <iframe
+            src={embedUrl}
+            className="w-full h-full border-0"
+            title={resourceTitle}
+            allowFullScreen
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          {isYouTubeUrl(resourceUrl) && (
+            <div className="absolute bottom-0 right-0 w-[80px] h-[35px] bg-black z-10"></div>
+          )}
+        </div>
       </div>
     );
   };
@@ -426,7 +436,7 @@ export function DirectResourceViewer({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-full">
+      <DialogContent className="max-w-4xl w-full" closeButton={false}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
