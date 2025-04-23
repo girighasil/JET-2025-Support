@@ -50,7 +50,7 @@ function isVimeoUrl(url: string): boolean {
 function getYouTubeEmbedUrl(url: string): string {
   try {
     // Parameters to keep only play/pause, playback speed, and fullscreen buttons
-    const params = `origin=${window.location.origin}&controls=1&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&fs=1&disablekb=0&loop=0&color=white&cc_load_policy=0&playsinline=1&channel=0`;
+    const params = `origin=${window.location.origin}&controls=1&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&fs=1&disablekb=1&loop=0&color=white&cc_load_policy=0&playsinline=1&channel=0`;
     
     if (url.includes("youtu.be/")) {
       // Short youtu.be links
@@ -277,7 +277,12 @@ export function DirectResourceViewer({
             referrerPolicy="no-referrer-when-downgrade"
           />
           {isYouTubeUrl(resourceUrl) && (
-            <div className="absolute bottom-0 right-0 w-[80px] h-[35px] bg-black z-10"></div>
+            <>
+              {/* Black overlay to hide YouTube logo/branding in the bottom right corner */}
+              <div className="absolute bottom-0 right-0 w-[90px] h-[40px] bg-black z-10"></div>
+              {/* Additional overlay to hide top-right YouTube UI elements if they appear */}
+              <div className="absolute top-0 right-0 w-[120px] h-[40px] bg-black z-10"></div>
+            </>
           )}
         </div>
       </div>
@@ -436,21 +441,11 @@ export function DirectResourceViewer({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-full" closeButton={false}>
+      <DialogContent className="max-w-4xl w-full">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {getResourceIcon()}
-              <DialogTitle className="text-xl">{resourceTitle}</DialogTitle>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-2">
+            {getResourceIcon()}
+            <DialogTitle className="text-xl">{resourceTitle}</DialogTitle>
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
             {mediaType === "video" && isYouTubeUrl(resourceUrl)
