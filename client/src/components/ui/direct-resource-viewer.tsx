@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   ExternalLink,
   X,
@@ -128,7 +128,7 @@ export function DirectResourceViewer({
 }: DirectResourceViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"viewer" | "external">("viewer");
+
   const { toast } = useToast();
 
   // Determine the correct media type based on URL analysis, not just the provided resourceType
@@ -141,7 +141,6 @@ export function DirectResourceViewer({
     if (isOpen) {
       setLoading(true);
       setError(null);
-      setActiveTab("viewer");
 
       // Determine the media type based on URL
       const detectedType = getMediaType(resourceUrl);
@@ -376,9 +375,8 @@ export function DirectResourceViewer({
             onClick={() => {
               setLoading(true);
               setError(null);
-              // Force reload by updating the activeTab
-              setActiveTab("external");
-              setTimeout(() => setActiveTab("viewer"), 100);
+              // Simple reload mechanism
+              setTimeout(() => setLoading(false), 100);
             }}
             variant="outline"
           >
@@ -451,36 +449,11 @@ export function DirectResourceViewer({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) =>
-            setActiveTab(value as "viewer" | "external")
-          }
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="viewer">In-App Viewer</TabsTrigger>
-            <TabsTrigger value="external">External Link</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="viewer" className="pt-4">
-            <div className="border rounded-md overflow-hidden bg-gray-50">
-              {renderContent()}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="external" className="pt-4">
-            <div className="p-8 text-center border rounded-md">
-              <ExternalLink className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium mb-2">External Resource</h3>
-              <p className="text-gray-500 mb-6">
-                This will open the resource in a new browser tab.
-              </p>
-              <Button onClick={() => window.open(resourceUrl, "_blank")}>
-                Open External Link <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <div className="pt-4">
+          <div className="border rounded-md overflow-hidden bg-gray-50">
+            {renderContent()}
+          </div>
+        </div>
 
         <DialogFooter>
           <div className="flex items-center justify-between w-full">
