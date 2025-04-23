@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   ExternalLink,
   X,
@@ -42,7 +42,7 @@ export function ResourceViewer({
 }: ResourceViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"viewer" | "external">("viewer");
+
   const { toast } = useToast();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -53,27 +53,29 @@ export function ResourceViewer({
   const [useFallbackUrl, setUseFallbackUrl] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
   const [currentUrl, setCurrentUrl] = useState(proxyUrl);
-  
+
   // Reset states when dialog opens and set a timeout to detect failed loads
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
       setError(null);
-      setActiveTab("viewer");
+
       setAttemptCount(0);
       setUseFallbackUrl(false);
       setCurrentUrl(proxyUrl);
-      
+
       // Set a timeout to detect if loading takes too long
       // This handles cases where the iframe doesn't trigger onLoad/onError events
       loadTimeoutRef.current = setTimeout(() => {
         if (loading) {
-          console.log("Resource loading timeout - might be blocked or unavailable");
-          
+          console.log(
+            "Resource loading timeout - might be blocked or unavailable",
+          );
+
           // First timeout - try fallback if we haven't already
           if (!useFallbackUrl && attemptCount < 1) {
             console.log("Trying direct URL fallback");
-            setAttemptCount(prev => prev + 1);
+            setAttemptCount((prev) => prev + 1);
             setUseFallbackUrl(true);
             // For YouTube and web content, try direct URL
             if (resourceType === "video" || resourceType === "webpage") {
@@ -85,16 +87,20 @@ export function ResourceViewer({
               loadTimeoutRef.current = setTimeout(() => {
                 if (loading) {
                   setLoading(false);
-                  setError("Resource loading timed out even with fallback method. The content might be blocked by the provider or unavailable.");
+                  setError(
+                    "Resource loading timed out even with fallback method. The content might be blocked by the provider or unavailable.",
+                  );
                 }
               }, 8000); // 8-second timeout for fallback
               return;
             }
           }
-          
+
           // Give up after second attempt or for non-web/video content
           setLoading(false);
-          setError("Resource loading timed out. The content might be blocked by the provider or unavailable.");
+          setError(
+            "Resource loading timed out. The content might be blocked by the provider or unavailable.",
+          );
         }
       }, 12000); // 12-second timeout
     }
@@ -119,34 +125,34 @@ export function ResourceViewer({
   // Handle load complete
   const handleLoadComplete = () => {
     console.log("Resource loaded successfully");
-    
+
     // Clear the timeout since content loaded successfully
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
       loadTimeoutRef.current = null;
     }
-    
+
     setLoading(false);
   };
 
   // Handle load error
   const handleLoadError = () => {
     console.log("Resource load error");
-    
+
     // Try fallback URL if not already using it
     if (!useFallbackUrl && attemptCount < 1) {
       console.log("Load error - trying direct URL fallback");
-      setAttemptCount(prev => prev + 1);
+      setAttemptCount((prev) => prev + 1);
       setUseFallbackUrl(true);
       return;
     }
-    
+
     // Clear the timeout since we already know there's an error
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
       loadTimeoutRef.current = null;
     }
-    
+
     setLoading(false);
     setError("Failed to load the resource. Try opening it externally.");
   };
@@ -155,13 +161,15 @@ export function ResourceViewer({
   const handleRetry = () => {
     setLoading(true);
     setError(null);
-    
+
     // Toggle between proxy and direct URL if we've already tried once
     if (attemptCount > 0) {
       setUseFallbackUrl(!useFallbackUrl);
       toast({
         title: "Trying different method...",
-        description: useFallbackUrl ? "Switching to proxy server method." : "Switching to direct URL method.",
+        description: useFallbackUrl
+          ? "Switching to proxy server method."
+          : "Switching to direct URL method.",
       });
     } else {
       // First retry with same method
@@ -170,12 +178,12 @@ export function ResourceViewer({
         description: "Attempting to load the resource again.",
       });
     }
-    
+
     // Force reload by updating the iframe src
     if (iframeRef.current) {
-      iframeRef.current.src = '';
+      iframeRef.current.src = "";
       setTimeout(() => {
-        setAttemptCount(prev => prev + 1);
+        setAttemptCount((prev) => prev + 1);
         if (iframeRef.current) {
           iframeRef.current.src = useFallbackUrl ? directUrl : proxyUrl;
         }
@@ -186,18 +194,19 @@ export function ResourceViewer({
   // Handle direct download
   const handleDownload = () => {
     // Create a temporary anchor element
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = proxyUrl;
-    a.download = resourceTitle || 'resource';
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
+    a.download = resourceTitle || "resource";
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
+
     toast({
       title: "Download Started",
-      description: "Your download should begin shortly. If not, try the external link option.",
+      description:
+        "Your download should begin shortly. If not, try the external link option.",
     });
   };
 
@@ -233,7 +242,7 @@ export function ResourceViewer({
           <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
           <h3 className="text-lg font-medium mb-2">Resource Loading Error</h3>
           <p className="text-gray-500 mb-4">{error}</p>
-          
+
           {/* Current method indicator */}
           <div className="bg-gray-100 py-2 px-4 rounded-md mb-4 text-sm flex items-center">
             <span className="font-medium mr-2">Current method:</span>
@@ -248,33 +257,30 @@ export function ResourceViewer({
               </span>
             )}
           </div>
-          
+
           <div className="flex flex-wrap gap-3 justify-center">
-            <Button
-              onClick={handleRetry}
-              variant="outline"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" /> 
+            <Button onClick={handleRetry} variant="outline">
+              <RefreshCw className="mr-2 h-4 w-4" />
               {attemptCount > 0 ? "Try Different Method" : "Retry"}
             </Button>
-            <Button
-              onClick={handleDownload}
-              variant="outline"
-            >
+            <Button onClick={handleDownload} variant="outline">
               <Download className="mr-2 h-4 w-4" /> Download
             </Button>
             <Button
-              onClick={() => window.open(useFallbackUrl ? directUrl : proxyUrl, "_blank")}
+              onClick={() =>
+                window.open(useFallbackUrl ? directUrl : proxyUrl, "_blank")
+              }
               variant="outline"
             >
               Open Externally <ExternalLink className="ml-2 h-4 w-4" />
             </Button>
           </div>
-          
+
           {/* Help text */}
           <p className="text-gray-400 text-xs mt-6 max-w-md">
-            Try opening the resource externally if it doesn't load in the viewer. 
-            Some external resources may have restrictions that prevent embedding.
+            Try opening the resource externally if it doesn't load in the
+            viewer. Some external resources may have restrictions that prevent
+            embedding.
           </p>
         </div>
       );
@@ -305,9 +311,9 @@ export function ResourceViewer({
           <div className="relative">
             <iframe {...commonIframeProps} />
             <div className="absolute top-2 right-2 flex gap-2">
-              <Button 
-                size="sm" 
-                variant="secondary" 
+              <Button
+                size="sm"
+                variant="secondary"
                 className="bg-background/80 backdrop-blur-sm"
                 onClick={handleDownload}
               >
@@ -322,7 +328,7 @@ export function ResourceViewer({
         if (resourceUrl.match(/\.(mp4|webm|ogg|mov)$/i)) {
           // Direct video file with enhanced player
           return (
-            <EnhancedVideoPlayer 
+            <EnhancedVideoPlayer
               src={currentUrl}
               title={resourceTitle}
               onLoadComplete={handleLoadComplete}
@@ -332,7 +338,7 @@ export function ResourceViewer({
             />
           );
         }
-        
+
         // Embedded videos (YouTube, Vimeo etc.)
         return (
           <iframe
@@ -369,36 +375,11 @@ export function ResourceViewer({
           </div>
         </DialogHeader>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) =>
-            setActiveTab(value as "viewer" | "external")
-          }
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="viewer">In-App Viewer</TabsTrigger>
-            <TabsTrigger value="external">External Link</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="viewer" className="pt-4">
-            <div className="border rounded-md overflow-hidden bg-gray-50">
-              {renderResourceContent()}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="external" className="pt-4">
-            <div className="p-8 text-center border rounded-md">
-              <ExternalLink className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium mb-2">External Resource</h3>
-              <p className="text-gray-500 mb-6">
-                This will open the resource in a new browser tab.
-              </p>
-              <Button onClick={() => window.open(useFallbackUrl ? directUrl : proxyUrl, "_blank")}>
-                Open External Link <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <div className="pt-4">
+          <div className="border rounded-md overflow-hidden bg-gray-50">
+            {renderResourceContent()}
+          </div>
+        </div>
 
         <DialogFooter>
           <div className="flex items-center justify-between w-full">
