@@ -273,8 +273,9 @@ export function DirectResourceViewer({
             title={resourceTitle}
             allowFullScreen
             frameBorder="0"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            referrerPolicy="no-referrer-when-downgrade"
+            referrerPolicy="no-referrer"
           />
           {isYouTubeUrl(resourceUrl) && (
             <>
@@ -282,6 +283,38 @@ export function DirectResourceViewer({
               <div className="absolute bottom-0 right-0 w-[90px] h-[40px] bg-black z-10"></div>
               {/* Additional overlay to hide top-right YouTube UI elements if they appear */}
               <div className="absolute top-0 right-0 w-[120px] h-[40px] bg-black z-10"></div>
+              
+              {/* 
+                Invisible overlay to block clicks to YouTube external links
+                The pointer-events-none class makes a small area in the center of the overlay 
+                still clickable for play/pause/controls functionality
+              */}
+              <div 
+                className="absolute inset-0 z-20" 
+                onClick={(e) => {
+                  // Prevent navigation to YouTube
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  // Optional: Show a message to the user that external navigation is not allowed
+                  toast({
+                    title: "External navigation blocked",
+                    description: "The video must be viewed within the learning platform.",
+                    variant: "default"
+                  });
+                }}
+                style={{
+                  // Create a clickable center area but block outer edges
+                  background: 'transparent',
+                  pointerEvents: 'all'
+                }}
+              >
+                {/* Inner area for controls to be clickable */}
+                <div 
+                  className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4"
+                  style={{ pointerEvents: 'none' }}
+                ></div>
+              </div>
             </>
           )}
         </div>
