@@ -30,8 +30,11 @@ async function testLogin(username, password) {
 }
 
 async function main() {
-  // Test student login
+  // Test student1 login (original user with reset password)
   await testLogin('student1', 'student123');
+  
+  // Test student2 login (new user)
+  await testLogin('student2', 'student123');
   
   // Test admin login
   await testLogin('admin', 'admin123');
