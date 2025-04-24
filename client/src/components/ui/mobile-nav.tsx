@@ -44,11 +44,6 @@ export function MobileNav({ className }: MobileNavProps) {
       icon: HelpCircle,
     },
     {
-      title: "Offline",
-      href: "/student/offline-resources",
-      icon: FileText,
-    },
-    {
       title: "Profile",
       href: "/student/profile",
       icon: User,
