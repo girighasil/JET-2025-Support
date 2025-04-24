@@ -49,6 +49,11 @@ export function SidebarNav({ className }: SidebarNavProps) {
       icon: HelpCircle,
     },
     {
+      title: "Offline Resources",
+      href: "/student/offline-resources",
+      icon: FileText,
+    },
+    {
       title: "My Profile",
       href: "/student/profile",
       icon: User,

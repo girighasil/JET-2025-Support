@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EnhancedVideoPlayer } from "@/components/ui/enhanced-video-player";
+import { OfflineResourceButton } from "@/components/ui/offline-resource-viewer";
 
 interface DirectResourceViewerProps {
   isOpen: boolean;
@@ -507,7 +508,18 @@ export function DirectResourceViewer({
         </div>
 
         <DialogFooter>
-          <div className="flex items-center justify-end w-full">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              {mediaType === "video" && (
+                <OfflineResourceButton
+                  resourceUrl={resourceUrl}
+                  resourceType={resourceType}
+                  resourceTitle={resourceTitle}
+                  courseId={courseId}
+                  allowDownload={true}
+                />
+              )}
+            </div>
             <div className="text-sm text-gray-500">
               Resource #{resourceIndex + 1}
             </div>
