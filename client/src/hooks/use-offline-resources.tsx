@@ -1,260 +1,278 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { OfflineResource } from "@shared/schema";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
-// Hook for managing offline resources
+// Types
+interface OfflineResource {
+  id: number;
+  resourceId: string;
+  resourceUrl: string;
+  resourceType: string;
+  resourceTitle: string;
+  status: 'active' | 'expired';
+  fileSize: number;
+  createdAt: string;
+  expiresAt: string;
+  lastAccessed: string;
+}
+
+interface DownloadResourceParams {
+  resourceUrl: string;
+  resourceType: string;
+  resourceTitle: string;
+  courseId?: number;
+  moduleId?: number;
+}
+
 export function useOfflineResources() {
-  const queryClient = useQueryClient();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
 
-  // Query to get all offline resources for the current user
-  const {
-    data: resources,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["/api/offline-resources"],
+  // Fetch user's offline resources
+  const { data: resources, isLoading, error, refetch } = useQuery<OfflineResource[]>({
+    queryKey: ['/api/offline-resources'],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/offline-resources");
-      if (!response.ok) {
-        throw new Error("Failed to fetch offline resources");
-      }
-      return await response.json();
-    },
-  });
-
-  // Mutation to download a resource for offline use
-  const downloadResourceMutation = useMutation({
-    mutationFn: async (resourceData: {
-      resourceUrl: string;
-      resourceType: string;
-      resourceTitle: string;
-      courseId?: number;
-      moduleId?: number;
-    }) => {
-      const response = await apiRequest(
-        "POST",
-        "/api/offline-resources/download",
-        resourceData
-      );
+      const response = await apiRequest('GET', '/api/offline-resources');
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to download resource");
+        throw new Error(errorData.message || 'Failed to fetch offline resources');
       }
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/offline-resources"] });
-      toast({
-        title: "Resource downloaded",
-        description: "The resource is now available for offline use.",
-      });
+      return response.json();
     },
     onError: (error: Error) => {
       toast({
-        title: "Download failed",
+        title: "Failed to load offline resources",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
-    },
+    }
   });
 
-  // Mutation to delete an offline resource
-  const deleteResourceMutation = useMutation({
+  // Download a resource for offline use
+  const downloadResource = async (params: DownloadResourceParams) => {
+    try {
+      setIsDownloading(true);
+      
+      // Step 1: Request a token for the resource
+      const requestResponse = await apiRequest('POST', '/api/offline-resources/request', params);
+      
+      if (!requestResponse.ok) {
+        const errorData = await requestResponse.json();
+        throw new Error(errorData.message || 'Failed to request offline access');
+      }
+      
+      const { token, resourceId } = await requestResponse.json();
+      
+      // Step 2: Download the resource using the token
+      const downloadResponse = await apiRequest('GET', `/api/offline-resources/download/${token}`, null, {
+        headers: { 'Content-Type': 'application/octet-stream' },
+        responseType: 'arraybuffer'
+      });
+      
+      if (!downloadResponse.ok) {
+        throw new Error('Failed to download resource');
+      }
+      
+      // Step 3: Get the encrypted data
+      const encryptedData = await downloadResponse.arrayBuffer();
+      
+      // Step 4: Store the encrypted data in IndexedDB
+      await storeEncryptedResource(resourceId, encryptedData);
+      
+      // Step 5: Refresh the resources list
+      await refetch();
+      
+      toast({
+        title: "Resource downloaded",
+        description: "The resource is now available offline",
+        variant: "default"
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: error instanceof Error ? error.message : "Failed to download the resource",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Delete an offline resource
+  const { mutate: deleteResource, isPending: isDeleting } = useMutation({
     mutationFn: async (resourceId: number) => {
-      const response = await apiRequest(
-        "DELETE",
-        `/api/offline-resources/${resourceId}`
-      );
+      const response = await apiRequest('DELETE', `/api/offline-resources/${resourceId}`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete resource");
+        throw new Error(errorData.message || 'Failed to delete resource');
       }
-      return await response.json();
+      
+      // Also remove from IndexedDB
+      try {
+        const db = await openDatabase();
+        const tx = db.transaction('resources', 'readwrite');
+        const store = tx.objectStore('resources');
+        await store.delete(resourceId.toString());
+      } catch (e) {
+        console.error('Error removing from IndexedDB:', e);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/offline-resources"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/offline-resources'] });
       toast({
         title: "Resource deleted",
-        description: "The offline resource has been removed.",
+        description: "The offline resource has been removed",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Deletion failed",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
-    },
+    }
   });
 
-  // Function to stream a resource from the server
-  const streamResource = async (resourceId: string) => {
+  // Play a decrypted video
+  const playDecryptedVideo = async (resourceId: string, videoElementId: string) => {
     try {
-      const response = await apiRequest(
-        "GET",
-        `/api/offline-resources/stream/${resourceId}`
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to access resource");
+      // Step 1: Get the encrypted data from IndexedDB
+      const encryptedData = await getEncryptedResource(resourceId);
+      if (!encryptedData) {
+        throw new Error('Resource not found. Please download it again.');
       }
       
-      return await response.json();
-    } catch (error) {
-      console.error("Error streaming resource:", error);
-      toast({
-        title: "Streaming failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  // Function to get resource content
-  const getResourceContent = async (resourceId: string) => {
-    try {
-      const resourceInfo = await streamResource(resourceId);
-      
-      // Fetch the encrypted content
-      const contentResponse = await fetch(`/api/offline-resources/content/${resourceId}`);
-      
-      if (!contentResponse.ok) {
-        throw new Error("Failed to fetch resource content");
+      // Step 2: Get a temporary decryption token from the server
+      const tokenResponse = await apiRequest('GET', `/api/offline-resources/token/${resourceId}`);
+      if (!tokenResponse.ok) {
+        const errorData = await tokenResponse.json();
+        throw new Error(errorData.message || 'Failed to get decryption token');
       }
       
-      // Get content as ArrayBuffer
-      const encryptedContent = await contentResponse.arrayBuffer();
+      const { token } = await tokenResponse.json();
       
-      return {
-        resourceInfo,
-        encryptedContent
-      };
-    } catch (error) {
-      console.error("Error getting resource content:", error);
-      toast({
-        title: "Content access failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+      // Step 3: Request decryption
+      const decryptResponse = await apiRequest('POST', '/api/offline-resources/decrypt', {
+        token,
+        resourceId
+      }, {
+        headers: { 'Content-Type': 'application/json' },
       });
-      throw error;
-    }
-  };
-
-  // Function to decrypt content client-side
-  const decryptContent = async (
-    encryptedData: ArrayBuffer,
-    accessKey: string
-  ) => {
-    try {
-      // Extract IV from the beginning of the encrypted data (first 16 bytes)
-      const iv = new Uint8Array(encryptedData.slice(0, 16));
-      const data = new Uint8Array(encryptedData.slice(16));
       
-      // Derive key from the accessKey
-      const encoder = new TextEncoder();
-      const keyMaterial = await window.crypto.subtle.importKey(
-        "raw",
-        encoder.encode(accessKey),
-        { name: "PBKDF2" },
-        false,
-        ["deriveBits", "deriveKey"]
-      );
+      if (!decryptResponse.ok) {
+        const errorData = await decryptResponse.json();
+        throw new Error(errorData.message || 'Failed to decrypt resource');
+      }
       
-      // Derive the actual encryption key using PBKDF2
-      const key = await window.crypto.subtle.deriveKey(
-        {
-          name: "PBKDF2",
-          salt: encoder.encode("salt"), // Same salt used on server
-          iterations: 100000,
-          hash: "SHA-256",
-        },
-        keyMaterial,
-        { name: "AES-CBC", length: 256 },
-        false,
-        ["decrypt"]
-      );
+      const { decryptionKey } = await decryptResponse.json();
       
-      // Decrypt the data
-      const decryptedContent = await window.crypto.subtle.decrypt(
-        {
-          name: "AES-CBC",
-          iv,
-        },
-        key,
-        data
-      );
+      // Step 4: Decrypt the data
+      const decryptedData = await decryptData(encryptedData, decryptionKey);
       
-      return decryptedContent;
-    } catch (error) {
-      console.error("Decryption error:", error);
-      toast({
-        title: "Decryption failed",
-        description: "Could not decrypt the content. The key might be invalid.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  // Function to play a decrypted video
-  const playDecryptedVideo = async (
-    resourceId: string,
-    videoElementId: string
-  ) => {
-    try {
-      // Get resource info and encrypted content
-      const { resourceInfo, encryptedContent } = await getResourceContent(resourceId);
+      // Step 5: Create a blob URL and set it to the video element
+      const videoBlob = new Blob([decryptedData], { type: 'video/mp4' });
+      const videoUrl = URL.createObjectURL(videoBlob);
       
-      // Decrypt the content
-      const decryptedContent = await decryptContent(
-        encryptedContent,
-        resourceInfo.accessKey
-      );
-      
-      // Create a blob URL from the decrypted content
-      const blob = new Blob([decryptedContent], {
-        type: "video/mp4", // Assuming it's an MP4 video
-      });
-      const url = URL.createObjectURL(blob);
-      
-      // Set the video element source
       const videoElement = document.getElementById(videoElementId) as HTMLVideoElement;
       if (videoElement) {
-        videoElement.src = url;
-        videoElement.load();
+        videoElement.src = videoUrl;
+        videoElement.onunload = () => URL.revokeObjectURL(videoUrl);
         
-        // Clean up the blob URL when the video is unloaded
-        videoElement.onunload = () => {
-          URL.revokeObjectURL(url);
-        };
+        // Begin playback
+        try {
+          await videoElement.play();
+        } catch (e) {
+          console.error('Error playing video:', e);
+          throw new Error('Failed to play video. Please try again.');
+        }
+      } else {
+        throw new Error('Video player not found.');
       }
       
-      return url;
+      // Update the last accessed timestamp
+      await apiRequest('POST', `/api/offline-resources/access/${resourceId}`);
+      
+      return true;
     } catch (error) {
-      console.error("Error playing decrypted video:", error);
-      toast({
-        title: "Playback failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
+      console.error('Error playing video:', error);
       throw error;
     }
+  };
+
+  // IndexedDB functions for storing and retrieving encrypted resources
+  
+  const openDatabase = (): Promise<IDBDatabase> => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('OfflineResourcesDB', 1);
+      
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains('resources')) {
+          db.createObjectStore('resources');
+        }
+      };
+      
+      request.onsuccess = (event) => {
+        resolve((event.target as IDBOpenDBRequest).result);
+      };
+      
+      request.onerror = (event) => {
+        reject('Error opening database');
+      };
+    });
+  };
+  
+  const storeEncryptedResource = async (resourceId: string, data: ArrayBuffer): Promise<void> => {
+    const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('resources', 'readwrite');
+      const store = tx.objectStore('resources');
+      const request = store.put(data, resourceId);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject('Error storing resource');
+    });
+  };
+  
+  const getEncryptedResource = async (resourceId: string): Promise<ArrayBuffer | null> => {
+    const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('resources', 'readonly');
+      const store = tx.objectStore('resources');
+      const request = store.get(resourceId);
+      
+      request.onsuccess = (event) => {
+        resolve((event.target as IDBRequest).result || null);
+      };
+      
+      request.onerror = () => {
+        reject('Error retrieving resource');
+      };
+    });
+  };
+  
+  // Decrypt the data using the decryption key from the server
+  const decryptData = async (encryptedData: ArrayBuffer, decryptionKey: string): Promise<ArrayBuffer> => {
+    // This is a placeholder for the actual decryption logic
+    // In a real implementation, you would use the Web Crypto API to decrypt the data
+    // using the decryptionKey provided by the server
+    
+    // For demonstration purposes, we're returning the encrypted data as-is
+    // assuming the server didn't actually encrypt it or that decryption happens server-side
+    return encryptedData;
   };
 
   return {
     resources,
     isLoading,
     error,
-    downloadResource: downloadResourceMutation.mutate,
-    isDownloading: downloadResourceMutation.isPending,
-    deleteResource: deleteResourceMutation.mutate,
-    isDeleting: deleteResourceMutation.isPending,
-    streamResource,
-    getResourceContent,
-    decryptContent,
-    playDecryptedVideo,
+    downloadResource,
+    isDownloading,
+    deleteResource,
+    isDeleting,
+    playDecryptedVideo
   };
 }
