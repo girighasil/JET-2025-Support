@@ -25,6 +25,7 @@ import {
 import filesRoutes from "./routes/files";
 import importExportRoutes from "./routes/import-export";
 import { registerNotificationRoutes } from "./routes/notifications";
+import offlineResourcesRoutes from "./routes/offline-resources";
 
 declare global {
   namespace Express {

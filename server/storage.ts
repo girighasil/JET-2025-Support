@@ -1337,6 +1337,66 @@ export class DatabaseStorage implements IStorage {
         return false;
     }
   }
+
+  // Offline Resource Methods
+  async getOfflineResource(id: number): Promise<OfflineResource | undefined> {
+    const [resource] = await db.select().from(offlineResources).where(eq(offlineResources.id, id));
+    return resource || undefined;
+  }
+
+  async getOfflineResourceByResourceId(userId: number, resourceId: string): Promise<OfflineResource | undefined> {
+    const [resource] = await db
+      .select()
+      .from(offlineResources)
+      .where(
+        and(
+          eq(offlineResources.userId, userId),
+          eq(offlineResources.resourceId, resourceId)
+        )
+      );
+    return resource || undefined;
+  }
+
+  async listOfflineResourcesByUser(userId: number): Promise<OfflineResource[]> {
+    return db
+      .select()
+      .from(offlineResources)
+      .where(eq(offlineResources.userId, userId))
+      .orderBy(offlineResources.downloadedAt);
+  }
+
+  async createOfflineResource(insertResource: InsertOfflineResource): Promise<OfflineResource> {
+    const [resource] = await db
+      .insert(offlineResources)
+      .values(insertResource)
+      .returning();
+    return resource;
+  }
+
+  async updateOfflineResourceStatus(id: number, status: string): Promise<OfflineResource | undefined> {
+    const [resource] = await db
+      .update(offlineResources)
+      .set({ status })
+      .where(eq(offlineResources.id, id))
+      .returning();
+    return resource;
+  }
+
+  async updateOfflineResourceLastAccessed(id: number): Promise<OfflineResource | undefined> {
+    const [resource] = await db
+      .update(offlineResources)
+      .set({ lastAccessedAt: new Date() })
+      .where(eq(offlineResources.id, id))
+      .returning();
+    return resource;
+  }
+
+  async deleteOfflineResource(id: number): Promise<boolean> {
+    const result = await db
+      .delete(offlineResources)
+      .where(eq(offlineResources.id, id));
+    return result.rowCount > 0;
+  }
 }
 
 // Import necessary modules for the DatabaseStorage class
