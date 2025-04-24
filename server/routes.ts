@@ -18,6 +18,10 @@ import {
   insertEnrollmentSchema,
   insertDoubtSessionSchema,
   insertStudyTimeSchema,
+  insertSiteConfigSchema,
+  insertPromoBannerSchema,
+  siteConfig,
+  promoBanners,
   enrollments as enrollmentsTable,
 } from "@shared/schema";
 

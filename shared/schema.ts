@@ -329,3 +329,39 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Site Configuration model
+export const siteConfig = pgTable("site_config", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: jsonb("value"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSiteConfigSchema = createInsertSchema(siteConfig).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type SiteConfig = typeof siteConfig.$inferSelect;
+export type InsertSiteConfig = z.infer<typeof insertSiteConfigSchema>;
+
+// Promotional Banner model
+export const promoBanners = pgTable("promo_banners", {
+  id: serial("id").primaryKey(),
+  text: text("text").notNull(),
+  url: text("url"),
+  isActive: boolean("is_active").notNull().default(true),
+  order: integer("order").notNull().default(1),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPromoBannerSchema = createInsertSchema(promoBanners).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type PromoBanner = typeof promoBanners.$inferSelect;
+export type InsertPromoBanner = z.infer<typeof insertPromoBannerSchema>;
