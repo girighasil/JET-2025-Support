@@ -1849,6 +1849,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register routes for file handling
   app.use("/api/files", isAuthenticated, filesRoutes);
+  
+  // Register routes for offline resources
+  app.use("/api/offline-resources", isAuthenticated, offlineResourcesRoutes);
 
   // Register routes for import/export
   app.use(
