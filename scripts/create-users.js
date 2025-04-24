@@ -1,8 +1,8 @@
 // This script creates admin, teacher, and student users
-const { Pool } = require('@neondatabase/serverless');
-const { createHash, randomBytes, scrypt } = require('crypto');
-const { promisify } = require('util');
-const WebSocket = require('ws');
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { randomBytes, scrypt } from 'node:crypto';
+import { promisify } from 'node:util';
+import WebSocket from 'ws';
 
 const scryptAsync = promisify(scrypt);
 
@@ -14,7 +14,6 @@ async function hashPassword(password) {
 }
 
 async function main() {
-  const { neonConfig } = require('@neondatabase/serverless');
   neonConfig.webSocketConstructor = WebSocket;
   
   if (!process.env.DATABASE_URL) {
