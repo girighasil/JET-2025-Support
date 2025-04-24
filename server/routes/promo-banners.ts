@@ -1,173 +1,212 @@
 import { Express, Request, Response } from 'express';
 import { db } from '../db';
-import { eq, desc } from 'drizzle-orm';
 import { promoBanners, insertPromoBannerSchema } from '@shared/schema';
+import { eq, and, or, gte, lte, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { now } from 'drizzle-orm/sql/expressions';
 
+// Schema for updating a promo banner
+const updatePromoBannerSchema = z.object({
+  text: z.string().min(5).optional(),
+  url: z.string().url().nullish(),
+  isActive: z.boolean().optional(),
+  order: z.number().int().min(1).optional(),
+  startDate: z.string().nullish().transform(val => val ? new Date(val) : null),
+  endDate: z.string().nullish().transform(val => val ? new Date(val) : null),
+});
+
+/**
+ * Register routes for promotional banners
+ */
 export function registerPromoBannerRoutes(app: Express) {
-  // Public endpoint to get active promotional banners
-  app.get('/api/promo-banners', async (req, res) => {
+  /**
+   * Get active promotional banners for public display
+   */
+  app.get('/api/promo-banners', async (req: Request, res: Response) => {
     try {
       const now = new Date();
       
-      // Get all active banners that are either not date-limited or within date range
-      const banners = await db.select()
+      // Get banners that are active and within their date range (if specified)
+      const activeBanners = await db
+        .select()
         .from(promoBanners)
-        .where(eq(promoBanners.isActive, true))
+        .where(
+          and(
+            eq(promoBanners.isActive, true),
+            or(
+              // No start date specified or start date is in the past
+              or(
+                sql`${promoBanners.startDate} IS NULL`,
+                lte(promoBanners.startDate, now)
+              ),
+              // No end date specified or end date is in the future
+              or(
+                sql`${promoBanners.endDate} IS NULL`,
+                gte(promoBanners.endDate, now)
+              )
+            )
+          )
+        )
         .orderBy(promoBanners.order);
-      
-      // Filter by date range in JavaScript to handle complex logic better
-      const activeBanners = banners.filter(banner => {
-        // If no date restrictions, always show
-        if (!banner.startDate && !banner.endDate) {
-          return true;
-        }
-        
-        // Check start date if exists
-        if (banner.startDate && new Date(banner.startDate) > now) {
-          return false;
-        }
-        
-        // Check end date if exists
-        if (banner.endDate && new Date(banner.endDate) < now) {
-          return false;
-        }
-        
-        return true;
-      });
       
       res.json(activeBanners);
     } catch (error) {
       console.error('Error fetching promotional banners:', error);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Failed to fetch promotional banners' });
     }
   });
 
-  // Admin endpoint to get all promotional banners (including inactive)
-  app.get('/api/admin/promo-banners', 
-    (req, res, next) => {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Not authenticated' });
+  /**
+   * Admin: Get all promotional banners (for management)
+   */
+  app.get('/api/admin/promo-banners', async (req: Request, res: Response) => {
+    try {
+      // Require admin role
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden: Only administrators can access this endpoint' });
       }
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Forbidden' });
-      }
-      next();
-    },
-    async (req, res) => {
-      try {
-        const banners = await db.select()
-          .from(promoBanners)
-          .orderBy(promoBanners.order);
-        
-        res.json(banners);
-      } catch (error) {
-        console.error('Error fetching all promotional banners:', error);
-        res.status(500).json({ message: 'Server error' });
-      }
+      
+      const allBanners = await db
+        .select()
+        .from(promoBanners)
+        .orderBy(promoBanners.order);
+      
+      res.json(allBanners);
+    } catch (error) {
+      console.error('Error fetching all promotional banners:', error);
+      res.status(500).json({ message: 'Failed to fetch promotional banners' });
     }
-  );
+  });
 
-  // Admin endpoint to create a new promotional banner
-  app.post('/api/admin/promo-banners', 
-    (req, res, next) => {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Not authenticated' });
+  /**
+   * Admin: Get a specific promotional banner by ID
+   */
+  app.get('/api/admin/promo-banners/:id', async (req: Request, res: Response) => {
+    try {
+      // Require admin role
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden: Only administrators can access this endpoint' });
       }
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Forbidden' });
+      
+      const { id } = req.params;
+      const banner = await db
+        .select()
+        .from(promoBanners)
+        .where(eq(promoBanners.id, parseInt(id, 10)))
+        .limit(1);
+      
+      if (!banner.length) {
+        return res.status(404).json({ message: `Banner with ID ${id} not found` });
       }
-      next();
-    },
-    async (req, res) => {
-      try {
-        const bannerData = insertPromoBannerSchema.parse(req.body);
-        
-        const [newBanner] = await db.insert(promoBanners)
-          .values(bannerData)
-          .returning();
-        
-        res.status(201).json(newBanner);
-      } catch (error) {
-        console.error('Error creating promotional banner:', error);
-        
-        if (error instanceof z.ZodError) {
-          return res.status(400).json({ message: 'Invalid data format', errors: error.errors });
-        }
-        
-        res.status(500).json({ message: 'Server error' });
-      }
+      
+      res.json(banner[0]);
+    } catch (error) {
+      console.error(`Error fetching banner with ID ${req.params.id}:`, error);
+      res.status(500).json({ message: 'Failed to fetch promotional banner' });
     }
-  );
+  });
 
-  // Admin endpoint to update a promotional banner
-  app.put('/api/admin/promo-banners/:id', 
-    (req, res, next) => {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Not authenticated' });
+  /**
+   * Admin: Create a new promotional banner
+   */
+  app.post('/api/admin/promo-banners', async (req: Request, res: Response) => {
+    try {
+      // Require admin role
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden: Only administrators can create promotional banners' });
       }
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Forbidden' });
+      
+      const parseResult = insertPromoBannerSchema.safeParse(req.body);
+      
+      if (!parseResult.success) {
+        return res.status(400).json({ message: 'Invalid request body', errors: parseResult.error.errors });
       }
-      next();
-    },
-    async (req, res) => {
-      try {
-        const bannerId = parseInt(req.params.id);
-        
-        // Allow partial updates
-        const bannerData = insertPromoBannerSchema.partial().parse(req.body);
-        
-        const [updatedBanner] = await db.update(promoBanners)
-          .set(bannerData)
-          .where(eq(promoBanners.id, bannerId))
-          .returning();
-        
-        if (!updatedBanner) {
-          return res.status(404).json({ message: 'Banner not found' });
-        }
-        
-        res.json(updatedBanner);
-      } catch (error) {
-        console.error(`Error updating promotional banner ${req.params.id}:`, error);
-        
-        if (error instanceof z.ZodError) {
-          return res.status(400).json({ message: 'Invalid data format', errors: error.errors });
-        }
-        
-        res.status(500).json({ message: 'Server error' });
-      }
+      
+      const bannerData = parseResult.data;
+      
+      const result = await db.insert(promoBanners).values(bannerData).returning();
+      
+      res.status(201).json({
+        message: 'Promotional banner created successfully',
+        banner: result[0],
+      });
+    } catch (error) {
+      console.error('Error creating promotional banner:', error);
+      res.status(500).json({ message: 'Failed to create promotional banner' });
     }
-  );
+  });
 
-  // Admin endpoint to delete a promotional banner
-  app.delete('/api/admin/promo-banners/:id', 
-    (req, res, next) => {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Not authenticated' });
+  /**
+   * Admin: Update a promotional banner
+   */
+  app.put('/api/admin/promo-banners/:id', async (req: Request, res: Response) => {
+    try {
+      // Require admin role
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden: Only administrators can update promotional banners' });
       }
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Forbidden' });
+      
+      const { id } = req.params;
+      const parseResult = updatePromoBannerSchema.safeParse(req.body);
+      
+      if (!parseResult.success) {
+        return res.status(400).json({ message: 'Invalid request body', errors: parseResult.error.errors });
       }
-      next();
-    },
-    async (req, res) => {
-      try {
-        const bannerId = parseInt(req.params.id);
-        
-        const [deletedBanner] = await db.delete(promoBanners)
-          .where(eq(promoBanners.id, bannerId))
-          .returning();
-        
-        if (!deletedBanner) {
-          return res.status(404).json({ message: 'Banner not found' });
-        }
-        
-        res.json({ message: 'Banner deleted successfully', id: bannerId });
-      } catch (error) {
-        console.error(`Error deleting promotional banner ${req.params.id}:`, error);
-        res.status(500).json({ message: 'Server error' });
+      
+      const bannerData = parseResult.data;
+      
+      // Check if banner exists
+      const existingBanner = await db
+        .select()
+        .from(promoBanners)
+        .where(eq(promoBanners.id, parseInt(id, 10)))
+        .limit(1);
+      
+      if (!existingBanner.length) {
+        return res.status(404).json({ message: `Banner with ID ${id} not found` });
       }
+      
+      // Update banner
+      const result = await db
+        .update(promoBanners)
+        .set(bannerData)
+        .where(eq(promoBanners.id, parseInt(id, 10)))
+        .returning();
+      
+      res.json({
+        message: 'Promotional banner updated successfully',
+        banner: result[0],
+      });
+    } catch (error) {
+      console.error(`Error updating banner with ID ${req.params.id}:`, error);
+      res.status(500).json({ message: 'Failed to update promotional banner' });
     }
-  );
+  });
+
+  /**
+   * Admin: Delete a promotional banner
+   */
+  app.delete('/api/admin/promo-banners/:id', async (req: Request, res: Response) => {
+    try {
+      // Require admin role
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden: Only administrators can delete promotional banners' });
+      }
+      
+      const { id } = req.params;
+      
+      const result = await db
+        .delete(promoBanners)
+        .where(eq(promoBanners.id, parseInt(id, 10)));
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: `Banner with ID ${id} not found` });
+      }
+      
+      res.json({ message: 'Promotional banner deleted successfully' });
+    } catch (error) {
+      console.error(`Error deleting banner with ID ${req.params.id}:`, error);
+      res.status(500).json({ message: 'Failed to delete promotional banner' });
+    }
+  });
 }

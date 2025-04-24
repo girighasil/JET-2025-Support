@@ -1,96 +1,144 @@
 import { Express, Request, Response } from 'express';
 import { db } from '../db';
-import { eq } from 'drizzle-orm';
 import { siteConfig, insertSiteConfigSchema } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+// Schema for updating site config
+const updateSiteConfigSchema = z.object({
+  value: z.any(),
+});
+
+/**
+ * Register routes for site configuration
+ */
 export function registerSiteConfigRoutes(app: Express) {
-  // Public endpoint to get all site configuration
-  app.get('/api/site-config', async (req, res) => {
+  /**
+   * Get all site configurations
+   */
+  app.get('/api/site-config', async (req: Request, res: Response) => {
     try {
-      const configEntries = await db.select().from(siteConfig);
+      const allConfigs = await db.select().from(siteConfig);
       
-      // Convert array of key-value entries to a single object
-      const configObject = configEntries.reduce((acc, entry) => {
-        acc[entry.key] = entry.value;
-        return acc;
-      }, {} as Record<string, any>);
+      // Transform array of configs into a single object
+      const configObject: Record<string, any> = {};
       
-      res.json(configObject);
+      for (const config of allConfigs) {
+        configObject[config.key] = config.value;
+      }
+      
+      // Merge all configuration objects into a single object
+      const merged = {
+        ...configObject.siteSettings,
+        examInfo: configObject.examInfo,
+        ...configObject.contactAndSocial
+      };
+      
+      res.json(merged);
     } catch (error) {
-      console.error('Error fetching site configuration:', error);
-      res.status(500).json({ message: 'Server error' });
+      console.error('Error fetching site config:', error);
+      res.status(500).json({ message: 'Failed to fetch site configuration' });
     }
   });
 
-  // Get a specific configuration value
-  app.get('/api/site-config/:key', async (req, res) => {
+  /**
+   * Get a specific site configuration by key
+   */
+  app.get('/api/site-config/:key', async (req: Request, res: Response) => {
     try {
-      const key = req.params.key;
-      const configEntry = await db.query.siteConfig.findFirst({
-        where: eq(siteConfig.key, key)
-      });
+      const { key } = req.params;
+      const config = await db
+        .select()
+        .from(siteConfig)
+        .where(eq(siteConfig.key, key))
+        .limit(1);
       
-      if (!configEntry) {
-        return res.status(404).json({ message: 'Configuration not found' });
+      if (!config.length) {
+        return res.status(404).json({ message: `Configuration with key '${key}' not found` });
       }
       
-      res.json({ key: configEntry.key, value: configEntry.value });
+      res.json(config[0].value);
     } catch (error) {
-      console.error(`Error fetching site configuration for key ${req.params.key}:`, error);
-      res.status(500).json({ message: 'Server error' });
+      console.error(`Error fetching site config for key '${req.params.key}':`, error);
+      res.status(500).json({ message: 'Failed to fetch site configuration' });
     }
   });
 
-  // Admin endpoint to update a configuration
-  app.put('/api/admin/site-config/:key', 
-    (req, res, next) => {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Not authenticated' });
+  /**
+   * Create or update a site configuration
+   * Admin only endpoint
+   */
+  app.put('/api/site-config/:key', async (req: Request, res: Response) => {
+    try {
+      // Require admin role
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden: Only administrators can update site configuration' });
       }
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Forbidden' });
+      
+      const { key } = req.params;
+      const parseResult = updateSiteConfigSchema.safeParse(req.body);
+      
+      if (!parseResult.success) {
+        return res.status(400).json({ message: 'Invalid request body', errors: parseResult.error.errors });
       }
-      next();
-    },
-    async (req, res) => {
-      try {
-        const key = req.params.key;
-        const updateSchema = z.object({
-          value: z.any(),
+      
+      const { value } = parseResult.data;
+      
+      // Check if config already exists
+      const existingConfig = await db
+        .select()
+        .from(siteConfig)
+        .where(eq(siteConfig.key, key))
+        .limit(1);
+      
+      if (existingConfig.length) {
+        // Update existing config
+        await db
+          .update(siteConfig)
+          .set({ value, updatedAt: new Date() })
+          .where(eq(siteConfig.key, key));
+        
+        return res.json({ message: `Configuration '${key}' updated successfully` });
+      } else {
+        // Create new config
+        await db.insert(siteConfig).values({
+          key,
+          value,
         });
         
-        const { value } = updateSchema.parse(req.body);
-        
-        // Check if key exists
-        const existingConfig = await db.query.siteConfig.findFirst({
-          where: eq(siteConfig.key, key)
-        });
-        
-        if (existingConfig) {
-          // Update existing config
-          await db.update(siteConfig)
-            .set({ value, updatedAt: new Date() })
-            .where(eq(siteConfig.key, key));
-        } else {
-          // Insert new config
-          await db.insert(siteConfig).values({
-            key,
-            value,
-            updatedAt: new Date()
-          });
-        }
-        
-        res.json({ key, value, updated: true });
-      } catch (error) {
-        console.error(`Error updating site configuration for key ${req.params.key}:`, error);
-        
-        if (error instanceof z.ZodError) {
-          return res.status(400).json({ message: 'Invalid data format', errors: error.errors });
-        }
-        
-        res.status(500).json({ message: 'Server error' });
+        return res.status(201).json({ message: `Configuration '${key}' created successfully` });
       }
+    } catch (error) {
+      console.error(`Error updating site config for key '${req.params.key}':`, error);
+      res.status(500).json({ message: 'Failed to update site configuration' });
     }
-  );
+  });
+
+  /**
+   * Delete a site configuration
+   * Admin only endpoint
+   */
+  app.delete('/api/site-config/:key', async (req: Request, res: Response) => {
+    try {
+      // Require admin role
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden: Only administrators can delete site configuration' });
+      }
+      
+      const { key } = req.params;
+      
+      const result = await db
+        .delete(siteConfig)
+        .where(eq(siteConfig.key, key));
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: `Configuration with key '${key}' not found` });
+      }
+      
+      res.json({ message: `Configuration '${key}' deleted successfully` });
+    } catch (error) {
+      console.error(`Error deleting site config for key '${req.params.key}':`, error);
+      res.status(500).json({ message: 'Failed to delete site configuration' });
+    }
+  });
 }

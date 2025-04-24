@@ -31,15 +31,15 @@ export default function HeroSection() {
                 <img src={config.logoUrl} alt="Logo" className="h-12 w-12" />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
-                  <span className="text-emerald-700 font-bold text-xl">{examInfo.name.charAt(0)}</span>
+                  <span className="text-emerald-700 font-bold text-xl">{examInfo.name?.charAt(0) || 'J'}</span>
                 </div>
               )}
               <div>
                 <h1 className="text-sm md:text-base font-semibold">
-                  {examInfo.name}/{examInfo.fullName} Entrance Examinations-{examInfo.year}
+                  {examInfo.name || 'JET'}/{examInfo.fullName || 'Joint Entrance Test'} Entrance Examinations-{examInfo.year || '2025'}
                 </h1>
                 <p className="text-xs md:text-sm">
-                  {examInfo.universityName}
+                  {examInfo.universityName || 'Swami Keshwanand Rajasthan Agricultural University, Bikaner'}
                 </p>
               </div>
             </div>
@@ -59,14 +59,14 @@ export default function HeroSection() {
         <div className="container mx-auto px-4">
           <div className="text-center">
             <h1 className="text-3xl md:text-5xl font-bold text-blue-600 mb-4">
-              {examInfo.name} {examInfo.year} – {config?.siteTitle || 'jet2025.com'}
+              {examInfo.name || 'JET'} {examInfo.year || '2025'} – {config?.siteTitle || 'jet2025.com'}
             </h1>
             
             <div className="mt-6 mb-8 bg-yellow-100 border border-yellow-400 p-4 rounded-lg max-w-3xl mx-auto">
               <h2 className="text-xl font-semibold text-yellow-800 mb-2">Notification Coming Soon- This Week</h2>
-              <h3 className="text-lg font-medium text-gray-800 mb-3">{examInfo.name}/{examInfo.fullName} Entrance Exam {examInfo.year}</h3>
+              <h3 className="text-lg font-medium text-gray-800 mb-3">{examInfo.name || 'JET'}/{examInfo.fullName || 'Joint Entrance Test'} Entrance Exam {examInfo.year || '2025'}</h3>
               <p className="text-gray-700">
-                After the official release, candidates can <strong>apply online for {examInfo.name} Application Form {examInfo.year}</strong> through the {examInfo.name}{examInfo.year} official website.
+                After the official release, candidates can <strong>apply online for {examInfo.name || 'JET'} Application Form {examInfo.year || '2025'}</strong> through the {examInfo.name || 'JET'}{examInfo.year || '2025'} official website.
               </p>
             </div>
             
@@ -83,7 +83,7 @@ export default function HeroSection() {
                   <li className="flex">
                     <span className="mr-2 text-amber-600">•</span>
                     <p className="text-gray-700">
-                      <strong>Before filling up the application form</strong> candidate must read and understand the instructions given in the {examInfo.name} Booklet-{examInfo.year}.
+                      <strong>Before filling up the application form</strong> candidate must read and understand the instructions given in the {examInfo.name || 'JET'} Booklet-{examInfo.year || '2025'}.
                     </p>
                   </li>
                   <li className="flex">
