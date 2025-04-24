@@ -51,7 +51,7 @@ function getYouTubeEmbedUrl(url: string): string {
   try {
     // Parameters to keep only play/pause, playback speed, and fullscreen buttons
     const params = `origin=${window.location.origin}&controls=1&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&fs=1&disablekb=1&loop=0&color=white&cc_load_policy=0&playsinline=1&channel=0`;
-    
+
     if (url.includes("youtu.be/")) {
       // Short youtu.be links
       const videoId = url.split("youtu.be/")[1].split("?")[0];
@@ -280,51 +280,54 @@ export function DirectResourceViewer({
           {isYouTubeUrl(resourceUrl) && (
             <>
               {/* Protected areas that block interaction with YouTube branding but allow video controls */}
-              
+
               {/* Top row - blocks all clicks in header area */}
-              <div className="absolute top-0 left-0 w-full h-[40px] z-10" 
-                   onClick={(e) => {
-                     e.preventDefault();
-                     e.stopPropagation();
-                     toast({
-                       title: "External navigation blocked",
-                       description: "The video must be viewed within the learning platform.",
-                       variant: "default"
-                     });
-                   }}
+              <div
+                className="absolute top-0 left-0 w-full h-[40px] z-10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toast({
+                    title: "External navigation blocked",
+                    description:
+                      "The video must be viewed within the learning platform.",
+                    variant: "default",
+                  });
+                }}
               ></div>
-              
+
               {/* Left edge */}
-              <div className="absolute top-[40px] left-0 w-[40px] h-[calc(100%-80px)] z-10"
-                   onClick={(e) => {
-                     e.preventDefault();
-                     e.stopPropagation();
-                   }}
+              <div
+                className="absolute top-[40px] left-0 w-[40px] h-[calc(100%-80px)] z-10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
               ></div>
-              
+
               {/* Right edge - blocks YouTube info cards */}
-              <div className="absolute top-[40px] right-0 w-[120px] h-[calc(100%-80px)] z-10"
-                   onClick={(e) => {
-                     e.preventDefault();
-                     e.stopPropagation();
-                   }}
+              <div
+                className="absolute top-[40px] right-0 w-[120px] h-[calc(100%-80px)] z-10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
               ></div>
-              
+
               {/* Bottom row - includes YouTube logo, subscribe button, etc. */}
-              <div className="absolute bottom-0 left-0 w-full h-[40px] z-10"
-                   onClick={(e) => {
-                     e.preventDefault();
-                     e.stopPropagation();
-                     toast({
-                       title: "External navigation blocked",
-                       description: "The video must be viewed within the learning platform.",
-                       variant: "default"
-                     });
-                   }}
-              >
-                {/* YouTube logo specific block in the bottom-right corner */}
-                <div className="absolute bottom-0 right-0 w-[90px] h-[40px] bg-black"></div>
-              </div>
+              <div
+                className="absolute bottom-0 left-[45%] w-full h-[40px] z-10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toast({
+                    title: "External navigation blocked",
+                    description:
+                      "The video must be viewed within the learning platform.",
+                    variant: "default",
+                  });
+                }}
+              ></div>
             </>
           )}
         </div>
