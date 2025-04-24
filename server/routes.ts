@@ -25,7 +25,7 @@ import {
 import filesRoutes from "./routes/files";
 import importExportRoutes from "./routes/import-export";
 import { registerNotificationRoutes } from "./routes/notifications";
-import offlineResourcesRoutes from "./routes/offline-resources";
+import { registerOfflineResourcesRoutes } from "./routes/offline-resources";
 
 declare global {
   namespace Express {
@@ -1851,7 +1851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/files", isAuthenticated, filesRoutes);
   
   // Register routes for offline resources
-  app.use("/api/offline-resources", isAuthenticated, offlineResourcesRoutes);
+  registerOfflineResourcesRoutes(app);
 
   // Register routes for import/export
   app.use(

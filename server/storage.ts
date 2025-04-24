@@ -102,6 +102,7 @@ export interface IStorage {
   getOfflineResourceByResourceId(userId: number, resourceId: string): Promise<OfflineResource | undefined>;
   listOfflineResourcesByUser(userId: number): Promise<OfflineResource[]>;
   createOfflineResource(offlineResource: InsertOfflineResource): Promise<OfflineResource>;
+  updateOfflineResource(id: number, updates: Partial<InsertOfflineResource>): Promise<OfflineResource | undefined>;
   updateOfflineResourceStatus(id: number, status: string): Promise<OfflineResource | undefined>;
   updateOfflineResourceLastAccessed(id: number): Promise<OfflineResource | undefined>;
   deleteOfflineResource(id: number): Promise<boolean>;
@@ -1369,6 +1370,15 @@ export class DatabaseStorage implements IStorage {
     const [resource] = await db
       .insert(offlineResources)
       .values(insertResource)
+      .returning();
+    return resource;
+  }
+  
+  async updateOfflineResource(id: number, updates: Partial<InsertOfflineResource>): Promise<OfflineResource | undefined> {
+    const [resource] = await db
+      .update(offlineResources)
+      .set(updates)
+      .where(eq(offlineResources.id, id))
       .returning();
     return resource;
   }
