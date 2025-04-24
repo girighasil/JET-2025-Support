@@ -29,6 +29,8 @@ import {
 import filesRoutes from "./routes/files";
 import importExportRoutes from "./routes/import-export";
 import { registerNotificationRoutes } from "./routes/notifications";
+import { registerSiteConfigRoutes } from "./routes/site-config";
+import { registerPromoBannerRoutes } from "./routes/promo-banners";
 
 declare global {
   namespace Express {
@@ -1863,6 +1865,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register routes for notifications
   registerNotificationRoutes(app);
+  registerSiteConfigRoutes(app);
+  registerPromoBannerRoutes(app);
 
   // Enhanced proxy endpoint for resource links (to hide URLs and embed content)
   app.get(
