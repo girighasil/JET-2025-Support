@@ -329,3 +329,30 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Offline Resources model for tracking downloaded resources
+export const offlineResources = pgTable("offline_resources", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Reference to users.id
+  resourceType: text("resource_type").notNull(), // "video", "pdf", "document", etc.
+  resourceUrl: text("resource_url").notNull(), // Original resource URL
+  resourceTitle: text("resource_title").notNull(),
+  resourceId: text("resource_id").notNull(), // Unique identifier for the resource
+  courseId: integer("course_id"), // Optional reference to courses.id
+  moduleId: integer("module_id"), // Optional reference to modules.id
+  downloadedAt: timestamp("downloaded_at").defaultNow(),
+  expiresAt: timestamp("expires_at"), // Optional expiration date
+  lastAccessedAt: timestamp("last_accessed_at"), // When the resource was last accessed
+  fileSize: integer("file_size"), // Size in bytes
+  accessKey: text("access_key").notNull(), // Encryption key or access token
+  status: text("status").notNull().default("active"), // "active", "expired", "revoked"
+});
+
+export const insertOfflineResourceSchema = createInsertSchema(offlineResources).omit({
+  id: true,
+  downloadedAt: true,
+  lastAccessedAt: true,
+});
+
+export type OfflineResource = typeof offlineResources.$inferSelect;
+export type InsertOfflineResource = z.infer<typeof insertOfflineResourceSchema>;

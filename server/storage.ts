@@ -8,7 +8,8 @@ import {
   enrollments, Enrollment, InsertEnrollment,
   doubtSessions, DoubtSession, InsertDoubtSession,
   studyTimes, StudyTime, InsertStudyTime,
-  notifications, Notification, InsertNotification
+  notifications, Notification, InsertNotification,
+  offlineResources, OfflineResource, InsertOfflineResource
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
@@ -95,6 +96,15 @@ export interface IStorage {
   
   // Course Update Notification Methods
   notifyCourseUpdate(courseId: number, updateType: string, message: string): Promise<void>;
+  
+  // Offline Resource Methods
+  getOfflineResource(id: number): Promise<OfflineResource | undefined>;
+  getOfflineResourceByResourceId(userId: number, resourceId: string): Promise<OfflineResource | undefined>;
+  listOfflineResourcesByUser(userId: number): Promise<OfflineResource[]>;
+  createOfflineResource(offlineResource: InsertOfflineResource): Promise<OfflineResource>;
+  updateOfflineResourceStatus(id: number, status: string): Promise<OfflineResource | undefined>;
+  updateOfflineResourceLastAccessed(id: number): Promise<OfflineResource | undefined>;
+  deleteOfflineResource(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
