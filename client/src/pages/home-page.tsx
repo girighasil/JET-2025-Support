@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
-import PromoBanner from "@/components/layout/PromoBanner";
 
 export default function HomePage() {
   const { user, isLoading } = useAuth();
