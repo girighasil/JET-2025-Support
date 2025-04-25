@@ -140,8 +140,8 @@ async function safeJsonParse(res: Response): Promise<any> {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
+  method: string,
   data?: unknown | undefined,
   options?: { isFormData?: boolean },
 ): Promise<Response> {

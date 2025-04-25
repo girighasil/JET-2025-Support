@@ -83,9 +83,9 @@ export function useSiteConfig() {
     mutationFn: async (settings: Partial<SiteSettings>) => {
       return apiRequest('/api/site-config/siteSettings', 'PUT', {
         value: {
-          ...config?.siteTitle && { siteTitle: config.siteTitle },
-          ...config?.tagline && { tagline: config.tagline },
-          ...config?.instituteName && { instituteName: config.instituteName },
+          ...(config?.siteTitle && { siteTitle: config.siteTitle }),
+          ...(config?.tagline && { tagline: config.tagline }),
+          ...(config?.instituteName && { instituteName: config.instituteName }),
           ...settings, // Overwrite with new values
         },
       });
