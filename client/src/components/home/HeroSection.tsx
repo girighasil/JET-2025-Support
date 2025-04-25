@@ -19,6 +19,9 @@ export default function HeroSection() {
 
   return (
     <div className="relative w-full overflow-hidden">
+      {/* Promo Banner for important announcements */}
+      <PromoBanner />
+      
       {/* Hero header with university name */}
       <div className="bg-emerald-700 text-white py-2 w-full">
         <div className="responsive-container">
@@ -50,9 +53,6 @@ export default function HeroSection() {
           </div>
         </div>
       </div>
-      
-      {/* Promo Banner for important announcements */}
-      <PromoBanner />
       
       {/* Main Hero Section */}
       <section className="py-10 md:py-16 bg-gradient-to-b from-white to-gray-100 w-full">
