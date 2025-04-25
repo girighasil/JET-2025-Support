@@ -149,8 +149,8 @@ export default function Navbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={() => {
-                      logoutMutation.mutate();
-                      navigate('/');
+                      logout();
+                      // Navigation is handled in the logout function
                     }}
                     className="cursor-pointer text-red-600"
                   >
