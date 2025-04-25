@@ -25,6 +25,9 @@ export default function HomePage() {
   // Hero section for landing page using the updated HeroSection component
   return (
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
+      {/* Hero Section - Using the updated component */}
+      <HeroSection />
+      
       {/* Navigation - updated with site config */}
       <nav className="w-full border-b border-border bg-white">
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
@@ -44,9 +47,6 @@ export default function HomePage() {
           </div>
         </div>
       </nav>
-
-      {/* Hero Section - Using the updated component */}
-      <HeroSection />
 
       {/* Features Section */}
       <section className="py-12 sm:py-16 md:py-20 bg-gray-50 w-full">
