@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
 
-import { useSiteConfig, useUpdateSiteConfig, type SiteConfigData } from '@/hooks/use-site-config';
+import { useSiteConfig, type SiteConfig } from '@/hooks/use-site-config';
 
 // Form schema for the site configuration
 const siteConfigSchema = z.object({
@@ -41,8 +41,8 @@ const siteConfigSchema = z.object({
 
 export default function SiteConfigPage() {
   const { toast } = useToast();
-  const { config, isLoading } = useSiteConfig();
-  const { updateConfig, isUpdating } = useUpdateSiteConfig();
+  const { config, isLoading, updateSiteSettings, updateExamInfo, updateContactAndSocial } = useSiteConfig();
+  const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
 
   // Initialize form with the current config values
@@ -98,44 +98,36 @@ export default function SiteConfigPage() {
 
   const onSubmit = async (data: z.infer<typeof siteConfigSchema>) => {
     try {
+      setIsUpdating(true);
+      
       // Update general site settings
-      await updateConfig({
-        key: 'siteSettings',
-        value: {
-          siteTitle: data.siteTitle,
-          tagline: data.tagline,
-          instituteName: data.instituteName,
-          logoUrl: data.logoUrl,
-        },
+      await updateSiteSettings({
+        siteTitle: data.siteTitle,
+        tagline: data.tagline,
+        instituteName: data.instituteName,
+        logoUrl: data.logoUrl,
       });
 
       // Update exam info
-      await updateConfig({
-        key: 'examInfo',
-        value: {
-          name: data.examName,
-          fullName: data.examFullName,
-          year: data.examYear,
-          applicationStartDate: data.applicationStartDate,
-          applicationEndDate: data.applicationEndDate,
-          examDate: data.examDate,
-          universityName: data.universityName,
-          universityLogo: data.universityLogo,
-        },
+      await updateExamInfo({
+        name: data.examName,
+        fullName: data.examFullName,
+        year: data.examYear,
+        applicationStartDate: data.applicationStartDate,
+        applicationEndDate: data.applicationEndDate,
+        examDate: data.examDate,
+        universityName: data.universityName,
       });
 
       // Update contact & social info
-      await updateConfig({
-        key: 'contactAndSocial',
-        value: {
-          footer: {
-            phone: data.contactPhone,
-            email: data.contactEmail,
-            address: data.contactAddress,
-          },
-          social: {
-            whatsapp: data.whatsappLink,
-          },
+      await updateContactAndSocial({
+        footer: {
+          phone: data.contactPhone,
+          email: data.contactEmail,
+          address: data.contactAddress,
+        },
+        social: {
+          whatsapp: data.whatsappLink,
         },
       });
 
@@ -151,6 +143,8 @@ export default function SiteConfigPage() {
         description: 'Failed to update site configuration. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 

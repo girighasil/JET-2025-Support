@@ -1,30 +1,19 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { usePromoBanners } from '@/hooks/use-site-config';
 
 export default function PromoBanner() {
   const [isVisible, setIsVisible] = useState(true);
+  const { banners, isLoading } = usePromoBanners();
 
-  // Fetch promotions from API
-  const { data: fetchedAnnouncements, isLoading } = useQuery({
-    queryKey: ['/api/promo-banners'],
-    staleTime: 60000,
-  });
-
-  // Default announcements data (fallback)
-  const defaultAnnouncements = [
-    "📢 All the latest information regarding JET/Pre-PG/Ph.D. Entrance Exam 2025 will be made available on this website.",
-    "📅 Important Dates: Application starts Feb 20, 2025 | Application ends March 30, 2025 | Exam Date: May 14, 2025",
-    "🎓 Admission open for B.Sc. Agriculture, Horticulture, Forestry, Food Technology, and more programs",
-    "📚 Before filling the application form, read all instructions in the JET Booklet-2025",
-    "📞 Helpdesk available from 10am to 5pm - Contact for application assistance",
-  ];
-
-  // Use fetched announcements or fallback to defaults
-  const announcements = Array.isArray(fetchedAnnouncements) && fetchedAnnouncements.length > 0 ? 
-    fetchedAnnouncements.map((promo: any) => promo.text) : 
-    defaultAnnouncements;
+  // Get announcement texts from active banners
+  const announcements = banners && banners.length > 0 
+    ? banners
+        .filter(banner => banner.isActive)
+        .sort((a, b) => a.order - b.order)
+        .map(banner => banner.text)
+    : [];
 
   // Set up auto rotation between announcements
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -63,7 +52,7 @@ export default function PromoBanner() {
     return () => clearInterval(interval);
   }, [announcements.length]);
 
-  if (!isVisible || isLoading) return null;
+  if (!isVisible || isLoading || announcements.length === 0) return null;
 
   return (
     <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-2 relative overflow-hidden border-b border-white/10">
