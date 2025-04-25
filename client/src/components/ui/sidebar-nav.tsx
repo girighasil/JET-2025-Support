@@ -146,15 +146,15 @@ export function SidebarNav({ className }: SidebarNavProps) {
       )}
     >
       {/* Logo and Title */}
-      <div className="flex h-16 items-center border-b px-4">
-        <div className="flex items-center gap-2 font-semibold">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
+      <div className="flex h-16 items-center border-b px-4 w-full">
+        <div className="flex items-center gap-2 font-semibold overflow-hidden flex-1 min-w-0">
+          <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
             M
           </div>
           {!collapsed && (
-            <div>
-              <div className="text-lg font-bold">Maths Magic Town</div>
-              <div className="text-xs text-muted-foreground">
+            <div className="overflow-hidden min-w-0">
+              <div className="text-lg font-bold truncate">Maths Magic Town</div>
+              <div className="text-xs text-muted-foreground truncate">
                 Learn, Practice, Succeed
               </div>
             </div>
@@ -163,8 +163,9 @@ export function SidebarNav({ className }: SidebarNavProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="ml-auto"
+          className="flex-shrink-0 ml-2"
           onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
             <svg
@@ -203,15 +204,15 @@ export function SidebarNav({ className }: SidebarNavProps) {
       {/* User Info */}
       <div
         className={cn(
-          "flex items-center gap-2 border-b p-4",
+          "flex items-center gap-2 border-b p-4 w-full",
           collapsed && "justify-center",
         )}
       >
-        <UserAvatar user={user} className="h-10 w-10" />
+        <UserAvatar user={user} className="h-10 w-10 flex-shrink-0" />
         {!collapsed && (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{user?.fullName}</span>
-            <span className="text-xs text-muted-foreground capitalize">
+          <div className="flex flex-col overflow-hidden min-w-0">
+            <span className="text-sm font-medium truncate">{user?.fullName}</span>
+            <span className="text-xs text-muted-foreground capitalize truncate">
               {user?.role}
             </span>
           </div>
@@ -263,16 +264,17 @@ function NavItem({ title, href, icon: Icon, collapsed = false }: NavItemProps) {
   const [isActive] = useRoute(href);
 
   return (
-    <div>
+    <div className="w-full">
       <Link
         href={href}
         className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors w-full",
           isActive
             ? "bg-blue-50 text-primary"
             : "text-gray-600 hover:bg-gray-50",
           collapsed && "justify-center px-0",
         )}
+        title={title}
       >
         <Icon
           className={cn(
@@ -280,7 +282,9 @@ function NavItem({ title, href, icon: Icon, collapsed = false }: NavItemProps) {
             isActive ? "text-primary" : "text-gray-500",
           )}
         />
-        {!collapsed && <span>{title}</span>}
+        {!collapsed && (
+          <span className="truncate overflow-hidden">{title}</span>
+        )}
       </Link>
     </div>
   );

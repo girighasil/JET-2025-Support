@@ -144,27 +144,27 @@ export function MobileSidebarNav({ className, onItemClick }: MobileSidebarNavPro
   return (
     <div className={cn("flex h-full flex-col bg-white", className)}>
       {/* Logo and Title */}
-      <div className="flex h-16 items-center border-b px-4">
-        <div className="flex items-center gap-2 font-semibold">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
+      <div className="flex h-16 items-center border-b px-4 w-full">
+        <div className="flex items-center gap-2 font-semibold overflow-hidden flex-1 min-w-0">
+          <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
             M
           </div>
-          <div>
-            <div className="text-lg font-bold">Maths Magic Town</div>
-            <div className="text-xs text-muted-foreground">Learn, Practice, Succeed</div>
+          <div className="overflow-hidden min-w-0">
+            <div className="text-lg font-bold truncate">Maths Magic Town</div>
+            <div className="text-xs text-muted-foreground truncate">Learn, Practice, Succeed</div>
           </div>
         </div>
       </div>
       
       {/* User Info */}
-      <div className="flex items-center gap-2 border-b p-4">
+      <div className="flex items-center gap-2 border-b p-4 w-full">
         <UserAvatar 
           user={user} 
-          className="h-10 w-10"
+          className="h-10 w-10 flex-shrink-0"
         />
-        <div className="flex flex-col">
-          <span className="text-sm font-medium">{user?.fullName}</span>
-          <span className="text-xs text-muted-foreground capitalize">{user?.role}</span>
+        <div className="flex flex-col overflow-hidden min-w-0">
+          <span className="text-sm font-medium truncate">{user?.fullName}</span>
+          <span className="text-xs text-muted-foreground capitalize truncate">{user?.role}</span>
         </div>
       </div>
       
@@ -214,20 +214,21 @@ function NavItem({ title, href, icon: Icon, onClick }: NavItemProps) {
   };
   
   return (
-    <div>
+    <div className="w-full">
       <Link 
         href={href} 
         className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors w-full",
           isActive 
             ? "bg-blue-50 text-primary" 
             : "text-gray-600 hover:bg-gray-50"
         )}
         onClick={handleClick}
+        title={title}
       >
         <Icon className={cn("h-5 w-5 flex-shrink-0", 
                          isActive ? "text-primary" : "text-gray-500")} />
-        <span>{title}</span>
+        <span className="truncate overflow-hidden">{title}</span>
       </Link>
     </div>
   );
