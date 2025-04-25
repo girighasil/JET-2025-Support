@@ -147,7 +147,7 @@ export function SidebarNav({ className }: SidebarNavProps) {
     >
       {/* Logo and Title */}
       <div className="flex h-16 items-center border-b px-4 w-full">
-        <div className="flex items-center gap-2 font-semibold overflow-hidden flex-1 min-w-0">
+        <Link href="/" className="flex items-center gap-2 font-semibold overflow-hidden flex-1 min-w-0">
           <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
             M
           </div>
@@ -159,7 +159,7 @@ export function SidebarNav({ className }: SidebarNavProps) {
               </div>
             </div>
           )}
-        </div>
+        </Link>
         <Button
           variant="ghost"
           size="icon"

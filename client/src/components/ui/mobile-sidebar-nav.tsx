@@ -145,7 +145,7 @@ export function MobileSidebarNav({ className, onItemClick }: MobileSidebarNavPro
     <div className={cn("flex h-full flex-col bg-white", className)}>
       {/* Logo and Title */}
       <div className="flex h-16 items-center border-b px-4 w-full">
-        <div className="flex items-center gap-2 font-semibold overflow-hidden flex-1 min-w-0">
+        <Link href="/" className="flex items-center gap-2 font-semibold overflow-hidden flex-1 min-w-0">
           <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
             M
           </div>
@@ -153,7 +153,7 @@ export function MobileSidebarNav({ className, onItemClick }: MobileSidebarNavPro
             <div className="text-lg font-bold truncate">Maths Magic Town</div>
             <div className="text-xs text-muted-foreground truncate">Learn, Practice, Succeed</div>
           </div>
-        </div>
+        </Link>
       </div>
       
       {/* User Info */}
