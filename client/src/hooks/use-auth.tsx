@@ -190,28 +190,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Set logging out flag to prevent 401 errors from showing
       setLoggingOut(true);
-      
+
       // Execute the logout
       await logoutMutation.mutateAsync();
-      
+
       // Clear all queries from the cache to prevent re-fetching with stale credentials
       queryClient.clear();
-      
+
       // Reset the logging out flag immediately after successful logout
       setLoggingOut(false);
-      
+
       // Show successful logout message
       toast({
         title: "Logged out successfully",
-        description: "You have been logged out of your account."
+        description: "You have been logged out of your account.",
       });
-      
-      // Use wouter's navigation instead of hard redirect
-      setLocation("/auth");
+
+      // Redirect to home page instead of auth page
+      setLocation("/");
     } catch (error) {
       // Reset the logging out flag
       setLoggingOut(false);
-      
+
       console.error("Logout error handled:", error);
     }
   };
