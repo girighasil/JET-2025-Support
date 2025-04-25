@@ -26,6 +26,8 @@ import ManageEnrollments from "@/pages/admin/manage-enrollments";
 import SessionSchedule from "@/pages/admin/session-schedule";
 import Analytics from "@/pages/admin/analytics";
 import AnalyticsDashboard from "@/pages/admin/analytics-dashboard";
+import SiteConfigPage from "@/pages/admin/site-config";
+import PromotionsPage from "@/pages/admin/promotions";
 
 function App() {
   return (
@@ -173,6 +175,20 @@ function App() {
           <ProtectedRoute
             path="/admin/analytics-dashboard"
             component={AnalyticsDashboard}
+            roles={["admin"]}
+          />
+        </Route>
+        <Route path="/admin/site-config">
+          <ProtectedRoute
+            path="/admin/site-config"
+            component={SiteConfigPage}
+            roles={["admin"]}
+          />
+        </Route>
+        <Route path="/admin/promotions">
+          <ProtectedRoute
+            path="/admin/promotions"
+            component={PromotionsPage}
             roles={["admin"]}
           />
         </Route>
