@@ -63,7 +63,7 @@ type PromoFormValues = z.infer<typeof promoFormSchema>;
 
 export default function PromotionsPage() {
   const { toast } = useToast();
-  const { banners, createBanner, updateBanner, deleteBanner } = usePromoBanners();
+  const { banners = [], createBanner, updateBanner, deleteBanner } = usePromoBanners();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBanner, setSelectedBanner] = useState<any | null>(null);
   
@@ -111,30 +111,43 @@ export default function PromotionsPage() {
   // Handle form submission for create/edit
   const onSubmit = async (data: PromoFormValues) => {
     try {
+      console.log('Submitting form with data:', data);
+      
       if (selectedBanner) {
         // Update existing banner
-        await updateBanner({
+        console.log('Updating existing banner ID:', selectedBanner.id);
+        await updateBanner.mutateAsync({
           id: selectedBanner.id,
           ...data,
         });
+        console.log('Banner update successful');
+        
         toast({
           title: 'Banner updated',
           description: 'The promotional banner has been updated successfully',
         });
       } else {
         // Create new banner
-        await createBanner(data);
+        console.log('Creating new banner');
+        await createBanner.mutateAsync(data);
+        console.log('Banner creation successful');
+        
         toast({
           title: 'Banner created',
           description: 'A new promotional banner has been created successfully',
         });
       }
       handleDialogClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving banner:', error);
+      // Log detailed error information for debugging
+      if (error.message) console.error('Error message:', error.message);
+      if (error.originalData) console.error('Original error data:', error.originalData);
+      if (error.status) console.error('Status code:', error.status);
+      
       toast({
         title: 'Error',
-        description: 'Failed to save the promotional banner',
+        description: error.message || 'Failed to save the promotional banner',
         variant: 'destructive',
       });
     }
@@ -144,7 +157,7 @@ export default function PromotionsPage() {
   const handleDeleteBanner = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this banner?')) {
       try {
-        await deleteBanner(id);
+        await deleteBanner.mutateAsync(id);
         toast({
           title: 'Banner deleted',
           description: 'The promotional banner has been deleted successfully',
@@ -167,7 +180,7 @@ export default function PromotionsPage() {
   };
   
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Promotional Banners</h1>

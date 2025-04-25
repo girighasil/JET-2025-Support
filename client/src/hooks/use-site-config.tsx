@@ -196,8 +196,15 @@ export function usePromoBanners() {
   
   // Create new banner
   const createBanner = useMutation({
-    mutationFn: async (banner: { text: string; url?: string; isActive?: boolean; order?: number }) => {
-      return apiRequest('/api/admin/promo-banners', 'POST', banner);
+    mutationFn: async (banner: { text: string; url?: string; isActive?: boolean; order?: number; startDate?: Date | null; endDate?: Date | null }) => {
+      // Convert dates to ISO string format
+      const payload = {
+        ...banner,
+        startDate: banner.startDate ? banner.startDate.toISOString() : null,
+        endDate: banner.endDate ? banner.endDate.toISOString() : null
+      };
+      
+      return apiRequest('/api/admin/promo-banners', 'POST', payload);
     },
     onSuccess: () => {
       toast({
@@ -219,8 +226,23 @@ export function usePromoBanners() {
   
   // Update banner
   const updateBanner = useMutation({
-    mutationFn: async ({ id, ...data }: { id: number; text?: string; url?: string; isActive?: boolean; order?: number }) => {
-      return apiRequest(`/api/admin/promo-banners/${id}`, 'PUT', data);
+    mutationFn: async ({ id, ...data }: { 
+      id: number; 
+      text?: string; 
+      url?: string; 
+      isActive?: boolean; 
+      order?: number;
+      startDate?: Date | null;
+      endDate?: Date | null;
+    }) => {
+      // Convert dates to ISO string format
+      const payload = {
+        ...data,
+        startDate: data.startDate ? data.startDate.toISOString() : null,
+        endDate: data.endDate ? data.endDate.toISOString() : null
+      };
+      
+      return apiRequest(`/api/admin/promo-banners/${id}`, 'PUT', payload);
     },
     onSuccess: () => {
       toast({
