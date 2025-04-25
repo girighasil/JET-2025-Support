@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import MobileMenu from './MobileMenu';
 import PromoBanner from './PromoBanner';
-import { SquareRadical, BarChart4, LogOut } from 'lucide-react';
+import { SquareRadical, BarChart4, LogOut, Home } from 'lucide-react';
 import { useSiteConfig } from '@/hooks/use-site-config';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
@@ -35,7 +35,7 @@ export default function Navbar() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
   
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [, navigate] = useLocation();
 
   // Define types for navigation links
@@ -102,6 +102,13 @@ export default function Navbar() {
         
         <div className="hidden md:flex flex-col md:flex-row w-full md:w-auto md:items-center mt-4 md:mt-0">
           <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
+            {/* Always visible Home link for all users */}
+            <li>
+              <Link href="/" className="flex items-center font-medium hover:text-primary transition-colors duration-200">
+                <Home className="mr-1 h-4 w-4" />
+                Home
+              </Link>
+            </li>
             {navLinks.map((link: NavLink, index: number) => (
               <li key={index}>
                 <a 
@@ -131,6 +138,10 @@ export default function Navbar() {
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer">
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer">
                     <BarChart4 className="mr-2 h-4 w-4" />
                     Dashboard
