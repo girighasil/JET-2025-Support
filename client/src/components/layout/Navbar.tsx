@@ -51,6 +51,15 @@ export default function Navbar() {
     config?.tagline || "Your Path to Success in Competitive Exams";
   const logoUrl = config?.logoUrl || "";
   const useCustomLogo = config?.useCustomLogo || false;
+
+  // Refetch config when it changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['/api/site-config'] });
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
   const navLinks: NavLink[] = config?.navLinks || [
     { title: "Home", path: "#home" },
     { title: "Courses", path: "#courses", className: "hover:underline" },
