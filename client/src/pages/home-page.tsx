@@ -179,16 +179,17 @@ export default function HomePage() {
 
           <div className="mt-4">
             <Button
-              className="w-full bg-amber-800 hover:bg-green-900 text-white"
+              className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
               onClick={() =>
                 window.open(
-                  config?.social?.whatsapp ||
-                    "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07",
+                  `${config?.social?.youtube}?sub_confirmation=1` ||
+                    "https://youtube.com/@mathsmagictown",
                   "_blank",
                 )
               }
             >
-              Subscribe YouTube Channel
+              <Youtube className="h-5 w-5" />
+              Subscribe on YouTube
             </Button>
           </div>
 
