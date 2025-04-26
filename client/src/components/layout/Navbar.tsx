@@ -70,21 +70,22 @@ export default function Navbar() {
             {isLoading ? (
               <Skeleton className="h-10 w-40 bg-gray-200" />
             ) : (
-              <><button  onClick={toggleMobileMenu}
-                  aria-label="Toggle menu">
-                {useCustomLogo && logoUrl ? (
-                  <div className="h-10 mr-3">
-                    <img
-                      src={logoUrl}
-                      alt={instituteName}
-                      className="h-full w-auto object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-primary rounded-full p-2 mr-3">
-                    <SquareRadical className="h-6 w-6 text-white" />
-                  </div>
-                )}</button>
+              <>
+                <button onClick={toggleMobileMenu} aria-label="Toggle menu">
+                  {useCustomLogo && logoUrl ? (
+                    <div className="h-10 mr-3">
+                      <img
+                        src={logoUrl}
+                        alt={instituteName}
+                        className="h-full w-auto object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-primary rounded-full p-2 mr-3">
+                      <SquareRadical className="h-6 w-6 text-white" />
+                    </div>
+                  )}
+                </button>
                 <div className="flex flex-col">
                   <span className="text-lg sm:text-xl font-bold">
                     {instituteName}
@@ -96,39 +97,9 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/*<button
-          className="md:hidden text-gray-700 focus:outline-none"
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>*/}
 
         <div className="hidden md:flex flex-col md:flex-row w-[50%] md:w-auto md:items-center mt-4 md:mt-0">
           <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
-            {/* Always visible Home link for all users */}
-            {/*<li>
-              <Link
-                href="/"
-                className="flex items-center font-medium hover:text-primary transition-colors duration-200 hover:underline"
-              >
-                <Home className="mr-1 h-4 w-4" />
-                Home
-              </Link>
-            </li>*/}
             {navLinks.map((link: NavLink, index: number) => (
               <li key={index}>
                 <a
@@ -140,78 +111,8 @@ export default function Navbar() {
               </li>
             ))}
           </ul>
-          
-          {/*<div className="mt-4 md:mt-0 md:ml-8 flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8 border border-primary/30">
-                        <AvatarFallback className="text-xs">
-                          {user.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="hidden md:inline-block font-medium">
-                        {user.fullName || user.username}
-                      </span>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => navigate("/")}
-                    className="cursor-pointer"
-                  >
-                    <Home className="mr-2 h-4 w-4" />
-                    Home
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate("/dashboard")}
-                    className="cursor-pointer"
-                  >
-                    <BarChart4 className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      logout();
-                      // Navigation is handled in the logout function
-                    }}
-                    className="cursor-pointer text-red-600"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs sm:text-sm"
-                  onClick={() => navigate("/auth")}
-                >
-                  Sign In
-                </Button>
-                <Button
-                  size="sm" className="text-xs sm:text-sm"
-                  onClick={() => navigate("/auth?tab=register")}
-                >
-                  Register
-                </Button>
-              </>
-            )}
-          </div>*/}
-          
-         
-          
         </div>
-        
+
       </nav>
 
       <PromoBanner />
