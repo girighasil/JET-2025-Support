@@ -41,7 +41,7 @@ export default function HomePage() {
     
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       {/* Navigation - updated with site config */}
-      <nav className="w-full border-b border-border bg-white">
+      <nav className="sticky top-0 z-50 w-full border-b border-border bg-white">
         <div className="bg-emerald-700 text-white py-2 w-full">
           <div className="responsive-container">
             <div className="flex flex-col md:flex-row justify-between items-center gap-3">
@@ -176,6 +176,23 @@ export default function HomePage() {
             </div>
           </div>
 
+
+          <div className="mt-4">
+            <Button
+              className="w-full bg-amber-800 hover:bg-green-900 text-white"
+              onClick={() =>
+                window.open(
+                  config?.social?.whatsapp ||
+                    "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07",
+                  "_blank",
+                )
+              }
+            >
+              Subscribe YouTube Channel
+            </Button>
+          </div>
+
+          
           <div className="mt-4">
             <Button
               className="w-full bg-green-600 hover:bg-green-700 text-white"
