@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
 import { useSiteConfig } from "@/hooks/use-site-config";
-import Navbar from "@/components/layout/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
@@ -76,22 +75,19 @@ export default function HomePage() {
               {config?.siteTitle || "JET 2025"}
             </span>
           </div>
-          <div className="hidden md:flex space-x-4 text-sm flex-wrap">
-            <Link href="/" className="hover:underline">
-              Home
-            </Link>
-            <Link href="#important-alert" className="hover:underline">
-              Important Alert
-            </Link>
-            <Link href="#important-instructions" className="hover:underline">
-              Important Instructions
-            </Link>
-            <Link href="#contact-us" className="hover:underline">
-              Contact Us
-            </Link>
-            <Link href="#guidelines" className="hover:underline">
-              Guidelines
-            </Link>
+          <div className="hidden md:flex flex-col md:flex-row w-[50%] md:w-auto md:items-center mt-4 md:mt-0">
+            <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
+              {navLinks.map((link: NavLink, index: number) => (
+                <li key={index}>
+                  <a
+                    href={link.path}
+                    className="text-xs sm:text-sm font-medium hover:text-primary transition-colors duration-200 hover:underline"
+                  >
+                    {link.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/auth">
@@ -119,7 +115,7 @@ export default function HomePage() {
         links={navLinks}
       />
       {/* Sign in / Registration Box */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 mx-auto max-w-[95%] lg:max-w-6xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mx-auto max-w-[95%] lg:max-w-6xl">
         <div className="bg-amber-100 p-4 sm:p-6 rounded-lg border border-amber-200">
           <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-800 flex items-center justify-center">
             <svg
