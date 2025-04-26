@@ -1,18 +1,30 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
-import HeroSection from "@/components/home/HeroSection";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import Navbar from "@/components/layout/Navbar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { config } = useSiteConfig();
   const examInfo = config?.examInfo || "JET 2025";
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+  const navLinks: NavLink[] = config?.navLinks || [
+    { title: "Home", path: "#home" },
+    { title: "Courses", path: "#courses", className: "hover:underline" },
+    { title: "Doubt Classes", path: "#doubt-classes" },
+    { title: "Practice Tests", path: "#practice-tests" },
+    { title: "Success Stories", path: "#testimonials" },
+    { title: "Contact", path: "#contact" },
+  ];
 
   // Redirect authenticated users to their dashboard
   useEffect(() => {
@@ -93,9 +105,34 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+        <button
+          className="md:hidden text-gray-700 focus:outline-none"
+          onClick={toggleMobileMenu}
+          aria-label="Toggle menu"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
       </nav>
       <Navbar />
       <PromoBanner />
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        onClose={toggleMobileMenu}
+        links={navLinks}
+      />
       {/* Sign in / Registration Box */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 mx-auto max-w-[95%] lg:max-w-6xl">
         <div className="bg-amber-100 p-4 sm:p-6 rounded-lg border border-amber-200">

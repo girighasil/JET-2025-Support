@@ -72,12 +72,11 @@ export default function MobileMenu({
         </nav>
 
         
-          <div className="flex items-center gap-2 sm:gap-4 ">
+          <div className="flex pt-2 md:pt-4 items-center gap-2 sm:gap-4 ">
             <Link href="/auth">
-              <Button
-                variant={"outline"}
+              <Button              
                 size="sm"
-                className="text-xm sm:text-sm"
+                className="text-xs sm:text-sm"
               >
                 Sign In
               </Button>
