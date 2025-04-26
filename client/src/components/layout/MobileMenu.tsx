@@ -20,13 +20,13 @@ export default function MobileMenu({
   if (!isOpen) return null;
 
   return (
-    <div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-50">
-      <div className="bg-white h-screen w-4/5 max-w-xs pt-5 px-4 overflow-y-auto">
+    <div className="md:hidden fixed top-[10%] inset-0 bg-black bg-opacity-50 z-50">
+      <div className="bg-white h-[80vh] w-[80%] max-w-xs pt-5 px-4 overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 left-[70%] text-white bg-gray-700 hover:text-gray-200 focus:outline-none"
           aria-label="Close menu"
-        >
+        > 
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
@@ -71,7 +71,7 @@ export default function MobileMenu({
           </ul>
         </nav>
 
-        <li>
+        
           <div className="flex items-center gap-2 sm:gap-4 ">
             <Link href="/auth">
               <Button
@@ -92,7 +92,7 @@ export default function MobileMenu({
               </Button>
             </Link>
           </div>
-        </li>
+       
       </div>
     </div>
   );
