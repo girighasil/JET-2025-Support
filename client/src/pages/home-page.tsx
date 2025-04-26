@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Youtube, Whatsapp } from "lucide-react";
 import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
 import { useSiteConfig } from "@/hooks/use-site-config";
@@ -204,7 +205,7 @@ export default function HomePage() {
                   "_blank",
                 )
               }
-            >
+            ><Whatsapp className="h-5 w-5" />
               Join WhatsApp
             </Button>
           </div>
