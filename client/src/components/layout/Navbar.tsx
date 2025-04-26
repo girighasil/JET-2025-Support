@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button } from '@/components/ui/button';
-import MobileMenu from './MobileMenu';
-import PromoBanner from './PromoBanner';
-import { SquareRadical, BarChart4, LogOut, Home } from 'lucide-react';
-import { useSiteConfig } from '@/hooks/use-site-config';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import MobileMenu from "./MobileMenu";
+import PromoBanner from "./PromoBanner";
+import { SquareRadical, BarChart4, LogOut, Home } from "lucide-react";
+import { useSiteConfig } from "@/hooks/use-site-config";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -27,14 +27,14 @@ export default function Navbar() {
       setIsScrolled(window.scrollY > 10);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
-  
+
   const { user, logout } = useAuth();
   const [, navigate] = useLocation();
 
@@ -43,24 +43,27 @@ export default function Navbar() {
     title: string;
     path: string;
   };
-  
+
   // Default values if config isn't loaded yet
-  const siteTitle = config?.siteTitle || 'Maths Magic Town';
-  const instituteName = config?.instituteName || 'Maths Magic Town';
-  const tagline = config?.tagline || 'Your Path to Success in Competitive Exams';
-  const logoUrl = config?.logoUrl || '';
+  const siteTitle = config?.siteTitle || "Maths Magic Town";
+  const instituteName = config?.instituteName || "Maths Magic Town";
+  const tagline =
+    config?.tagline || "Your Path to Success in Competitive Exams";
+  const logoUrl = config?.logoUrl || "";
   const useCustomLogo = config?.useCustomLogo || false;
   const navLinks: NavLink[] = config?.navLinks || [
-    { title: 'Home', path: '#home' },
-    { title: 'Courses', path: '#courses' },
-    { title: 'Doubt Classes', path: '#doubt-classes' },
-    { title: 'Practice Tests', path: '#practice-tests' },
-    { title: 'Success Stories', path: '#testimonials' },
-    { title: 'Contact', path: '#contact' }
+    { title: "Home", path: "#home" },
+    { title: "Courses", path: "#courses", className: "hover:underline" },
+    { title: "Doubt Classes", path: "#doubt-classes" },
+    { title: "Practice Tests", path: "#practice-tests" },
+    { title: "Success Stories", path: "#testimonials" },
+    { title: "Contact", path: "#contact" },
   ];
 
   return (
-    <header className={`sticky top-0 bg-white z-50 transition-shadow duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
+    <header
+      className={`sticky top-0 bg-white z-50 transition-shadow duration-300 ${isScrolled ? "shadow-md" : ""}`}
+    >
       <nav className="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between">
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
@@ -70,10 +73,10 @@ export default function Navbar() {
               <>
                 {useCustomLogo && logoUrl ? (
                   <div className="h-10 mr-3">
-                    <img 
-                      src={logoUrl} 
-                      alt={instituteName} 
-                      className="h-full w-auto object-contain" 
+                    <img
+                      src={logoUrl}
+                      alt={instituteName}
+                      className="h-full w-auto object-contain"
                     />
                   </div>
                 ) : (
@@ -82,38 +85,54 @@ export default function Navbar() {
                   </div>
                 )}
                 <div className="flex flex-col">
-                  <span className="font-bold text-xl text-primary">{instituteName}</span>
+                  <span className="font-bold text-xl text-primary">
+                    {instituteName}
+                  </span>
                   <span className="text-xs text-gray-600">{tagline}</span>
                 </div>
               </>
             )}
           </Link>
         </div>
-        
-        <button 
+
+        <button
           className="md:hidden text-gray-700 focus:outline-none"
           onClick={toggleMobileMenu}
           aria-label="Toggle menu"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
           </svg>
         </button>
-        
+
         <div className="hidden md:flex flex-col md:flex-row w-full md:w-auto md:items-center mt-4 md:mt-0">
           <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
             {/* Always visible Home link for all users */}
             <li>
-              <Link href="/" className="flex items-center font-medium hover:text-primary transition-colors duration-200">
+              <Link
+                href="/"
+                className="flex items-center font-medium hover:text-primary transition-colors duration-200 hover:underline"
+              >
                 <Home className="mr-1 h-4 w-4" />
                 Home
               </Link>
             </li>
             {navLinks.map((link: NavLink, index: number) => (
               <li key={index}>
-                <a 
-                  href={link.path} 
-                  className="font-medium hover:text-primary transition-colors duration-200"
+                <a
+                  href={link.path}
+                  className="text-xs sm:text-sm font-medium hover:text-primary transition-colors duration-200 hover:underline"
                 >
                   {link.title}
                 </a>
@@ -131,23 +150,31 @@ export default function Navbar() {
                           {user.username.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="hidden md:inline-block font-medium">{user.fullName || user.username}</span>
+                      <span className="hidden md:inline-block font-medium">
+                        {user.fullName || user.username}
+                      </span>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => navigate("/")}
+                    className="cursor-pointer"
+                  >
                     <Home className="mr-2 h-4 w-4" />
                     Home
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => navigate("/dashboard")}
+                    className="cursor-pointer"
+                  >
                     <BarChart4 className="mr-2 h-4 w-4" />
                     Dashboard
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => {
                       logout();
                       // Navigation is handled in the logout function
@@ -161,16 +188,16 @@ export default function Navbar() {
               </DropdownMenu>
             ) : (
               <>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="border-primary text-primary hover:bg-primary hover:text-white"
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate("/auth")}
                 >
                   Login
                 </Button>
-                <Button 
+                <Button
                   className="bg-primary text-white hover:bg-primary/90"
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate("/auth")}
                 >
                   Register
                 </Button>
@@ -179,9 +206,13 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
-      
+
       <PromoBanner />
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={toggleMobileMenu} links={navLinks} />
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        onClose={toggleMobileMenu}
+        links={navLinks}
+      />
     </header>
   );
 }
