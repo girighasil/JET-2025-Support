@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Youtube, Whatsapp } from "lucide-react";
+import { Youtube, MessageCircle } from "lucide-react";
 import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
 import { useSiteConfig } from "@/hooks/use-site-config";
@@ -163,19 +163,16 @@ export default function HomePage() {
             </li>
           </ul>
 
-          <div className="mt-6 bg-amber-200 p-3 rounded-lg">
+          {/*} <div className="mt-6 bg-amber-200 p-3 rounded-lg">
             <div className="flex flex-wrap justify-between items-center text-sm sm:text-base">
-              <strong className="text-amber-800 mr-2">
-                📞 Contact Number:
-              </strong>
-              <span className="text-gray-700">
-                {config?.footer?.phone || "907XXXXXXX, 637XXXXXXX"}
-              </span>
-            </div>
             <div className="text-xs text-center mt-1 text-gray-600">
-              (10am to 5pm only)
+              <strong className="text-amber-800 mr-2">
+                For Exam Preparation and Application related queries  </strong>
+            </div>              
+              
             </div>
-          </div>
+            
+          </div>*/}
 
 
           <div className="mt-4">
@@ -190,7 +187,7 @@ export default function HomePage() {
               }
             >
               <Youtube className="h-5 w-5" />
-              Subscribe on YouTube
+              Subscribe YouTube Channel
             </Button>
           </div>
 
@@ -205,8 +202,8 @@ export default function HomePage() {
                   "_blank",
                 )
               }
-            ><Whatsapp className="h-5 w-5" />
-              Join WhatsApp
+            ><MessageCircle className="h-5 w-5" />
+              Join WhatsApp Channel
             </Button>
           </div>
         </div>
