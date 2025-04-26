@@ -70,7 +70,8 @@ export default function Navbar() {
             {isLoading ? (
               <Skeleton className="h-10 w-40 bg-gray-200" />
             ) : (
-              <>
+              <><button  onClick={toggleMobileMenu}
+                  aria-label="Toggle menu">
                 {useCustomLogo && logoUrl ? (
                   <div className="h-10 mr-3">
                     <img
@@ -83,7 +84,7 @@ export default function Navbar() {
                   <div className="bg-primary rounded-full p-2 mr-3">
                     <SquareRadical className="h-6 w-6 text-white" />
                   </div>
-                )}
+                )}</button>
                 <div className="flex flex-col">
                   <span className="text-lg sm:text-xl font-bold">
                     {instituteName}
@@ -95,7 +96,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <button
+        {/*<button
           className="md:hidden text-gray-700 focus:outline-none"
           onClick={toggleMobileMenu}
           aria-label="Toggle menu"
@@ -114,7 +115,7 @@ export default function Navbar() {
               d="M4 6h16M4 12h16M4 18h16"
             />
           </svg>
-        </button>
+        </button>*/}
 
         <div className="hidden md:flex flex-col md:flex-row w-[50%] md:w-auto md:items-center mt-4 md:mt-0">
           <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
@@ -139,7 +140,8 @@ export default function Navbar() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 md:mt-0 md:ml-8 flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
+          
+          {/*<div className="mt-4 md:mt-0 md:ml-8 flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -204,8 +206,12 @@ export default function Navbar() {
                 </Button>
               </>
             )}
-          </div>
+          </div>*/}
+          
+         
+          
         </div>
+        
       </nav>
 
       <PromoBanner />

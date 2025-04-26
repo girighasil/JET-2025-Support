@@ -20,13 +20,13 @@ export default function MobileMenu({
   if (!isOpen) return null;
 
   return (
-    <div className="md:hidden fixed top-[10%] inset-0 bg-black bg-opacity-50 z-50">
-      <div className="bg-white h-[80vh] w-[80%] max-w-xs pt-5 px-4 overflow-y-auto">
+    <div className="md:hidden fixed top-[15%] inset-0 bg-black bg-opacity-50 z-50">
+      <div className="bg-gray-50 h-screen w-[70%] max-w-xs pt-5 px-4 overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 left-[70%] text-white bg-gray-700 hover:text-gray-200 focus:outline-none"
+          className=" absolute top-4 left-[60%] text-white bg-gray-700 hover:text-gray focus:outline-none"
           aria-label="Close menu"
-        > 
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
@@ -71,27 +71,18 @@ export default function MobileMenu({
           </ul>
         </nav>
 
-        
-          <div className="flex pt-2 md:pt-4 items-center gap-2 sm:gap-4 ">
-            <Link href="/auth">
-              <Button              
-                size="sm"
-                className="text-xs sm:text-sm"
-              >
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/auth?tab=register">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xm sm:text-sm"
-              >
-                Register
-              </Button>
-            </Link>
-          </div>
-       
+        <div className="flex pt-2 md:pt-4 items-center gap-2 sm:gap-4 ">
+          <Link href="/auth">
+            <Button size="sm" className="text-xs sm:text-sm">
+              Sign In
+            </Button>
+          </Link>
+          <Link href="/auth?tab=register">
+            <Button variant="outline" size="sm" className="text-xm sm:text-sm">
+              Register
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

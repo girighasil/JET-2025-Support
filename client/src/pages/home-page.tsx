@@ -39,6 +39,7 @@ export default function HomePage() {
 
   // Hero section for landing page using the updated HeroSection component
   return (
+    
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       {/* Navigation - updated with site config */}
       <nav className="w-full border-b border-border bg-white">
@@ -63,10 +64,14 @@ export default function HomePage() {
         </div>
 
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-bold flex-shrink-0">
-              {config?.examInfo?.name?.charAt(0) || "J"}
-            </div>
+         
+          <div className="flex items-center gap-2">          
+            <button  onClick={toggleMobileMenu}
+              aria-label="Toggle menu">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-bold flex-shrink-0">
+                {config?.examInfo?.name?.charAt(0) || "J"}
+              </div>
+              </button>
             <span className="text-lg sm:text-xl font-bold truncate">
               {config?.siteTitle || "JET 2025"}
             </span>
@@ -102,31 +107,11 @@ export default function HomePage() {
               <Button size="sm" className="text-xs sm:text-sm">
                 Register
               </Button>
-            </Link>
+            </Link>            
           </div>
         </div>
-        <button
-          className="md:hidden text-gray-700 focus:outline-none"
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
       </nav>
-      <Navbar />
+      
       <PromoBanner />
       <MobileMenu
         isOpen={isMobileMenuOpen}
