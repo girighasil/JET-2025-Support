@@ -80,12 +80,12 @@ export default function Navbar() {
                     />
                   </div>
                 ) : (
-                  <div className="bg-primary rounded-lg p-2 mr-3">
+                  <div className="bg-primary rounded-full p-2 mr-3">
                     <SquareRadical className="h-6 w-6 text-white" />
                   </div>
                 )}
                 <div className="flex flex-col">
-                  <span className="font-bold text-xl text-primary">
+                  <span className="text-lg sm:text-xl font-bold">
                     {instituteName}
                   </span>
                   <span className="text-xs text-gray-600">{tagline}</span>
@@ -116,7 +116,7 @@ export default function Navbar() {
           </svg>
         </button>
 
-        <div className="hidden md:flex flex-col md:flex-row w-full md:w-auto md:items-center mt-4 md:mt-0">
+        <div className="hidden md:flex flex-col md:flex-row w-[50%] md:w-auto md:items-center mt-4 md:mt-0">
           <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
             {/* Always visible Home link for all users */}
             <li>
@@ -190,14 +190,15 @@ export default function Navbar() {
               <>
                 <Button
                   variant="outline"
-                  className="border-primary text-primary hover:bg-primary hover:text-white"
+                  size="sm"
+                  className="text-xs sm:text-sm"
                   onClick={() => navigate("/auth")}
                 >
-                  Login
+                  Sign In
                 </Button>
                 <Button
-                  className="bg-primary text-white hover:bg-primary/90"
-                  onClick={() => navigate("/auth")}
+                  size="sm" className="text-xs sm:text-sm"
+                  onClick={() => navigate("/auth?tab=register")}
                 >
                   Register
                 </Button>
