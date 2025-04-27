@@ -30,12 +30,6 @@ export default function HomePage() {
     { title: "Contact", path: "#contact" },
   ];
 
-  type NavLink = {
-    title: string;
-    path: string;
-    className?: string;
-  };
-
   // Scroll effect to detect when page is scrolled
   useEffect(() => {
     const handleScroll = () => {
@@ -123,12 +117,11 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      
-      
+        <PromoBanner />      
       </header>
-      <PromoBanner />
+      
       {/* Add padding to account for fixed header height */}
-      <div className="pt-20">
+      <div className="pt-32">
         <MobileMenu
           isOpen={isMobileMenuOpen}
           onClose={toggleMobileMenu}

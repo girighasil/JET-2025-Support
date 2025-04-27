@@ -136,17 +136,17 @@ export default function PromoBanner() {
           >
             <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           </button>
-          <button 
+          
+          
+        </div>
+        
+        {/* <button 
             onClick={closeBanner}
             className="p-1 rounded-full hover:bg-white/20 transition-colors z-10 flex-shrink-0 ml-2 sm:ml-0"
             aria-label="Close banner"
           >
             <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-          </button>
-          
-        </div>
-        
-        {/* Indicators */}
+          </button> */}
         {announcements.length > 1 && (
           <div className="flex justify-center space-x-1 mt-1">
             {announcements.map((_: string, index: number) => (
