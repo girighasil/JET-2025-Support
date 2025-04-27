@@ -182,14 +182,14 @@ export default function HomePage() {
             <div className="mt-4">
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
-                onClick={() =>
+                onClick={() => {
+                  const youtubeUrl = config?.social?.youtube || "https://www.youtube.com/@JET2025Support";
                   window.open(
-                    `${config?.social?.youtube}?sub_confirmation=1` ||
-                      "https://www.youtube.com/@JET2025Support",
+                    `${youtubeUrl}?sub_confirmation=1`,
                     "_blank",
-                
-                  )
-                }
+                    "noopener,noreferrer"
+                  );
+                }}
               >
                 <Youtube className="h-5 w-5" />
                 Subscribe YouTube
