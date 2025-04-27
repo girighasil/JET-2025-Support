@@ -76,6 +76,10 @@ router.post('/tests/:testId/questions/import', isAuthorized, uploadSingle('file'
         const pointsValue = points || 1;
         const negativePointsValue = negativePoints || 0;
         
+        // Check if points or negative points have decimal values
+        const hasDecimalPoints = pointsValue % 1 !== 0;
+        const hasDecimalNegativePoints = negativePointsValue % 1 !== 0;
+        
         // Insert the question
         await db.insert(questions).values({
           testId,
@@ -83,8 +87,12 @@ router.post('/tests/:testId/questions/import', isAuthorized, uploadSingle('file'
           question: questionText,
           options: jsonOptions,
           correctAnswer: jsonCorrectAnswer,
-          points: pointsValue,
-          negativePoints: negativePointsValue,
+          // For integer columns, we store rounded values
+          points: Math.round(pointsValue),
+          negativePoints: Math.round(negativePointsValue),
+          // Store original decimal values in the float columns
+          pointsFloat: hasDecimalPoints ? pointsValue.toString() : null,
+          negativePointsFloat: hasDecimalNegativePoints ? negativePointsValue.toString() : null,
           explanation,
           sortOrder: startSortOrder++
         });
