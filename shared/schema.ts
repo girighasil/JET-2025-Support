@@ -355,6 +355,18 @@ export type NavLink = {
 
 export type SiteConfig = typeof siteConfig.$inferSelect & {
   navLinks?: NavLink[];
+  logoUrl?: string;
+  useCustomLogo?: boolean;
+  siteTitle?: string;
+  tagline?: string;
+  instituteName?: string;
+  theme?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    fontMain?: string;
+    fontHeadings?: string;
+    useCustomLogo?: boolean;
+  };
 };
 export type InsertSiteConfig = z.infer<typeof insertSiteConfigSchema>;
 
