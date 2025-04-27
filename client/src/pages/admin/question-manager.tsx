@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AlertTriangle, ArrowLeft, Edit, Loader2, Trash } from 'lucide-react';
+import ImportQuestions from '@/components/question/import-questions';
 
 // Question form schema
 const questionSchema = z.object({
