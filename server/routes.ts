@@ -28,6 +28,7 @@ import {
 // Import route modules
 import filesRoutes from "./routes/files";
 import importExportRoutes from "./routes/import-export";
+import questionImportRoutes from "./routes/question-import";
 import { registerNotificationRoutes } from "./routes/notifications";
 import { registerSiteConfigRoutes } from "./routes/site-config";
 import { registerPromoBannerRoutes } from "./routes/promo-banners";

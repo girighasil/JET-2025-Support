@@ -512,6 +512,7 @@ export default function QuestionManager() {
             <Edit className="h-4 w-4" />
             Edit Test Details
           </Button>
+          {testId && <ImportQuestions testId={testId} onImportComplete={() => queryClient.invalidateQueries({ queryKey: [`/api/tests/${testId}/questions`] })} />}
         </div>
       </div>
       
