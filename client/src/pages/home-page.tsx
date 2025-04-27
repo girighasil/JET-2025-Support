@@ -202,7 +202,7 @@ export default function HomePage() {
                 onClick={() =>
                   window.open(
                     config?.social?.whatsapp ||
-                      "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07",
+                      "https://whatsapp.com/channel/0029Vb6CybFJuyAFcaXTMR1o",
                     "_blank",
                   )
                 }
