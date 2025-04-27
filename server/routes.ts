@@ -1872,6 +1872,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerNotificationRoutes(app);
   registerSiteConfigRoutes(app);
   registerPromoBannerRoutes(app);
+  
+  // Register routes for template files
+  app.use("/api/templates", templateRoutes);
 
   // Enhanced proxy endpoint for resource links (to hide URLs and embed content)
   app.get(
