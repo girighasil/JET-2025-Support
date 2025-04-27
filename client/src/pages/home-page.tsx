@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SquareRadical, Youtube, MessageCircle } from "lucide-react";
 import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
+import WhyChooseUs from "@/components/home/WhyChooseUs";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -122,10 +123,12 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+      
+        <PromoBanner />
       </header>
-      <PromoBanner />
+      
       {/* Add padding to account for fixed header height */}
-      <div className="pt-28">
+      <div className="pt-32">
         <MobileMenu
           isOpen={isMobileMenuOpen}
           onClose={toggleMobileMenu}
@@ -216,8 +219,9 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
+          <WhyChooseUs />
 
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
+          {/*<div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-gray-800 flex items-center justify-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -348,7 +352,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
