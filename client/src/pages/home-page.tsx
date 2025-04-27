@@ -49,25 +49,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       {/* Navigation - updated with site config */}
       <nav className="sticky top-0 z-50 w-full border-b border-border bg-white">
-        <div className="bg-emerald-700 text-white py-2 w-full">
-          <div className="responsive-container">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-3">
-              <div className="flex items-center gap-3 w-full md:w-auto overflow-hidden">
-                {/* Prevent text overflow */}
-                <h1 className="text-sm md:text-base font-semibold truncate">
-                  {/* Site title */}
-                  "Joint Entrance Test"
-                </h1>
-                {/* tagline */}
-                <p className="text-xs md:text-sm truncate">
-                  {
-                    "Swami Keshwanand Rajasthan Agricultural University, Bikaner"
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
          
@@ -128,7 +110,9 @@ export default function HomePage() {
         </div>
       </nav>
       
+       
       <PromoBanner />
+        
       <MobileMenu
         isOpen={isMobileMenuOpen}
         onClose={toggleMobileMenu}
