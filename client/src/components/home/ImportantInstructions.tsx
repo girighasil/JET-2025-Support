@@ -28,7 +28,7 @@ export default function ImportantInstructions() {
     <div className="mx-auto w-full max-w-[95%] lg:max-w-6xl">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between bg-gradient-to-r from-green-700 to-green-600 text-white py-3 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-200 mb-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+        className="w-full bg-green-600 hover:bg-green-700 text-white"
       >
         <div className="flex items-center">
           <span className="text-lg sm:text-xl font-bold">

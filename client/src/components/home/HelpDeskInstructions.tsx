@@ -30,11 +30,10 @@ export default function HelpDeskInstructions() {
       <div className="fixed left-0 top-1/2 -translate-y-1/2 z-40">
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-green-700 text-white py-3 px-4 rounded-r-lg shadow-lg hover:bg-green-600 transition-all duration-200 flex flex-col items-center justify-center space-y-2"
+          className="bg-amber-500 text-white py-3 px-2 rounded-r-lg shadow-lg hover:bg-amber-700 transition-all duration-200 flex flex-col items-center justify-center space-y-2"
           aria-label="Open Help Desk"
-        >
-          <HelpCircle className="h-6 w-6" />
-          <div className="font-bold text-xs writing-vertical-lr rotate-180">HELP DESK</div>
+        >          
+          <div className="font-bold text-xs writing-vertical-lr rotate-180">JET Important</div>
         </button>
       </div>
 

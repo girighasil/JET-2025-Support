@@ -58,8 +58,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-stone-50 w-full overflow-x-hidden">
-      {/* Fixed navigation at the top */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-200 shadow-sm">
+      {/* PromoBar is now fixed at the top */}
+      <PromoBanner />
+      
+      {/* Fixed navigation below PromoBar */}
+      <header className="fixed top-12 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-200 shadow-sm">
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
           <div className="flex items-center">
             <button onClick={toggleMobileMenu} aria-label="Toggle menu">
@@ -118,12 +121,11 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-        </div>
-        <PromoBanner />      
+        </div>     
       </header>
       
-      {/* Add padding to account for fixed header height */}
-      <div className="pt-32">
+      {/* Add padding to account for fixed header height plus promo banner */}
+      <div className="pt-44">
         <MobileMenu
           isOpen={isMobileMenuOpen}
           onClose={toggleMobileMenu}
@@ -131,14 +133,13 @@ export default function HomePage() {
         />
 
         {/* Sign in / Registration Box */}
-        {/* Very Important Instructions - Expandable Section */}
-        <ImportantInstructions />
+        
         
         {/* Help Desk Sidebar */}
         <HelpDeskInstructions />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mx-auto max-w-[95%] lg:max-w-6xl">
-          <div className="bg-gradient-to-b from-amber-100 to-amber-50 p-4 sm:p-6 rounded-lg border border-amber-200">
+          <div className="bg-gradient-to-b from-amber-100 to-amber-50 p-6 sm:p-6 rounded-lg border border-amber-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-800 flex items-center justify-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -154,32 +155,25 @@ export default function HomePage() {
               </svg>
               Important Alerts
             </h2>
-            <ul className="text-left space-y-3 sm:space-y-4 text-sm sm:text-base">
+            <ul className="text-left space-y-3 sm:space-y-4 text-xm sm:text-base">
               <li className="flex">
-                <span className="mr-2 text-amber-600 flex-shrink-0">•</span>
+                <span className="mr-3 text-amber-600 flex-shrink-0">•</span>
                 <p className="text-gray-700">
-                  <strong>Before filling up the application form</strong>{" "}
+                  <strong>JET form filling will be started from 28.04.2025</strong>{" "}
                   candidate must read and understand the instructions given in
-                  the {examInfo.name || "JET"} Booklet-
-                  {examInfo.year || "2025"}.
+                  the JET Booklet-2025                  
                 </p>
               </li>
               <li className="flex">
-                <span className="mr-2 text-amber-600 flex-shrink-0">•</span>
+                <span className="mr-3 text-amber-600 flex-shrink-0">•</span>
                 <p className="text-gray-700">
-                  <strong>The mobile number and Email</strong> registered at the
-                  time of filling online application form must be operational
-                  till admission process is over. All information will be
-                  communicated on registered mobile number or Email.
+                  <strong>Last date of Form filling: 28.05.2025 (without late fee) </strong> and 31.05.2025 (with late fee)
                 </p>
               </li>
               <li className="flex">
-                <span className="mr-2 text-amber-600 flex-shrink-0">•</span>
+                <span className="mr-3 text-amber-600 flex-shrink-0">•</span>
                 <p className="text-gray-700">
-                  <strong>Note down and keep your user ID</strong> (Reg. No.)
-                  and password safely, it can be used by any one for making
-                  change in your application form. If it happens candidate
-                  himself or herself will be responsible.
+                  <strong>Date of Exam: 29.06.2025</strong> .
                 </p>
               </li>
             </ul>
@@ -240,11 +234,11 @@ export default function HomePage() {
               >
                 <MessageCircle className="h-5 w-5" />
                 Join WhatsApp
-              </Button>
-            </div>
+              </Button>              
+            </div>            
           </div>
           <WhyChooseUs />
-
+          <ImportantInstructions/>
           {/*<div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-gray-800 flex items-center justify-center">
               <svg
