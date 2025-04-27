@@ -196,7 +196,7 @@ export async function parseWordQuestions(filePath: string): Promise<{
     
     // Split text into question blocks
     // Each question should start with "Q:" or "Question:"
-    const questionRegex = /(?:^|\n)(?:Q:|Question:)\s*(.*?)(?=(?:\n(?:Q:|Question:))|$)/gs;
+    const questionRegex = /(?:^|\n)(?:Q:|Question:)\s*(.*?)(?=(?:\n(?:Q:|Question:))|$)/g;
     let questionMatch;
     let questionIndex = 0;
     
@@ -245,10 +245,12 @@ export async function parseWordQuestions(filePath: string): Promise<{
         }
         
         // Extract explanation if provided
-        const explanationRegex = /Explanation:\s*(.*?)(?=(?:\n(?:Type:|Points:|Negative Points:))|$)/is;
-        const explanationMatch = questionBlock.match(explanationRegex);
-        if (explanationMatch) {
-          explanation = explanationMatch[1].trim();
+        const explanationLines = questionBlock.split('\n')
+          .filter(line => line.match(/^Explanation:/i))
+          .map(line => line.replace(/^Explanation:/i, '').trim());
+          
+        if (explanationLines.length > 0) {
+          explanation = explanationLines[0];
         }
         
         // Extract question text (everything before the first option)

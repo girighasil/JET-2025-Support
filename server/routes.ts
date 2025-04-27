@@ -1863,6 +1863,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     hasRole(["admin", "teacher"]),
     importExportRoutes,
   );
+  
+  // Register routes for question import
+  app.use("/api", questionImportRoutes);
 
   // Register routes for notifications
   registerNotificationRoutes(app);

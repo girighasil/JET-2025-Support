@@ -58,8 +58,8 @@ router.post('/tests/:testId/questions/import', isAuthorized, uploadSingle('file'
     // Get the maximum sort order for existing questions
     const existingQuestions = await db.select({ sortOrder: questions.sortOrder })
       .from(questions)
-      .where(questions.testId.equals(testId))
-      .orderBy(questions.sortOrder.desc())
+      .where(eq(questions.testId, testId))
+      .orderBy(desc(questions.sortOrder))
       .limit(1);
     
     let startSortOrder = existingQuestions.length > 0 ? existingQuestions[0].sortOrder + 1 : 0;
