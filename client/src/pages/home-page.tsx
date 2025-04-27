@@ -6,6 +6,8 @@ import { SquareRadical, Youtube, MessageCircle } from "lucide-react";
 import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
 import WhyChooseUs from "@/components/home/WhyChooseUs";
+import ImportantInstructions from "@/components/home/ImportantInstructions";
+import HelpDeskInstructions from "@/components/home/HelpDeskInstructions";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -129,6 +131,12 @@ export default function HomePage() {
         />
 
         {/* Sign in / Registration Box */}
+        {/* Very Important Instructions - Expandable Section */}
+        <ImportantInstructions />
+        
+        {/* Help Desk Sidebar */}
+        <HelpDeskInstructions />
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mx-auto max-w-[95%] lg:max-w-6xl">
           <div className="bg-gradient-to-b from-amber-100 to-amber-50 p-4 sm:p-6 rounded-lg border border-amber-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-800 flex items-center justify-center">
