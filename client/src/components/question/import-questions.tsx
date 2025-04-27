@@ -155,6 +155,7 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
           <DialogDescription>
             Upload a file with questions to import them into this test. 
             We support Excel (.xlsx), CSV (.csv), and Word (.docx) files.
+            All formats support Hindi and other languages for all question content.
           </DialogDescription>
         </DialogHeader>
 
@@ -173,7 +174,7 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                 </p>
                 <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   <li>type - 'mcq', 'truefalse', 'fillblank', or 'subjective'</li>
-                  <li>question - The question text</li>
+                  <li>question - The question text (supports Hindi and other languages)</li>
                   <li>options - For MCQs, comma-separated options like "A:Option text,B:Another option"</li>
                   <li>correctAnswer - The correct answer(s), comma-separated for MCQs with multiple answers</li>
                   <li>points - Points value for the question (optional, defaults to 1)</li>
@@ -200,7 +201,7 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                 </p>
                 <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   <li>type - 'mcq', 'truefalse', 'fillblank', or 'subjective'</li>
-                  <li>question - The question text</li>
+                  <li>question - The question text (supports Hindi and other languages)</li>
                   <li>options - For MCQs, comma-separated options like "A:Option text,B:Another option"</li>
                   <li>correctAnswer - The correct answer(s), comma-separated for MCQs with multiple answers</li>
                   <li>points - Points value for the question (optional, defaults to 1)</li>
@@ -232,6 +233,7 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                   <li>Add "Explanation:" followed by text to include explanations</li>
                   <li>Add "Points:" followed by a number for custom point values</li>
                   <li>Use "Type: [type]" to specify question type (defaults to mcq)</li>
+                  <li>All content supports Hindi and other languages</li>
                 </ul>
                 <div className="mt-3">
                   <a 

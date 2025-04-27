@@ -52,3 +52,28 @@ Type: subjective
 Points: 5
 
 Explanation: Gravity is a force that attracts objects with mass towards each other, with the strength proportional to their masses and inversely proportional to the square of the distance between them.
+
+-----------------------------------------
+
+Q: भारत की राजधानी क्या है?
+Type: mcq
+Points: 2
+
+A) मुंबई
+B) दिल्ली
+C) कोलकाता
+D) चेन्नई
+
+*B) दिल्ली
+
+Explanation: दिल्ली भारत की राजधानी है।
+
+-----------------------------------------
+
+Q: गणित में π का मान लगभग ___ होता है।
+Type: fillblank
+Points: 1
+
+Answer: 3.14159
+
+Explanation: 3.14159 गणित में π का लगभग मान है।

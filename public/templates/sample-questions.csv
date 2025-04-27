@@ -4,3 +4,5 @@ mcq,Which of the following is a prime number?,"A:4,B:9,C:11,D:15",c,1,0.5,11 is 
 truefalse,The Earth is flat.,,,1,0,The Earth is approximately spherical in shape
 fillblank,The formula for water is ___.,,,1,0,H2O is the chemical formula for water
 subjective,"Explain the concept of gravity in your own words.",,,5,0,"Gravity is a force that attracts objects with mass towards each other, with the strength proportional to their masses and inversely proportional to the square of the distance between them."
+mcq,भारत की राजधानी क्या है?,"A:मुंबई,B:दिल्ली,C:कोलकाता,D:चेन्नई",b,2,0,दिल्ली भारत की राजधानी है
+fillblank,गणित में π का मान लगभग ___ होता है।,,,1,0,3.14159 गणित में π का लगभग मान है
