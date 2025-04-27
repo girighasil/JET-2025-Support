@@ -1,0 +1,6 @@
+type,question,options,correctAnswer,points,negativePoints,explanation
+mcq,What is the capital of France?,"A:Berlin,B:Paris,C:London,D:Madrid",b,2,0,Paris is the capital and most populous city of France.
+mcq,Which of the following is a prime number?,"A:4,B:6,C:7,D:8",c,1,0.5,A prime number has exactly two factors: 1 and itself. 7 is only divisible by 1 and 7.
+truefalse,The Earth is flat.,,,1,0,The Earth is approximately spherical in shape.
+fillblank,The process of plants making their own food using sunlight is called ______.,,,2,0,Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize foods with carbon dioxide and water.
+subjective,Explain the concept of gravity in your own words.,,"force,attraction,mass,Newton,pull",5,0,A good answer should explain gravity as the force of attraction between masses reference Newton's law of universal gravitation and explain how gravity affects objects on Earth.
