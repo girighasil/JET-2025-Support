@@ -43,6 +43,24 @@ export type NavLink = {
 export type SiteConfig = SiteSettings & {
   examInfo: ExamInfo;
   navLinks?: NavLink[];
+  logoUrl?: string;
+  useCustomLogo?: boolean;
+  theme?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    fontMain?: string;
+    fontHeadings?: string;
+    useCustomLogo?: boolean;
+  };
+  hero?: {
+    title?: string;
+    subtitle?: string;
+    primaryButton?: string;
+    primaryButtonUrl?: string;
+    secondaryButton?: string;
+    secondaryButtonUrl?: string;
+    image?: string;
+  };
 } & Partial<ContactAndSocial>;
 
 const defaultConfig: SiteConfig = {

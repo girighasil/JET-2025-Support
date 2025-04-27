@@ -35,11 +35,11 @@ export default function AuthPage() {
         <div className="container max-w-7xl mx-auto px-4 flex justify-center">
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-bold">
-              M
+              J
             </div>
             <div>
-              <h1 className="font-bold text-xl">Maths Magic Town</h1>
-              <p className="text-xs text-gray-500">Personalized learning for competitive exam preparation</p>
+              <h1 className="font-bold text-xl">JET 2025 Support</h1>
+              <p className="text-xs text-gray-500">Learn, Practice, Succeed</p>
             </div>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function AuthPage() {
       </main>
 
       <footer className="py-6 text-center text-sm text-gray-500">
-        <p>&copy; {new Date().getFullYear()} Maths Magic Town. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} JET 2025 Support. All rights reserved.</p>
       </footer>
     </div>
   );

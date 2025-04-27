@@ -71,24 +71,22 @@ export default function HomePage() {
 
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
          
-          <div className="flex items-center gap-2">          
+          <div className="flex items-center">          
             <button  onClick={toggleMobileMenu}
               aria-label="Toggle menu">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-bold flex-shrink-0">
-                {useCustomLogo && logoUrl ? (
-                  <div className="h-10 mr-3">
-                    <img
-                      src={logoUrl}
-                      alt={config?.siteTitle || "JET 2025"}
-                      className="h-full w-auto object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-primary rounded-full p-2 mr-3">
-                    <SquareRadical className="h-6 w-6 text-white" />
-                  </div>
-                )}
-              </div>
+              {useCustomLogo && logoUrl ? (
+                <div className="h-10 mr-3">
+                  <img
+                    src={logoUrl}
+                    alt={config?.siteTitle || "JET 2025"}
+                    className="h-full w-auto object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="bg-primary rounded-full p-2 mr-3">
+                  <SquareRadical className="h-6 w-6 text-white" />
+                </div>
+              )}
               </button>
             <div className="flex flex-col">
               <span className="text-lg sm:text-xl font-bold">
@@ -533,31 +531,7 @@ export default function HomePage() {
       <footer className="bg-gray-900 text-white py-8 sm:py-12 w-full">
         <div className="responsive-container">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white text-primary font-bold flex-shrink-0">
-                  {useCustomLogo && logoUrl ? (
-                    <div className="h-10 mr-3">
-                      <img
-                        src={logoUrl}
-                        alt={config?.siteTitle || "JET 2025"}
-                        className="h-full w-auto object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="bg-primary rounded-full p-2 mr-3">
-                      <SquareRadical className="h-6 w-6 text-white" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-bold">
-                  {config?.siteTitle || "JET 2025"}
-                </span>
-                <span className="text-xs text-gray-600">{config?.tagline || "Exam Support"}</span>
-                </div>
-              </div>              
-            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 md:col-span-3">
               <div>
                 <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">
