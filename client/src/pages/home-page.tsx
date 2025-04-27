@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Youtube, MessageCircle } from "lucide-react";
+import { SquareRadical, Youtube, MessageCircle } from "lucide-react";
 import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
 import { useSiteConfig } from "@/hooks/use-site-config";
@@ -17,6 +17,8 @@ export default function HomePage() {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+  const logoUrl = config?.logoUrl || "";
+  const useCustomLogo = config?.useCustomLogo || false;
   const navLinks: NavLink[] = config?.navLinks || [
     { title: "Home", path: "#home" },
     { title: "Courses", path: "#courses", className: "hover:underline" },
@@ -73,12 +75,27 @@ export default function HomePage() {
             <button  onClick={toggleMobileMenu}
               aria-label="Toggle menu">
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-bold flex-shrink-0">
-                {config?.examInfo?.name?.charAt(0) || "J"}
+                {useCustomLogo && logoUrl ? (
+                  <div className="h-10 mr-3">
+                    <img
+                      src={logoUrl}
+                      alt={config?.siteTitle || "JET 2025"}
+                      className="h-full w-auto object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-primary rounded-full p-2 mr-3">
+                    <SquareRadical className="h-6 w-6 text-white" />
+                  </div>
+                )}
               </div>
               </button>
-            <span className="text-lg sm:text-xl font-bold truncate">
-              {config?.siteTitle || "JET 2025"}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-lg sm:text-xl font-bold">
+                {config?.siteTitle || "JET 2025"}
+              </span>
+              <span className="text-xs text-gray-600">{config?.tagline || "Exam Support"}</span>
+              </div>
           </div>
           <div className="hidden md:flex flex-col md:flex-row w-[50%] md:w-auto md:items-center mt-4 md:mt-0">
             <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
@@ -185,13 +202,13 @@ export default function HomePage() {
               onClick={() =>
                 window.open(
                   `${config?.social?.youtube}?sub_confirmation=1` ||
-                    "https://youtube.com/@mathsmagictown",
+                    "https://youtube.com/@JET2025Support",
                   "_blank",
                 )
               }
             >
               <Youtube className="h-5 w-5" />
-              Subscribe YouTube Channel
+              Subscribe YouTube
             </Button>
           </div>
 
@@ -207,7 +224,7 @@ export default function HomePage() {
                 )
               }
             ><MessageCircle className="h-5 w-5" />
-              Join WhatsApp Channel
+              Join WhatsApp
             </Button>
           </div>
         </div>
@@ -519,15 +536,27 @@ export default function HomePage() {
             <div className="md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white text-primary font-bold flex-shrink-0">
-                  {config?.examInfo?.name?.charAt(0) || "J"}
+                  {useCustomLogo && logoUrl ? (
+                    <div className="h-10 mr-3">
+                      <img
+                        src={logoUrl}
+                        alt={config?.siteTitle || "JET 2025"}
+                        className="h-full w-auto object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-primary rounded-full p-2 mr-3">
+                      <SquareRadical className="h-6 w-6 text-white" />
+                    </div>
+                  )}
                 </div>
+                <div className="flex flex-col">
                 <span className="text-lg sm:text-xl font-bold">
                   {config?.siteTitle || "JET 2025"}
                 </span>
-              </div>
-              <p className="text-sm text-gray-400">
-                {config?.tagline || "Prepare for JET Entrance Exam"}
-              </p>
+                <span className="text-xs text-gray-600">{config?.tagline || "Exam Support"}</span>
+                </div>
+              </div>              
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 md:col-span-3">
               <div>

@@ -34,8 +34,15 @@ export type ContactAndSocial = {
   };
 };
 
+export type NavLink = {
+  title: string;
+  path: string;
+  className?: string;
+};
+
 export type SiteConfig = SiteSettings & {
   examInfo: ExamInfo;
+  navLinks?: NavLink[];
 } & Partial<ContactAndSocial>;
 
 const defaultConfig: SiteConfig = {
