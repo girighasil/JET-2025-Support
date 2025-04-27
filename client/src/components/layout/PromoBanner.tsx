@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, AlertTriangle, PauseCircle, PlayCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, PauseCircle, PlayCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePromoBanners } from '@/hooks/use-site-config';
 
@@ -15,8 +15,25 @@ type Banner = {
 export default function PromoBanner() {
   const { banners = [], isLoading } = usePromoBanners();
   const [isPaused, setIsPaused] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const bannerRef = useRef<HTMLDivElement>(null);
   const [animationKey, setAnimationKey] = useState(0);
+  
+  // Close the banner
+  const closeBanner = () => {
+    setIsVisible(false);
+    
+    // Remember user closed the banner for this session
+    localStorage.setItem('promoBannerClosed', 'true');
+  };
+  
+  // Check if banner was closed previously
+  useEffect(() => {
+    const isClosed = localStorage.getItem('promoBannerClosed') === 'true';
+    if (isClosed) {
+      setIsVisible(false);
+    }
+  }, []);
 
   // Get announcement texts from active banners - memoized to prevent unnecessary re-renders
   const announcements = useMemo(() => {
@@ -68,7 +85,7 @@ export default function PromoBanner() {
     );
   }
   
-  if (announcements.length === 0) return null;
+  if (announcements.length === 0 || !isVisible) return null;
 
   // The current announcement text
   const currentAnnouncement = announcements[currentIndex];
@@ -160,11 +177,11 @@ export default function PromoBanner() {
             </AnimatePresence>
           </div>
           
-          {/* Mobile controls */}
-          <div className="sm:hidden flex items-center space-x-1">
+          {/* Mobile controls and close button */}
+          <div className="flex items-center space-x-1">
             <button
               onClick={togglePause}
-              className="p-1 rounded-full hover:bg-white/20 transition-colors z-10 flex-shrink-0"
+              className="p-1 rounded-full hover:bg-white/20 transition-colors z-10 flex-shrink-0 sm:hidden"
               aria-label={isPaused ? "Resume announcements" : "Pause announcements"}
             >
               {isPaused ? (
@@ -172,6 +189,15 @@ export default function PromoBanner() {
               ) : (
                 <PauseCircle className="h-3.5 w-3.5" />
               )}
+            </button>
+            
+            {/* Close button - visible on all screen sizes */}
+            <button
+              onClick={closeBanner}
+              className="p-1 rounded-full hover:bg-white/20 transition-colors z-10 flex-shrink-0"
+              aria-label="Close banner"
+            >
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>

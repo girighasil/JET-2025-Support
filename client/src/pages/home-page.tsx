@@ -58,11 +58,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-stone-50 w-full overflow-x-hidden">
-      {/* PromoBar is now fixed at the top */}
+      {/* PromoBar at the top */}
       <PromoBanner />
       
       {/* Fixed navigation below PromoBar */}
-      <header className="fixed top-12 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-200 shadow-sm">
+      <header className="fixed top-12 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-200 shadow-sm">        
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
           <div className="flex items-center">
             <button onClick={toggleMobileMenu} aria-label="Toggle menu">
@@ -121,11 +121,11 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-        </div>     
+        </div>
       </header>
       
       {/* Add padding to account for fixed header height plus promo banner */}
-      <div className="pt-44">
+      <div className="pt-36">
         <MobileMenu
           isOpen={isMobileMenuOpen}
           onClose={toggleMobileMenu}
