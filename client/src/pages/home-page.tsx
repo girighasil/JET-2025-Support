@@ -46,9 +46,9 @@ export default function HomePage() {
   // Hero section for landing page using the updated HeroSection component
   return (
     
-    <div className="min-h-screen bg-amber-50 w-full overflow-x-hidden">
+    <div className="min-h-screen bg-stone-50 w-full overflow-x-hidden">
       {/* Navigation - updated with site config */}
-      <nav className="sticky top-0 z-50 w-full border-b border-border border-emerald-500 bg-orange-50">
+      <nav className="sticky top-0 z-50 w-full border-b border-amber-200 bg-amber-50">
         
 
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
