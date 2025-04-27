@@ -25,7 +25,11 @@ export default function HomePage() {
     { title: "Success Stories", path: "#testimonials" },
     { title: "Contact", path: "#contact" },
   ];
-
+  type NavLink = {
+    title: string;
+    path: string;
+    className?: string;
+  };
   // Redirect authenticated users to their dashboard
   useEffect(() => {
     if (!isLoading && user) {
