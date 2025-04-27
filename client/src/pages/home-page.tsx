@@ -212,24 +212,20 @@ export default function HomePage() {
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 onClick={(e) => {
                   e.preventDefault();
+                  // Make sure WhatsApp URL starts with https://
+                  let whatsappUrl = config?.social?.whatsapp || 
+                    "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
                   
-                  // Force the correct WhatsApp channel URL
-                  const whatsappUrl = "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
+                  // Ensure URL has proper protocol
+                  if (!whatsappUrl.startsWith('http')) {
+                    whatsappUrl = 'https://' + whatsappUrl;
+                  }
                   
-                  // Open in new window with correct security attributes
-                  const newWindow = window.open(
-                    whatsappUrl, 
-                    '_blank', 
-                    'noopener,noreferrer'
-                  );
-                  
-                  // Additional security for older browsers
+                  // Open in new window using proper window.open() method
+                  const newWindow = window.open(whatsappUrl, '_blank');
                   if (newWindow) {
                     newWindow.opener = null;
                   }
-                  
-                  // Log for debugging
-                  console.log("Opening WhatsApp URL:", whatsappUrl);
                 }}
               >
                 <MessageCircle className="h-5 w-5" />
