@@ -268,7 +268,7 @@ export async function parseWordQuestions(filePath: string): Promise<{
             .replace(typeRegex, '')
             .replace(pointsRegex, '')
             .replace(negPointsRegex, '')
-            .replace(explanationRegex, '')
+            .replace(/^Explanation:.*$/im, '')
             .trim();
         } else {
           // Extract question text as everything before options
@@ -276,7 +276,7 @@ export async function parseWordQuestions(filePath: string): Promise<{
             .replace(typeRegex, '')
             .replace(pointsRegex, '')
             .replace(negPointsRegex, '')
-            .replace(explanationRegex, '')
+            .replace(/^Explanation:.*$/im, '')
             .trim();
         }
         
