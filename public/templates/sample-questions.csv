@@ -1,0 +1,6 @@
+type,question,options,correctAnswer,points,negativePoints,explanation
+mcq,What is the capital of France?,"A:Paris,B:London,C:Berlin,D:Madrid",a,2,0,Paris is the capital city of France
+mcq,Which of the following is a prime number?,"A:4,B:9,C:11,D:15",c,1,0.5,11 is a prime number as it's only divisible by 1 and itself
+truefalse,The Earth is flat.,,,1,0,The Earth is approximately spherical in shape
+fillblank,The formula for water is ___.,,,1,0,H2O is the chemical formula for water
+subjective,"Explain the concept of gravity in your own words.",,,5,0,"Gravity is a force that attracts objects with mass towards each other, with the strength proportional to their masses and inversely proportional to the square of the distance between them."

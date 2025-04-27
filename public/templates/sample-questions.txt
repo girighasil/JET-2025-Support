@@ -1,0 +1,54 @@
+Q: What is the capital of France?
+Type: mcq
+Points: 2
+
+A) Paris
+B) London
+C) Berlin
+D) Madrid
+
+*A) Paris
+
+Explanation: Paris is the capital city of France.
+
+-----------------------------------------
+
+Q: Which of the following is a prime number?
+Type: mcq
+Points: 1
+Negative Points: 0.5
+
+A) 4
+B) 9
+*C) 11
+D) 15
+
+Explanation: 11 is a prime number as it's only divisible by 1 and itself.
+
+-----------------------------------------
+
+Q: The Earth is flat.
+Type: truefalse
+Points: 1
+
+False
+
+Explanation: The Earth is approximately spherical in shape.
+
+-----------------------------------------
+
+Q: The formula for water is ___.
+Type: fillblank
+Points: 1
+
+Answer: H2O
+
+Explanation: H2O is the chemical formula for water.
+
+-----------------------------------------
+
+Q: Explain the concept of gravity in your own words.
+Type: subjective
+Points: 5
+
+Explanation: Gravity is a force that attracts objects with mass towards each other, with the strength proportional to their masses and inversely proportional to the square of the distance between them.

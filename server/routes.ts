@@ -29,6 +29,7 @@ import {
 import filesRoutes from "./routes/files";
 import importExportRoutes from "./routes/import-export";
 import questionImportRoutes from "./routes/question-import";
+import templateRoutes from "./routes/templates";
 import { registerNotificationRoutes } from "./routes/notifications";
 import { registerSiteConfigRoutes } from "./routes/site-config";
 import { registerPromoBannerRoutes } from "./routes/promo-banners";

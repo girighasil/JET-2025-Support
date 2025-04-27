@@ -160,8 +160,9 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
 
         {!uploadResult ? (
           <Tabs defaultValue="excel" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="excel">Excel Format</TabsTrigger>
+              <TabsTrigger value="csv">CSV Format</TabsTrigger>
               <TabsTrigger value="word">Word Format</TabsTrigger>
             </TabsList>
             
@@ -179,6 +180,43 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                   <li>negativePoints - Points deducted for wrong answers (optional, defaults to 0)</li>
                   <li>explanation - Explanation for the correct answer (optional)</li>
                 </ul>
+                <div className="mt-3">
+                  <a 
+                    href="/api/templates/sample-questions.xlsx" 
+                    download
+                    className="text-xs text-primary hover:underline inline-flex items-center"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Download Sample Excel Template
+                  </a>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="csv" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <p className="text-sm">
+                  Use CSV format for simple structured data. Your CSV file should have the following columns:
+                </p>
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                  <li>type - 'mcq', 'truefalse', 'fillblank', or 'subjective'</li>
+                  <li>question - The question text</li>
+                  <li>options - For MCQs, comma-separated options like "A:Option text,B:Another option"</li>
+                  <li>correctAnswer - The correct answer(s), comma-separated for MCQs with multiple answers</li>
+                  <li>points - Points value for the question (optional, defaults to 1)</li>
+                  <li>negativePoints - Points deducted for wrong answers (optional, defaults to 0)</li>
+                  <li>explanation - Explanation for the correct answer (optional)</li>
+                </ul>
+                <div className="mt-3">
+                  <a 
+                    href="/api/templates/sample-questions.csv" 
+                    download
+                    className="text-xs text-primary hover:underline inline-flex items-center"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Download Sample CSV Template
+                  </a>
+                </div>
               </div>
             </TabsContent>
             
@@ -195,6 +233,16 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                   <li>Add "Points:" followed by a number for custom point values</li>
                   <li>Use "Type: [type]" to specify question type (defaults to mcq)</li>
                 </ul>
+                <div className="mt-3">
+                  <a 
+                    href="/api/templates/sample-questions.docx" 
+                    download
+                    className="text-xs text-primary hover:underline inline-flex items-center"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Download Sample Word Template
+                  </a>
+                </div>
               </div>
             </TabsContent>
 
