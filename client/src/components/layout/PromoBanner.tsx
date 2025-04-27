@@ -64,7 +64,7 @@ export default function PromoBanner() {
   // If no banners or loading, render a placeholder to prevent layout shifts
   if (isLoading) {
     return (
-      <div className="h-12 bg-gradient-to-r from-orange-500 to-amber-500 animate-pulse"></div>
+      <div className="h-8 bg-gradient-to-r from-orange-500 to-amber-500 animate-pulse"></div>
     );
   }
   
@@ -77,7 +77,7 @@ export default function PromoBanner() {
   const animationDuration = 15; // 15 seconds
 
   return (
-    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-3 relative overflow-hidden border-b border-white/10 w-full fixed top-0 left-0 right-0 z-[60]" ref={bannerRef}>
+    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-2 relative overflow-hidden border-b border-white/10 w-full fixed top-0 left-0 right-0 z-[60]" ref={bannerRef}>
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-[radial-gradient(white,_transparent_60%)] bg-left"></div>
       </div>
@@ -85,7 +85,7 @@ export default function PromoBanner() {
       <div className="responsive-container relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+            <bell className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
             
             {/* Navigation controls - desktop only */}
             <div className="hidden sm:flex items-center space-x-1">
