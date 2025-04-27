@@ -68,16 +68,18 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
     'video/mp4', 'video/webm', 'video/ogg'
   ];
   
-  // Import only files should have stricter filter
-  if (req.path.includes('/import')) {
+  // Check if this is a question import request
+  if (req.path.includes('/questions/import') || req.path.includes('/import-export')) {
     const importAllowedTypes = [
       'text/csv', 
       'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
     
     if (!importAllowedTypes.includes(file.mimetype)) {
-      return cb(new Error('Invalid file type. Only CSV and Excel files are allowed for import.'));
+      return cb(new Error('Invalid file type. Only CSV, Excel, and Word files are allowed for import.'));
     }
   } else if (!allowedTypes.includes(file.mimetype)) {
     return cb(new Error('Invalid file type.'));
