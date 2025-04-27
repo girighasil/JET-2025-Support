@@ -48,7 +48,7 @@ export default function HomePage() {
     
     <div className="min-h-screen bg-amber-50 w-full overflow-x-hidden">
       {/* Navigation - updated with site config */}
-      <nav className="sticky top-0 z-50 w-full border-b border-border bg-emerald">
+      <nav className="sticky top-0 z-50 w-full border-b border-border bg-amber-100">
         
 
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
