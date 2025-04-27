@@ -55,11 +55,15 @@ export const insertCourseSchema = createInsertSchema(courses)
     // Make these fields optional with appropriate validation
     richContent: z.string().optional(),
     videoUrls: z.array(z.string().url()).optional(),
-    resourceLinks: z.array(z.object({
-      url: z.string().url(),
-      type: z.string(),
-      label: z.string()
-    })).optional(),
+    resourceLinks: z
+      .array(
+        z.object({
+          url: z.string().url(),
+          type: z.string(),
+          label: z.string(),
+        }),
+      )
+      .optional(),
     attachments: z
       .array(
         z.object({
@@ -343,7 +347,15 @@ export const insertSiteConfigSchema = createInsertSchema(siteConfig).omit({
   updatedAt: true,
 });
 
-export type SiteConfig = typeof siteConfig.$inferSelect;
+export type NavLink = {
+  title: string;
+  path: string;
+  className?: string;
+};
+
+export type SiteConfig = typeof siteConfig.$inferSelect & {
+  navLinks?: NavLink[];
+};
 export type InsertSiteConfig = z.infer<typeof insertSiteConfigSchema>;
 
 // Promotional Banner model
