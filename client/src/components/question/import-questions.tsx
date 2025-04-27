@@ -21,7 +21,7 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Loader2, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, FileText, Loader2, Upload } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 
