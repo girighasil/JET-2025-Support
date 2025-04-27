@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, AlertTriangle, PauseCircle, PlayCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bell, PauseCircle, PlayCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePromoBanners } from '@/hooks/use-site-config';
 
@@ -77,7 +77,7 @@ export default function PromoBanner() {
   const animationDuration = 15; // 15 seconds
 
   return (
-    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-2 relative overflow-hidden border-b border-white/10 w-full fixed top-0 left-0 right-0 z-[60]" ref={bannerRef}>
+    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-1 relative overflow-hidden border-b border-white/10 w-full fixed top-0 left-0 right-0 z-[60]" ref={bannerRef}>
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-[radial-gradient(white,_transparent_60%)] bg-left"></div>
       </div>
@@ -85,7 +85,7 @@ export default function PromoBanner() {
       <div className="responsive-container relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <bell className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+            <Bell className="h-4 w-4 sm:h-4 sm:w-4 mr-1" />
             
             {/* Navigation controls - desktop only */}
             <div className="hidden sm:flex items-center space-x-1">
@@ -120,14 +120,14 @@ export default function PromoBanner() {
           </div>
           
           {/* Announcement content container */}
-          <div className="overflow-hidden flex-1 mx-3">
+          <div className="overflow-hidden flex-1 mx-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`announcement-${currentIndex}-${animationKey}`}
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -10, opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.1 }}
                 className="font-medium text-xs sm:text-sm overflow-hidden"
               >
                 {/* Mobile: Smooth ticker animation */}
@@ -145,8 +145,7 @@ export default function PromoBanner() {
                         }
                       }}
                       className="inline-block px-2"
-                    >
-                      <strong className="text-white mr-1">Important:</strong> 
+                    >                       
                       {currentAnnouncement}
                     </motion.div>
                   </div>
@@ -168,9 +167,9 @@ export default function PromoBanner() {
               aria-label={isPaused ? "Resume announcements" : "Pause announcements"}
             >
               {isPaused ? (
-                <PlayCircle className="h-3.5 w-3.5" />
+                <PlayCircle className="h-5 w-5" />
               ) : (
-                <PauseCircle className="h-3.5 w-3.5" />
+                <PauseCircle className="h-5 w-5" />
               )}
             </button>
           </div>
