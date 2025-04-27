@@ -204,6 +204,7 @@ export default function HomePage() {
                     config?.social?.whatsapp ||
                       "https://whatsapp.com/channel/0029Vb6CybFJuyAFcaXTMR1o",
                     "_blank",
+                    "noopener,noreferrer"
                   )
                 }
               ><MessageCircle className="h-5 w-5" />
