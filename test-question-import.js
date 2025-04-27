@@ -65,12 +65,12 @@ async function runImportTest() {
     // Login to get session cookies
     const cookies = await login();
     
-    // Create a test docx file
-    const docxPath = await createTestDocxFile();
+    // Prepare the test CSV file
+    const csvPath = await prepareTestFile();
     
     // Create a form data object
     const form = new FormData();
-    form.append('file', fs.createReadStream(docxPath));
+    form.append('file', fs.createReadStream(csvPath));
     
     // Make the request
     console.log(`Sending import request to ${API_URL}...`);
@@ -90,8 +90,8 @@ async function runImportTest() {
     console.log('Response:', JSON.stringify(data, null, 2));
     
     // Clean up
-    if (fs.existsSync(docxPath)) {
-      fs.unlinkSync(docxPath);
+    if (fs.existsSync(csvPath)) {
+      fs.unlinkSync(csvPath);
       console.log('Removed test file');
     }
   } catch (error) {

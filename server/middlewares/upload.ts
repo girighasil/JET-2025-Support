@@ -72,13 +72,18 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   if (req.path.includes('/questions/import') || req.path.includes('/import-export')) {
     const importAllowedTypes = [
       'text/csv', 
+      'text/plain', // Sometimes CSV files can be detected as text/plain
+      'application/csv',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
     
-    if (!importAllowedTypes.includes(file.mimetype)) {
+    // Check mime type or file extension for CSV files
+    const isCSV = file.originalname.toLowerCase().endsWith('.csv');
+    
+    if (!importAllowedTypes.includes(file.mimetype) && !isCSV) {
       return cb(new Error('Invalid file type. Only CSV, Excel, and Word files are allowed for import.'));
     }
   } else if (!allowedTypes.includes(file.mimetype)) {

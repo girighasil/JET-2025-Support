@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx';  // Using default import instead of * as import
 import mammoth from 'mammoth';
 import { z } from 'zod';
 
@@ -448,10 +448,14 @@ export async function parseQuestionsFromFile(filePath: string): Promise<{
     return parseExcelQuestions(filePath);
   } else if (['.docx', '.doc'].includes(extension)) {
     return parseWordQuestions(filePath);
+  } else if (['.csv'].includes(extension)) {
+    // For CSV files, we'll treat them like Excel files
+    // XLSX can read CSV files as well
+    return parseExcelQuestions(filePath);
   } else {
     return {
       questions: [],
-      errors: [`Unsupported file format: ${extension}. Please upload an Excel or Word document.`]
+      errors: [`Unsupported file format: ${extension}. Please upload an Excel, CSV, or Word document.`]
     };
   }
 }

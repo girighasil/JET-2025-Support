@@ -154,7 +154,7 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
           <DialogTitle>Import Questions</DialogTitle>
           <DialogDescription>
             Upload a file with questions to import them into this test. 
-            We support Excel (.xlsx) and Word (.docx) files.
+            We support Excel (.xlsx), CSV (.csv), and Word (.docx) files.
           </DialogDescription>
         </DialogHeader>
 
@@ -204,11 +204,11 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                 <Input
                   id="import-file"
                   type="file"
-                  accept=".xlsx,.xls,.docx,.doc"
+                  accept=".xlsx,.xls,.csv,.docx,.doc"
                   onChange={(e) => setImportFile(e.target.files?.[0] || null)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Accepted formats: Excel (.xlsx, .xls), Word (.docx, .doc)
+                  Accepted formats: Excel (.xlsx, .xls), CSV (.csv), Word (.docx, .doc)
                 </p>
               </div>
               
