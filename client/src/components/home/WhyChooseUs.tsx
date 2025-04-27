@@ -30,7 +30,7 @@ export default function WhyChooseUs() {
   };
 
   return (
-    <section className="py-12 bg-amber-50 border-b border-amber-500">
+    <section className="py-12 bg-gradient-to-b from-amber-50 to-amber-200 rounded-lg border border-amber-200">
       <div className="container mx-auto px-4">
         <motion.div 
           className="text-center mb-12"

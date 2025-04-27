@@ -3,16 +3,25 @@ import { X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePromoBanners } from '@/hooks/use-site-config';
 
+// Define banner type for type safety
+type Banner = {
+  id: number;
+  text: string;
+  isActive: boolean;
+  order: number;
+  url?: string;
+};
+
 export default function PromoBanner() {
   const [isVisible, setIsVisible] = useState(true);
   const { banners, isLoading } = usePromoBanners();
 
   // Get announcement texts from active banners
-  const announcements = banners && banners.length > 0 
+  const announcements = Array.isArray(banners) && banners.length > 0 
     ? banners
-        .filter(banner => banner.isActive)
-        .sort((a, b) => a.order - b.order)
-        .map(banner => banner.text)
+        .filter((banner: Banner) => banner.isActive)
+        .sort((a: Banner, b: Banner) => a.order - b.order)
+        .map((banner: Banner) => banner.text)
     : [];
 
   // Set up auto rotation between announcements
@@ -23,7 +32,7 @@ export default function PromoBanner() {
     setIsVisible(false);
     
     // Remember user closed the banner for this session
-    sessionStorage.setItem('promoBannerClosed', 'true');
+    localStorage.setItem('promoBannerClosed', 'true');
   };
 
   // Navigate to next announcement
@@ -36,18 +45,24 @@ export default function PromoBanner() {
     setCurrentIndex((prevIndex) => (prevIndex - 1 + announcements.length) % announcements.length);
   };
 
-  // Auto rotate announcements
+  // Check if banner was closed
   useEffect(() => {
-    // Check if user closed the banner previously in this session
-    const isClosed = sessionStorage.getItem('promoBannerClosed') === 'true';
+    // Check if user closed the banner previously (using localStorage instead of sessionStorage)
+    const isClosed = localStorage.getItem('promoBannerClosed') === 'true';
     if (isClosed) {
       setIsVisible(false);
-      return;
+    } else {
+      setIsVisible(true);
     }
+  }, []);
+
+  // Auto rotate announcements
+  useEffect(() => {
+    if (announcements.length <= 1) return;
     
     const interval = setInterval(() => {
       nextAnnouncement();
-    }, 7500);
+    }, 10000); // Increased duration for better readability
     
     return () => clearInterval(interval);
   }, [announcements.length]);
@@ -55,7 +70,7 @@ export default function PromoBanner() {
   if (!isVisible || isLoading || announcements.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-2 relative overflow-hidden border-b border-white/10 w-full">
+    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-3 relative overflow-hidden border-b border-white/10 w-full">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-[radial-gradient(white,_transparent_60%)] bg-left"></div>
       </div>
@@ -84,7 +99,7 @@ export default function PromoBanner() {
                 className="text-center font-medium text-xs sm:text-sm"
               >
                 <div className="relative sm:static">
-                  {/* Mobile scrolling text */}
+                  {/* Mobile scrolling text - slowed down animation */}
                   <div className="sm:hidden block overflow-hidden">
                     <div className="inline-block whitespace-nowrap overflow-x-hidden w-full">
                       <motion.div
@@ -94,7 +109,7 @@ export default function PromoBanner() {
                         transition={{
                           x: {
                             repeat: Infinity,
-                            duration: 25,
+                            duration: 40, // Slower scroll speed
                             ease: "linear",
                           },
                         }}
@@ -105,9 +120,9 @@ export default function PromoBanner() {
                     </div>
                   </div>
                   
-                  {/* Desktop static text */}
-                  <div className="hidden sm:block overflow-hidden text-ellipsis">
-                    <strong>Important Alert:</strong> {announcements[currentIndex]}
+                  {/* Desktop static text with improved margins and wrapping */}
+                  <div className="hidden sm:block overflow-hidden px-4 mx-auto max-w-4xl">
+                    <strong className="text-white">Important Alert:</strong> {announcements[currentIndex]}
                   </div>
                 </div>
               </motion.div>
@@ -121,20 +136,20 @@ export default function PromoBanner() {
           >
             <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           </button>
-          
-          {/* <button 
+          <button 
             onClick={closeBanner}
             className="p-1 rounded-full hover:bg-white/20 transition-colors z-10 flex-shrink-0 ml-2 sm:ml-0"
             aria-label="Close banner"
           >
             <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-          </button>*/}
+          </button>
+          
         </div>
         
         {/* Indicators */}
         {announcements.length > 1 && (
           <div className="flex justify-center space-x-1 mt-1">
-            {announcements.map((_, index) => (
+            {announcements.map((_: string, index: number) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}

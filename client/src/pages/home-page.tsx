@@ -124,11 +124,11 @@ export default function HomePage() {
           </div>
         </div>
       
-        <PromoBanner />
-      </header>
       
+      </header>
+      <PromoBanner />
       {/* Add padding to account for fixed header height */}
-      <div className="pt-32">
+      <div className="pt-20">
         <MobileMenu
           isOpen={isMobileMenuOpen}
           onClose={toggleMobileMenu}
@@ -137,7 +137,7 @@ export default function HomePage() {
 
         {/* Sign in / Registration Box */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mx-auto max-w-[95%] lg:max-w-6xl">
-          <div className="bg-amber-100 p-4 sm:p-6 rounded-lg border border-amber-200">
+          <div className="bg-gradient-to-b from-amber-100 to-amber-50 p-4 sm:p-6 rounded-lg border border-amber-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-800 flex items-center justify-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -186,15 +186,29 @@ export default function HomePage() {
             <div className="mt-4">
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
-                onClick={() => {
-                  const youtubeUrl =
-                    config?.social?.youtube ||
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Make sure URL starts with https:// and handle YouTube sub confirmation
+                  let youtubeUrl = config?.social?.youtube || 
                     "https://www.youtube.com/@JET2025Support";
-                  window.open(
-                    `${youtubeUrl}?sub_confirmation=1`,
-                    "_blank",
-                    "noopener,noreferrer",
-                  );
+                  
+                  // Ensure URL has proper protocol
+                  if (!youtubeUrl.startsWith('http')) {
+                    youtubeUrl = 'https://' + youtubeUrl;
+                  }
+                  
+                  // Add subscription confirmation parameter if not already present
+                  if (!youtubeUrl.includes('sub_confirmation=1')) {
+                    youtubeUrl += youtubeUrl.includes('?') ? 
+                      '&sub_confirmation=1' : 
+                      '?sub_confirmation=1';
+                  }
+                  
+                  // Open in new window using proper window.open() method
+                  const newWindow = window.open(youtubeUrl, '_blank');
+                  if (newWindow) {
+                    newWindow.opener = null;
+                  }
                 }}
               >
                 <Youtube className="h-5 w-5" />
@@ -205,14 +219,23 @@ export default function HomePage() {
             <div className="mt-4">
               <Button
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
-                onClick={() =>
-                  window.open(
-                    config?.social?.whatsapp ||
-                      "https://whatsapp.com/channel/0029Vb6CybFJuyAFcaXTMR1o",
-                    "_blank",
-                    "noopener,noreferrer",
-                  )
-                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Make sure WhatsApp URL starts with https://
+                  let whatsappUrl = config?.social?.whatsapp || 
+                    "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
+                  
+                  // Ensure URL has proper protocol
+                  if (!whatsappUrl.startsWith('http')) {
+                    whatsappUrl = 'https://' + whatsappUrl;
+                  }
+                  
+                  // Open in new window using proper window.open() method
+                  const newWindow = window.open(whatsappUrl, '_blank');
+                  if (newWindow) {
+                    newWindow.opener = null;
+                  }
+                }}
               >
                 <MessageCircle className="h-5 w-5" />
                 Join WhatsApp
