@@ -19,6 +19,7 @@ export default function HomePage() {
   };
   const logoUrl = config?.logoUrl || "";
   const useCustomLogo = config?.useCustomLogo || false;
+  const [isScrolled, setIsScrolled] = useState(false);
   const navLinks: NavLink[] = config?.navLinks || [
     { title: "Home", path: "#home" },
     { title: "Courses", path: "#courses", className: "hover:underline" },
@@ -32,6 +33,22 @@ export default function HomePage() {
     path: string;
     className?: string;
   };
+  // Scroll event listener effect
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if page is scrolled
+      setIsScrolled(window.scrollY > 0);
+    };
+    
+    // Add event listener
+    window.addEventListener('scroll', handleScroll);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
   // Redirect authenticated users to their dashboard
   useEffect(() => {
     if (!isLoading && user) {
@@ -47,9 +64,10 @@ export default function HomePage() {
   return (
     
     <div className="min-h-screen bg-stone-50 w-full overflow-x-hidden">
-      {/* Navigation - updated with site config */}
-      <nav className="sticky top-0 z-50 w-full border-b border-amber-200 bg-amber-50">
-        
+      {/* Navigation - updated with site config */}      
+      <nav className={`sticky top-0 z-50 w-full border-b transition-all duration-200 ${
+        isScrolled ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-amber-50 border-amber-200'
+      }`}>      
 
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
          
@@ -107,11 +125,12 @@ export default function HomePage() {
               </Button>
             </Link>            
           </div>
-        </div>
+        </div> 
+        <PromoBanner />
       </nav>
       
        
-      <PromoBanner />
+      
         
       <MobileMenu
         isOpen={isMobileMenuOpen}
@@ -184,8 +203,9 @@ export default function HomePage() {
               onClick={() =>
                 window.open(
                   `${config?.social?.youtube}?sub_confirmation=1` ||
-                    "https://youtube.com/@JET2025Support",
+                    "https://www.youtube.com/@JET2025Support",
                   "_blank",
+              
                 )
               }
             >
