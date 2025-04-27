@@ -148,7 +148,7 @@ export default function SiteConfigManagement() {
       setTwitterUrl(social.twitter || 'https://twitter.com/');
       setInstagramUrl(social.instagram || 'https://instagram.com/');
       setLinkedinUrl(social.linkedin || 'https://linkedin.com/');
-      setYoutubeUrl(social.youtube || 'https://youtube.com/');
+      setYoutubeUrl(social.youtube || 'https://www.youtube.com/@JET2025Support');
       setWhatsappLink(social.whatsapp || 'https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07');
       
       // Initialize SEO settings
@@ -1193,7 +1193,7 @@ export default function SiteConfigManagement() {
                       id="youtubeUrl"
                       value={youtubeUrl}
                       onChange={e => setYoutubeUrl(e.target.value)}
-                      placeholder="https://youtube.com/c/yourchannel" 
+                      placeholder="https://www.youtube.com/@JET2025Support" 
                     />
                   </div>
                 </div>
