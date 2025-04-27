@@ -182,27 +182,24 @@ export default function HomePage() {
                 className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
                 onClick={(e) => {
                   e.preventDefault();
-                  // Make sure URL starts with https:// and handle YouTube sub confirmation
-                  let youtubeUrl = config?.social?.youtube || 
-                    "https://www.youtube.com/@JET2025Support";
                   
-                  // Ensure URL has proper protocol
-                  if (!youtubeUrl.startsWith('http')) {
-                    youtubeUrl = 'https://' + youtubeUrl;
-                  }
+                  // Force the correct YouTube channel URL with subscription confirmation
+                  const youtubeUrl = "https://www.youtube.com/@JET2025Support?sub_confirmation=1";
                   
-                  // Add subscription confirmation parameter if not already present
-                  if (!youtubeUrl.includes('sub_confirmation=1')) {
-                    youtubeUrl += youtubeUrl.includes('?') ? 
-                      '&sub_confirmation=1' : 
-                      '?sub_confirmation=1';
-                  }
+                  // Open in new window with correct security attributes
+                  const newWindow = window.open(
+                    youtubeUrl, 
+                    '_blank', 
+                    'noopener,noreferrer'
+                  );
                   
-                  // Open in new window using proper window.open() method
-                  const newWindow = window.open(youtubeUrl, '_blank');
+                  // Additional security for older browsers
                   if (newWindow) {
                     newWindow.opener = null;
                   }
+                  
+                  // Log for debugging
+                  console.log("Opening YouTube URL:", youtubeUrl);
                 }}
               >
                 <Youtube className="h-5 w-5" />
@@ -215,20 +212,24 @@ export default function HomePage() {
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 onClick={(e) => {
                   e.preventDefault();
-                  // Make sure WhatsApp URL starts with https://
-                  let whatsappUrl = config?.social?.whatsapp || 
-                    "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
                   
-                  // Ensure URL has proper protocol
-                  if (!whatsappUrl.startsWith('http')) {
-                    whatsappUrl = 'https://' + whatsappUrl;
-                  }
+                  // Force the correct WhatsApp channel URL
+                  const whatsappUrl = "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
                   
-                  // Open in new window using proper window.open() method
-                  const newWindow = window.open(whatsappUrl, '_blank');
+                  // Open in new window with correct security attributes
+                  const newWindow = window.open(
+                    whatsappUrl, 
+                    '_blank', 
+                    'noopener,noreferrer'
+                  );
+                  
+                  // Additional security for older browsers
                   if (newWindow) {
                     newWindow.opener = null;
                   }
+                  
+                  // Log for debugging
+                  console.log("Opening WhatsApp URL:", whatsappUrl);
                 }}
               >
                 <MessageCircle className="h-5 w-5" />
