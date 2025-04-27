@@ -47,7 +47,7 @@ export default function PromoBanner() {
     
     const interval = setInterval(() => {
       nextAnnouncement();
-    }, 7000);
+    }, 7500);
     
     return () => clearInterval(interval);
   }, [announcements.length]);
@@ -80,7 +80,7 @@ export default function PromoBanner() {
                 initial={{ y: 8, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -8, opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.25 }}
                 className="text-center font-medium text-xs sm:text-sm"
               >
                 <div className="relative sm:static">
@@ -94,7 +94,7 @@ export default function PromoBanner() {
                         transition={{
                           x: {
                             repeat: Infinity,
-                            duration: 20,
+                            duration: 25,
                             ease: "linear",
                           },
                         }}
@@ -122,13 +122,13 @@ export default function PromoBanner() {
             <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           </button>
           
-           <button 
+          {/* <button 
             onClick={closeBanner}
             className="p-1 rounded-full hover:bg-white/20 transition-colors z-10 flex-shrink-0 ml-2 sm:ml-0"
             aria-label="Close banner"
           >
             <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-          </button>
+          </button>*/}
         </div>
         
         {/* Indicators */}

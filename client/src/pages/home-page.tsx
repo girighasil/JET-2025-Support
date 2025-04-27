@@ -28,26 +28,26 @@ export default function HomePage() {
     { title: "Success Stories", path: "#testimonials" },
     { title: "Contact", path: "#contact" },
   ];
-  
+
   type NavLink = {
     title: string;
     path: string;
     className?: string;
   };
-  
+
   // Scroll effect to detect when page is scrolled
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
     };
-    
-    window.addEventListener('scroll', handleScroll);
-    
+
+    window.addEventListener("scroll", handleScroll);
+
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  
+
   // Redirect authenticated users to their dashboard
   useEffect(() => {
     if (!isLoading && user) {
@@ -64,7 +64,7 @@ export default function HomePage() {
       {/* Fixed navigation at the top */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-200 shadow-sm">
         <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
-          <div className="flex items-center">          
+          <div className="flex items-center">
             <button onClick={toggleMobileMenu} aria-label="Toggle menu">
               {useCustomLogo && logoUrl ? (
                 <div className="h-10 mr-3">
@@ -84,10 +84,12 @@ export default function HomePage() {
               <span className="text-lg sm:text-xl font-bold">
                 {config?.siteTitle || "JET 2025"}
               </span>
-              <span className="text-xs text-gray-600">{config?.tagline || "Exam Support"}</span>
+              <span className="text-xs text-gray-600">
+                {config?.tagline || "Exam Support"}
+              </span>
             </div>
           </div>
-          
+
           <div className="hidden md:flex flex-col md:flex-row w-[50%] md:w-auto md:items-center mt-4 md:mt-0">
             <ul className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
               {navLinks.map((link, index) => (
@@ -102,7 +104,7 @@ export default function HomePage() {
               ))}
             </ul>
           </div>
-          
+
           <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/auth">
               <Button
@@ -117,12 +119,11 @@ export default function HomePage() {
               <Button size="sm" className="text-xs sm:text-sm">
                 Register
               </Button>
-            </Link>            
+            </Link>
           </div>
         </div>
-        <PromoBanner />
       </header>
-      
+      <PromoBanner />
       {/* Add padding to account for fixed header height */}
       <div className="pt-28">
         <MobileMenu
@@ -130,7 +131,7 @@ export default function HomePage() {
           onClose={toggleMobileMenu}
           links={navLinks}
         />
-        
+
         {/* Sign in / Registration Box */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mx-auto max-w-[95%] lg:max-w-6xl">
           <div className="bg-amber-100 p-4 sm:p-6 rounded-lg border border-amber-200">
@@ -154,8 +155,8 @@ export default function HomePage() {
                 <span className="mr-2 text-amber-600 flex-shrink-0">•</span>
                 <p className="text-gray-700">
                   <strong>Before filling up the application form</strong>{" "}
-                  candidate must read and understand the instructions given in the{" "}
-                  {examInfo.name || "JET"} Booklet-
+                  candidate must read and understand the instructions given in
+                  the {examInfo.name || "JET"} Booklet-
                   {examInfo.year || "2025"}.
                 </p>
               </li>
@@ -163,18 +164,18 @@ export default function HomePage() {
                 <span className="mr-2 text-amber-600 flex-shrink-0">•</span>
                 <p className="text-gray-700">
                   <strong>The mobile number and Email</strong> registered at the
-                  time of filling online application form must be operational till
-                  admission process is over. All information will be communicated
-                  on registered mobile number or Email.
+                  time of filling online application form must be operational
+                  till admission process is over. All information will be
+                  communicated on registered mobile number or Email.
                 </p>
               </li>
               <li className="flex">
                 <span className="mr-2 text-amber-600 flex-shrink-0">•</span>
                 <p className="text-gray-700">
-                  <strong>Note down and keep your user ID</strong> (Reg. No.) and
-                  password safely, it can be used by any one for making change in
-                  your application form. If it happens candidate himself or
-                  herself will be responsible.
+                  <strong>Note down and keep your user ID</strong> (Reg. No.)
+                  and password safely, it can be used by any one for making
+                  change in your application form. If it happens candidate
+                  himself or herself will be responsible.
                 </p>
               </li>
             </ul>
@@ -183,11 +184,13 @@ export default function HomePage() {
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
                 onClick={() => {
-                  const youtubeUrl = config?.social?.youtube || "https://www.youtube.com/@JET2025Support";
+                  const youtubeUrl =
+                    config?.social?.youtube ||
+                    "https://www.youtube.com/@JET2025Support";
                   window.open(
                     `${youtubeUrl}?sub_confirmation=1`,
                     "_blank",
-                    "noopener,noreferrer"
+                    "noopener,noreferrer",
                   );
                 }}
               >
@@ -204,10 +207,11 @@ export default function HomePage() {
                     config?.social?.whatsapp ||
                       "https://whatsapp.com/channel/0029Vb6CybFJuyAFcaXTMR1o",
                     "_blank",
-                    "noopener,noreferrer"
+                    "noopener,noreferrer",
                   )
                 }
-              ><MessageCircle className="h-5 w-5" />
+              >
+                <MessageCircle className="h-5 w-5" />
                 Join WhatsApp
               </Button>
             </div>
@@ -312,10 +316,16 @@ export default function HomePage() {
               </Button>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-4">
-                <Button variant="outline" className="w-full text-sm sm:text-base">
+                <Button
+                  variant="outline"
+                  className="w-full text-sm sm:text-base"
+                >
                   New Registration
                 </Button>
-                <Button variant="outline" className="w-full text-sm sm:text-base">
+                <Button
+                  variant="outline"
+                  className="w-full text-sm sm:text-base"
+                >
                   Forgot password?
                 </Button>
               </div>
