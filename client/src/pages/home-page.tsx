@@ -235,7 +235,7 @@ export default function HomePage() {
             </div>            
           </div>
           <div className="bg-gradient-to-b from-amber-50 to-amber-100 p-6 sm:p-6 rounded-lg border border-amber-200">
-            <h2 className="text-lg sm:text-xl font-bold mb-3 text-amber-800 flex items-center justify-center">
+            <h1 className="text-3xl sm:text-xl font-bold mb-3 text-amber-900 flex items-center justify-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5 mr-2"
@@ -245,13 +245,13 @@ export default function HomePage() {
                 <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.465 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
               </svg>
               Coming Soon
-            </h2>
+            </h1>
             <h3 className="text-center text-sm text-amber-700 mb-6">Stay tuned for updates</h3>
             
             <div className="flex flex-col items-center justify-center my-8">
-              <h1 className="text-2xl sm:text-3xl font-bold text-center text-amber-800 mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center text-amber-800 mb-4">
                 JET 2025 Online Application Form
-              </h1>
+              </h2>
               <p className="text-gray-700 text-center mb-6">
                 The online application form will be available soon. Please check back later.
               </p>
