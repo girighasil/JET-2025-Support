@@ -514,6 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test Routes
   app.get("/api/tests", isAuthenticated, async (req, res) => {
     try {
+      // Get query parameters
       const courseId = req.query.courseId
         ? parseInt(req.query.courseId as string)
         : undefined;
@@ -523,8 +524,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : req.query.isActive === "false"
             ? false
             : undefined;
+      const visibility = req.query.visibility as 'public' | 'private' | undefined;
+      const testType = req.query.testType as 'formal' | 'practice' | undefined;
 
-      const tests = await storage.listTests(courseId, isActive);
+      // Filter tests based on criteria
+      const tests = await storage.listTests({
+        courseId,
+        isActive,
+        visibility,
+        testType
+      });
 
       // Add creator information to each test
       const testsWithCreatorInfo = await Promise.all(
@@ -1036,6 +1045,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!test.isActive) {
         return res.status(400).json({ message: "Test is not active" });
+      }
+      
+      // Check user's access to the test based on visibility and test type
+      if (req.user.role === "student") {
+        // For private tests, verify course enrollment
+        if (test.visibility === "private" && test.courseId) {
+          const enrollment = await storage.getEnrollment(req.user.id, test.courseId);
+          if (!enrollment) {
+            return res.status(403).json({ 
+              message: "You must be enrolled in this course to take this test" 
+            });
+          }
+        }
+        
+        // For formal tests, always verify course enrollment regardless of visibility
+        if (test.testType === "formal" && test.courseId) {
+          const enrollment = await storage.getEnrollment(req.user.id, test.courseId);
+          if (!enrollment) {
+            return res.status(403).json({ 
+              message: "You must be enrolled in this course to take this formal test" 
+            });
+          }
+        }
       }
 
       // Check if user already has an in-progress attempt for this test

@@ -39,7 +39,12 @@ export interface IStorage {
   
   // Test Methods
   getTest(id: number): Promise<Test | undefined>;
-  listTests(courseId?: number, isActive?: boolean): Promise<Test[]>;
+  listTests(opts?: {
+    courseId?: number;
+    isActive?: boolean;
+    visibility?: 'public' | 'private';
+    testType?: 'formal' | 'practice';
+  }): Promise<Test[]>;
   createTest(test: InsertTest): Promise<Test>;
   updateTest(id: number, test: Partial<InsertTest>): Promise<Test | undefined>;
   deleteTest(id: number): Promise<boolean>;
@@ -300,15 +305,30 @@ export class MemStorage implements IStorage {
     return this.tests.get(id);
   }
   
-  async listTests(courseId?: number, isActive?: boolean): Promise<Test[]> {
+  async listTests(opts?: {
+    courseId?: number;
+    isActive?: boolean;
+    visibility?: 'public' | 'private';
+    testType?: 'formal' | 'practice';
+  }): Promise<Test[]> {
     let tests = Array.from(this.tests.values());
     
-    if (courseId !== undefined) {
-      tests = tests.filter(test => test.courseId === courseId);
-    }
-    
-    if (isActive !== undefined) {
-      tests = tests.filter(test => test.isActive === isActive);
+    if (opts) {
+      if (opts.courseId !== undefined) {
+        tests = tests.filter(test => test.courseId === opts.courseId);
+      }
+      
+      if (opts.isActive !== undefined) {
+        tests = tests.filter(test => test.isActive === opts.isActive);
+      }
+      
+      if (opts.visibility !== undefined) {
+        tests = tests.filter(test => test.visibility === opts.visibility);
+      }
+      
+      if (opts.testType !== undefined) {
+        tests = tests.filter(test => test.testType === opts.testType);
+      }
     }
     
     return tests;
@@ -940,16 +960,41 @@ export class DatabaseStorage implements IStorage {
     return test || undefined;
   }
 
-  async listTests(courseId?: number, isActive?: boolean): Promise<Test[]> {
-    if (courseId && isActive !== undefined) {
-      return await db.select().from(tests)
-        .where(and(eq(tests.courseId, courseId), eq(tests.isActive, isActive)));
-    } else if (courseId) {
-      return await db.select().from(tests).where(eq(tests.courseId, courseId));
-    } else if (isActive !== undefined) {
-      return await db.select().from(tests).where(eq(tests.isActive, isActive));
+  async listTests(opts?: {
+    courseId?: number;
+    isActive?: boolean;
+    visibility?: 'public' | 'private';
+    testType?: 'formal' | 'practice';
+  }): Promise<Test[]> {
+    let query = db.select().from(tests);
+    
+    if (opts) {
+      const conditions = [];
+      
+      if (opts.courseId !== undefined) {
+        conditions.push(eq(tests.courseId, opts.courseId));
+      }
+      
+      if (opts.isActive !== undefined) {
+        conditions.push(eq(tests.isActive, opts.isActive));
+      }
+      
+      if (opts.visibility !== undefined) {
+        conditions.push(eq(tests.visibility, opts.visibility));
+      }
+      
+      if (opts.testType !== undefined) {
+        conditions.push(eq(tests.testType, opts.testType));
+      }
+      
+      if (conditions.length === 1) {
+        query = query.where(conditions[0]);
+      } else if (conditions.length > 1) {
+        query = query.where(and(...conditions));
+      }
     }
-    return await db.select().from(tests);
+    
+    return await query;
   }
 
   async createTest(insertTest: InsertTest): Promise<Test> {
