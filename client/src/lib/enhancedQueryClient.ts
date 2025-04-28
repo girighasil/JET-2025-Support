@@ -151,6 +151,13 @@ export async function apiRequest(
   dataOrOptions?: unknown | { isFormData?: boolean },
   optionsOrUndefined?: { isFormData?: boolean },
 ): Promise<Response> {
+  // Declare variables at function scope to be accessible in both try and catch blocks
+  let url: string;
+  let method: string;
+  let data: unknown | undefined;
+  let options: { isFormData?: boolean } | undefined;
+  let useMethod: string;
+  
   try {
     // Determine parameter order by analyzing the first parameter
     // If it starts with '/', it's a URL, so we use the old order (url, method, data, options)
@@ -158,11 +165,6 @@ export async function apiRequest(
     const isLegacyFormat = methodOrUrl.startsWith('/');
     
     // Set the parameters based on the detected format
-    let url: string;
-    let method: string;
-    let data: unknown | undefined;
-    let options: { isFormData?: boolean } | undefined;
-    
     if (isLegacyFormat) {
       // Legacy format: apiRequest(url, method, data, options)
       url = methodOrUrl;
@@ -194,7 +196,7 @@ export async function apiRequest(
     }
     
     // Normalize the method
-    const useMethod = method.toUpperCase() === "PATCH" ? "PUT" : method.toUpperCase();
+    useMethod = method.toUpperCase() === "PATCH" ? "PUT" : method.toUpperCase();
 
     // Determine if we should handle as form data
     const isFormData = options?.isFormData || false;
