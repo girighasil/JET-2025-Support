@@ -209,7 +209,7 @@ export function TestCard({
           )}
         </div>
         
-        <Button 
+        <LoadingButton 
           onClick={handleAction}
           className="w-full mt-4"
           variant={status === 'expired' || (status === 'locked' && hasEnrollmentRequest && enrollmentRequestStatus === 'pending') ? 'outline' : 'default'}
@@ -217,7 +217,7 @@ export function TestCard({
           isLoading={isSubmitting}
         >
           {buttonText[status]}
-        </Button>
+        </LoadingButton>
       </CardContent>
     </Card>
   );

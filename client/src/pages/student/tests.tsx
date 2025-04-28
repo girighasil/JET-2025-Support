@@ -75,7 +75,7 @@ export default function StudentTests() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
-  // Fetch available tests (includes public practice tests)
+  // Fetch available tests (includes public practice tests and tests student has access to)
   const { data: tests = [], isLoading: isTestsLoading } = useQuery({
     queryKey: ['/api/available-tests'],
   });
@@ -83,6 +83,11 @@ export default function StudentTests() {
   // Fetch test attempts
   const { data: attempts = [], isLoading: isAttemptsLoading } = useQuery({
     queryKey: ['/api/test-attempts'],
+  });
+  
+  // Fetch test enrollment requests
+  const { data: testEnrollmentRequests = [], isLoading: isEnrollmentRequestsLoading } = useQuery({
+    queryKey: ['/api/test-enrollment-requests'],
   });
 
   // Start test attempt mutation
@@ -110,10 +115,18 @@ export default function StudentTests() {
     const lastCompletedAttempt = testAttempts.find((a: any) => a.status === 'completed');
     const inProgressAttempt = testAttempts.find((a: any) => a.status === 'in_progress');
     
+    // Find any enrollment requests for this test
+    const enrollmentRequest = testEnrollmentRequests.find(
+      (request: any) => request.testId === test.id
+    );
+    
+    // Check if the test is locked (private test that requires enrollment)
+    const isLocked = test.visibility === 'private' && test.accessStatus === 'locked';
+    
     // Determine test status
-    let status = 'available';
+    let status = isLocked ? 'locked' : 'available';
     if (test.scheduledFor && isFuture(new Date(test.scheduledFor))) {
-      status = 'upcoming';
+      status = isLocked ? 'locked' : 'upcoming';
     } else if (lastCompletedAttempt) {
       status = 'completed';
     } else if (test.scheduledFor && isPast(addMinutes(new Date(test.scheduledFor), test.duration))) {
@@ -125,7 +138,9 @@ export default function StudentTests() {
       status,
       score: lastCompletedAttempt?.score,
       inProgressAttemptId: inProgressAttempt?.id,
-      lastCompletedAttempt
+      lastCompletedAttempt,
+      hasEnrollmentRequest: !!enrollmentRequest,
+      enrollmentRequestStatus: enrollmentRequest?.status
     };
   });
 
@@ -172,7 +187,7 @@ export default function StudentTests() {
         
         {/* Available Tests Tab */}
         <TabsContent value="available">
-          {isTestsLoading || isAttemptsLoading ? (
+          {isTestsLoading || isAttemptsLoading || isEnrollmentRequestsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Skeleton className="h-64 w-full" />
               <Skeleton className="h-64 w-full" />
@@ -187,11 +202,14 @@ export default function StudentTests() {
                   title={test.title}
                   description={test.description}
                   duration={test.duration}
-                  questionCount={10} // Would come from API
-                  status="available"
+                  questionCount={test.questionCount || 10}
+                  status={test.status}
                   testType={test.testType}
                   visibility={test.visibility}
                   onStartTest={handleStartTest}
+                  hasEnrollmentRequest={test.hasEnrollmentRequest}
+                  enrollmentRequestStatus={test.enrollmentRequestStatus}
+                  courseId={test.courseId}
                 />
               ))}
             </div>
@@ -215,7 +233,7 @@ export default function StudentTests() {
         
         {/* Upcoming Tests Tab */}
         <TabsContent value="upcoming">
-          {isTestsLoading || isAttemptsLoading ? (
+          {isTestsLoading || isAttemptsLoading || isEnrollmentRequestsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Skeleton className="h-64 w-full" />
               <Skeleton className="h-64 w-full" />
@@ -230,10 +248,13 @@ export default function StudentTests() {
                   description={test.description}
                   scheduledFor={test.scheduledFor}
                   duration={test.duration}
-                  questionCount={10} // Would come from API
-                  status="upcoming"
+                  questionCount={test.questionCount || 10}
+                  status={test.status}
                   testType={test.testType}
                   visibility={test.visibility}
+                  hasEnrollmentRequest={test.hasEnrollmentRequest}
+                  enrollmentRequestStatus={test.enrollmentRequestStatus}
+                  courseId={test.courseId}
                 />
               ))}
             </div>
@@ -256,7 +277,7 @@ export default function StudentTests() {
         
         {/* Completed Tests Tab */}
         <TabsContent value="completed">
-          {isTestsLoading || isAttemptsLoading ? (
+          {isTestsLoading || isAttemptsLoading || isEnrollmentRequestsLoading ? (
             <Skeleton className="h-96 w-full" />
           ) : completedTests.length > 0 ? (
             <DataTable
