@@ -647,6 +647,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
+  
+  // Check if a user has access to a specific test
+  app.get("/api/test-access/:testId", isAuthenticated, async (req, res) => {
+    try {
+      const testId = parseInt(req.params.testId);
+      const userId = req.user.id;
+      
+      console.log(`Checking test access for user ${userId} and test ${testId}`);
+      
+      // Get the test
+      const test = await storage.getTest(testId);
+      if (!test) {
+        return res.status(404).json({ message: "Test not found", hasAccess: false });
+      }
+      
+      // Admin and teachers always have access
+      if (req.user.role === "admin" || req.user.role === "teacher") {
+        return res.json({ hasAccess: true, reason: "admin_or_teacher" });
+      }
+      
+      // Public tests are accessible to all
+      if (test.visibility === "public") {
+        return res.json({ hasAccess: true, reason: "public_test" });
+      }
+      
+      // For private tests, check approved enrollment request
+      const testEnrollment = await storage.getTestEnrollmentRequest(userId, testId);
+      if (testEnrollment && testEnrollment.status === "approved") {
+        return res.json({ hasAccess: true, reason: "approved_test_enrollment" });
+      }
+      
+      // If test is associated with a course, check course enrollment
+      if (test.courseId) {
+        const courseEnrollment = await storage.getEnrollment(userId, test.courseId);
+        if (courseEnrollment) {
+          return res.json({ hasAccess: true, reason: "course_enrollment" });
+        }
+      }
+      
+      // User doesn't have access
+      return res.json({ 
+        hasAccess: false, 
+        needsEnrollment: true,
+        reason: "no_access",
+        courseId: test.courseId 
+      });
+    } catch (error) {
+      console.error("Error checking test access:", error);
+      res.status(500).json({ message: "Server error", hasAccess: false });
+    }
+  });
 
   app.get("/api/tests/:id", isAuthenticated, async (req, res) => {
     try {
@@ -1906,6 +1957,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(updatedRequest);
       } catch (error) {
         console.error(`Error in PATCH /api/enrollment-requests/:userId/:courseId:`, error);
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  );
+
+  // Test Enrollment Request Routes (for requesting access to private tests)
+  app.get("/api/test-enrollment-requests", isAuthenticated, async (req, res) => {
+    try {
+      console.log("GET /api/test-enrollment-requests with query:", req.query);
+      let requests = [];
+      
+      // Admin and Teachers can see all requests or filtered requests
+      if (req.user.role === "admin" || req.user.role === "teacher") {
+        if (req.query.status) {
+          // Filter by status
+          const status = req.query.status as string;
+          console.log(`Fetching test enrollment requests with status: ${status}`);
+          requests = await storage.listTestEnrollmentRequestsByStatus(status);
+        } else if (req.query.testId) {
+          // Filter by testId
+          const testId = parseInt(req.query.testId as string);
+          console.log(`Fetching test enrollment requests for test: ${testId}`);
+          requests = await storage.listTestEnrollmentRequestsByTest(testId);
+        } else if (req.query.userId) {
+          // Filter by userId
+          const userId = parseInt(req.query.userId as string);
+          console.log(`Fetching test enrollment requests for user: ${userId}`);
+          requests = await storage.listTestEnrollmentRequestsByUser(userId);
+        } else {
+          // No filters, return all requests
+          console.log("Fetching all test enrollment requests");
+          requests = await storage.listAllTestEnrollmentRequests();
+        }
+      } else {
+        // Students can only see their own requests
+        console.log(`Fetching test enrollment requests for student: ${req.user.id}`);
+        requests = await storage.listTestEnrollmentRequestsByUser(req.user.id);
+      }
+      
+      // Enrich the data with test and user information
+      const enrichedRequests = await Promise.all(
+        requests.map(async (request) => {
+          const test = await storage.getTest(request.testId);
+          const user = await storage.getUser(request.userId);
+          
+          return {
+            ...request,
+            testTitle: test ? test.title : "Unknown Test",
+            courseId: test ? test.courseId : null,
+            userName: user ? user.fullName || user.username : "Unknown User",
+          };
+        })
+      );
+      
+      console.log(`Returning ${enrichedRequests.length} test enrollment requests`);
+      res.json(enrichedRequests);
+    } catch (error) {
+      console.error("Error in GET /api/test-enrollment-requests:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.post("/api/test-enrollment-requests", isAuthenticated, async (req, res) => {
+    try {
+      console.log("Processing test enrollment request creation:", req.body);
+      
+      // Validate the request data
+      const requestData = insertTestEnrollmentRequestSchema.parse({
+        ...req.body,
+        userId: req.user.id, // Always use the authenticated user's ID
+        status: "pending"     // Always start with pending status
+      });
+      
+      console.log("Validated test enrollment request data:", requestData);
+      
+      // First, check if the test exists
+      const test = await storage.getTest(requestData.testId);
+      if (!test) {
+        return res.status(404).json({ message: "Test not found" });
+      }
+      
+      // Cannot request enrollment in public tests
+      if (test.visibility === "public") {
+        return res.status(400).json({ 
+          message: "Cannot request enrollment for public tests. Public tests are accessible without enrollment." 
+        });
+      }
+      
+      // Check if user is already enrolled in the course
+      if (test.courseId !== null) {
+        const enrollment = await storage.getEnrollment(req.user.id, test.courseId);
+        if (!enrollment) {
+          // If not enrolled in the course, check if there's a pending course enrollment request
+          const courseRequest = await storage.getEnrollmentRequest(req.user.id, test.courseId);
+          if (!courseRequest) {
+            // Suggest enrolling in the course first
+            return res.status(400).json({ 
+              message: "You must be enrolled in the course to access its tests. Please request course enrollment first.",
+              courseId: test.courseId
+            });
+          } else if (courseRequest.status !== "approved") {
+            return res.status(400).json({ 
+              message: "Your course enrollment request is still pending. Please wait for approval before requesting test access.",
+              requestStatus: courseRequest.status,
+              courseId: test.courseId
+            });
+          }
+        }
+      }
+      
+      // All checks passed, create the request
+      console.log("Creating test enrollment request");
+      const createdRequest = await storage.createTestEnrollmentRequest(requestData);
+      
+      console.log("Test enrollment request created:", createdRequest);
+      res.status(201).json(createdRequest);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors });
+      } else {
+        console.error("Error in POST /api/test-enrollment-requests:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  });
+  
+  app.patch(
+    "/api/test-enrollment-requests/:userId/:testId", 
+    isAuthenticated, 
+    hasRole(["admin", "teacher"]), 
+    async (req, res) => {
+      try {
+        const userId = parseInt(req.params.userId);
+        const testId = parseInt(req.params.testId);
+        const { status } = req.body;
+        
+        if (!status || !["approved", "rejected"].includes(status)) {
+          return res.status(400).json({ 
+            message: "Invalid status. Status must be 'approved' or 'rejected'." 
+          });
+        }
+        
+        console.log(`Updating test enrollment request: userId=${userId}, testId=${testId}, status=${status}`);
+        
+        // Check if the request exists
+        const request = await storage.getTestEnrollmentRequest(userId, testId);
+        if (!request) {
+          return res.status(404).json({ message: "Test enrollment request not found" });
+        }
+        
+        // Update the status
+        const updatedRequest = await storage.updateTestEnrollmentRequestStatus(
+          userId,
+          testId,
+          status,
+          req.user.id // reviewedBy is the current admin/teacher
+        );
+        
+        if (!updatedRequest) {
+          return res.status(404).json({ message: "Failed to update test enrollment request" });
+        }
+        
+        // If approved, send a notification to the student
+        if (status === "approved") {
+          const test = await storage.getTest(testId);
+          if (test) {
+            await storage.createNotification({
+              userId: userId,
+              title: "Test Enrollment Approved",
+              message: `Your request to access the test "${test.title}" has been approved.`,
+              type: "enrollment_approved",
+              resourceId: testId,
+              resourceType: "test",
+              isRead: false
+            });
+          }
+        }
+        
+        res.json(updatedRequest);
+      } catch (error) {
+        console.error(`Error in PATCH /api/test-enrollment-requests/:userId/:testId:`, error);
         res.status(500).json({ message: "Server error" });
       }
     }
