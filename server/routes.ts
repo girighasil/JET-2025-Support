@@ -1656,6 +1656,255 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+  
+  // Enrollment Request Routes (for self-enrollment with admin approval)
+  app.get("/api/enrollment-requests", isAuthenticated, async (req, res) => {
+    try {
+      console.log("GET /api/enrollment-requests with query:", req.query);
+      let requests = [];
+      
+      // Admin and Teachers can see all requests or filtered requests
+      if (req.user.role === "admin" || req.user.role === "teacher") {
+        if (req.query.status) {
+          // Filter by status
+          const status = req.query.status as string;
+          console.log(`Fetching enrollment requests with status: ${status}`);
+          requests = await storage.listEnrollmentRequestsByStatus(status);
+        } else if (req.query.courseId) {
+          // Filter by courseId
+          const courseId = parseInt(req.query.courseId as string);
+          console.log(`Fetching enrollment requests for course: ${courseId}`);
+          requests = await storage.listEnrollmentRequestsByCourse(courseId);
+        } else if (req.query.userId) {
+          // Filter by userId
+          const userId = parseInt(req.query.userId as string);
+          console.log(`Fetching enrollment requests for user: ${userId}`);
+          requests = await storage.listEnrollmentRequestsByUser(userId);
+        } else {
+          // No filters, return all requests
+          console.log("Fetching all enrollment requests");
+          requests = await storage.listAllEnrollmentRequests();
+        }
+      } else {
+        // Students can only see their own requests
+        console.log(`Fetching enrollment requests for student: ${req.user.id}`);
+        requests = await storage.listEnrollmentRequestsByUser(req.user.id);
+      }
+      
+      // Enrich the data with course and user information
+      const enrichedRequests = await Promise.all(
+        requests.map(async (request) => {
+          const course = await storage.getCourse(request.courseId);
+          const user = await storage.getUser(request.userId);
+          
+          return {
+            ...request,
+            courseTitle: course ? course.title : "Unknown Course",
+            courseCategory: course ? course.category : "Unknown",
+            userName: user ? user.fullName || user.username : "Unknown User",
+          };
+        })
+      );
+      
+      console.log(`Returning ${enrichedRequests.length} enrollment requests`);
+      res.json(enrichedRequests);
+    } catch (error) {
+      console.error("Error in GET /api/enrollment-requests:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.post("/api/enrollment-requests", isAuthenticated, async (req, res) => {
+    try {
+      console.log("Processing enrollment request creation:", req.body);
+      
+      // Students can only request enrollment for themselves
+      const userId = req.user.id;
+      
+      // Validate request data
+      const requestData = insertEnrollmentRequestSchema.parse({
+        ...req.body,
+        userId,
+      });
+      
+      console.log("Validated enrollment request data:", requestData);
+      
+      // Check if user exists
+      const user = await storage.getUser(requestData.userId);
+      if (!user) {
+        console.log(`User with ID ${requestData.userId} not found`);
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if course exists and is active
+      const course = await storage.getCourse(requestData.courseId);
+      if (!course) {
+        console.log(`Course with ID ${requestData.courseId} not found`);
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      if (!course.isActive) {
+        console.log(`Course ${course.id} is not active, student cannot request enrollment`);
+        return res.status(400).json({ message: "Course is not active" });
+      }
+      
+      // Check if user is already enrolled
+      const existingEnrollment = await storage.getEnrollment(userId, requestData.courseId);
+      if (existingEnrollment) {
+        console.log(`User ${userId} is already enrolled in course ${requestData.courseId}`);
+        return res.status(400).json({ 
+          message: "You are already enrolled in this course", 
+          enrollment: existingEnrollment 
+        });
+      }
+      
+      // Check if a pending request already exists
+      const existingRequest = await storage.getEnrollmentRequest(userId, requestData.courseId);
+      if (existingRequest && existingRequest.status === "pending") {
+        console.log(`User ${userId} already has a pending request for course ${requestData.courseId}`);
+        return res.status(400).json({ 
+          message: "You already have a pending enrollment request for this course", 
+          request: existingRequest 
+        });
+      }
+      
+      // Create the enrollment request
+      console.log(`Creating enrollment request for user ${userId} in course ${requestData.courseId}`);
+      const request = await storage.createEnrollmentRequest(requestData);
+      console.log(`Successfully created enrollment request:`, request);
+      
+      // Notify administrators about the new enrollment request
+      try {
+        // Get all admin users
+        const admins = await storage.listUsers("admin");
+        
+        // Send notifications to all admins
+        for (const admin of admins) {
+          await storage.createNotification({
+            userId: admin.id,
+            title: "New Enrollment Request",
+            message: `${user.fullName || user.username} has requested to enroll in "${course.title}".`,
+            type: "enrollment_request",
+            resourceId: course.id,
+            resourceType: "course",
+          });
+        }
+        
+        console.log(`Sent enrollment request notifications to ${admins.length} admins`);
+      } catch (notificationError) {
+        console.error("Failed to create admin notifications:", notificationError);
+        // Don't fail the request if notification creation fails
+      }
+      
+      res.status(201).json(request);
+    } catch (error) {
+      console.error("Error in POST /api/enrollment-requests:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors });
+      } else {
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  });
+  
+  app.patch(
+    "/api/enrollment-requests/:userId/:courseId", 
+    isAuthenticated, 
+    hasRole(["admin", "teacher"]), 
+    async (req, res) => {
+      try {
+        const userId = parseInt(req.params.userId);
+        const courseId = parseInt(req.params.courseId);
+        const { status, notes } = req.body;
+        
+        console.log(`Processing enrollment request update: userId=${userId}, courseId=${courseId}, status=${status}`);
+        
+        // Validate status
+        if (!["approved", "rejected"].includes(status)) {
+          return res.status(400).json({ message: "Status must be either 'approved' or 'rejected'" });
+        }
+        
+        // Check if request exists
+        const request = await storage.getEnrollmentRequest(userId, courseId);
+        if (!request) {
+          return res.status(404).json({ message: "Enrollment request not found" });
+        }
+        
+        // Update request status
+        const updatedRequest = await storage.updateEnrollmentRequestStatus(
+          userId, 
+          courseId, 
+          status,
+          req.user.id
+        );
+        
+        console.log(`Updated enrollment request status to ${status}`);
+        
+        // If approved, create the actual enrollment
+        if (status === "approved") {
+          console.log(`Status is approved, creating enrollment for user ${userId} in course ${courseId}`);
+          
+          // Check if the course exists
+          const course = await storage.getCourse(courseId);
+          if (!course) {
+            return res.status(404).json({ message: "Course not found" });
+          }
+          
+          // Create the enrollment
+          const enrollment = await storage.createEnrollment({
+            userId,
+            courseId,
+            progress: 0,
+            isCompleted: false
+          });
+          
+          console.log(`Successfully created enrollment after approval`);
+          
+          // Notify the student about the approval
+          try {
+            await storage.createNotification({
+              userId,
+              title: "Enrollment Request Approved",
+              message: `Your request to enroll in "${course.title}" has been approved.`,
+              type: "enrollment_approved",
+              resourceId: courseId,
+              resourceType: "course",
+            });
+            
+            console.log(`Sent enrollment approval notification to user ${userId}`);
+          } catch (notificationError) {
+            console.error("Failed to create approval notification:", notificationError);
+            // Don't fail the enrollment if notification creation fails
+          }
+        } else if (status === "rejected") {
+          // Notify the student about the rejection
+          try {
+            const course = await storage.getCourse(courseId);
+            if (course) {
+              await storage.createNotification({
+                userId,
+                title: "Enrollment Request Rejected",
+                message: `Your request to enroll in "${course.title}" has been rejected.${notes ? ` Reason: ${notes}` : ''}`,
+                type: "enrollment_rejected",
+                resourceId: courseId,
+                resourceType: "course",
+              });
+              
+              console.log(`Sent enrollment rejection notification to user ${userId}`);
+            }
+          } catch (notificationError) {
+            console.error("Failed to create rejection notification:", notificationError);
+            // Don't fail if notification creation fails
+          }
+        }
+        
+        res.json(updatedRequest);
+      } catch (error) {
+        console.error(`Error in PATCH /api/enrollment-requests/:userId/:courseId:`, error);
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  );
 
   // Doubt Session Routes
   app.get("/api/doubt-sessions", isAuthenticated, async (req, res) => {
