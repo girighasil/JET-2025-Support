@@ -684,6 +684,124 @@ export class DatabaseStorage implements IStorage {
     console.log(`Deletion result:`, result);
     return result.count > 0;
   }
+  
+  // Enrollment Request Methods
+  async getEnrollmentRequest(
+    userId: number,
+    courseId: number
+  ): Promise<EnrollmentRequest | undefined> {
+    console.log(`Getting enrollment request for userId=${userId}, courseId=${courseId}`);
+    
+    const [request] = await this.db
+      .select()
+      .from(enrollmentRequests)
+      .where(
+        and(eq(enrollmentRequests.userId, userId), eq(enrollmentRequests.courseId, courseId)),
+      );
+      
+    return request;
+  }
+  
+  async listEnrollmentRequestsByUser(userId: number): Promise<EnrollmentRequest[]> {
+    console.log(`Listing enrollment requests for userId=${userId}`);
+    
+    const requests = await this.db
+      .select()
+      .from(enrollmentRequests)
+      .where(eq(enrollmentRequests.userId, userId));
+      
+    return requests;
+  }
+  
+  async listEnrollmentRequestsByCourse(courseId: number): Promise<EnrollmentRequest[]> {
+    console.log(`Listing enrollment requests for courseId=${courseId}`);
+    
+    const requests = await this.db
+      .select()
+      .from(enrollmentRequests)
+      .where(eq(enrollmentRequests.courseId, courseId));
+      
+    return requests;
+  }
+  
+  async listEnrollmentRequestsByStatus(status: string): Promise<EnrollmentRequest[]> {
+    console.log(`Listing enrollment requests with status=${status}`);
+    
+    const requests = await this.db
+      .select()
+      .from(enrollmentRequests)
+      .where(eq(enrollmentRequests.status, status));
+      
+    return requests;
+  }
+  
+  async listAllEnrollmentRequests(): Promise<EnrollmentRequest[]> {
+    console.log(`Listing all enrollment requests`);
+    
+    const requests = await this.db
+      .select()
+      .from(enrollmentRequests);
+      
+    return requests;
+  }
+  
+  async createEnrollmentRequest(request: InsertEnrollmentRequest): Promise<EnrollmentRequest> {
+    console.log(`Creating enrollment request:`, request);
+    
+    const [created] = await this.db
+      .insert(enrollmentRequests)
+      .values({
+        ...request,
+        requestedAt: new Date(),
+        status: "pending"
+      })
+      .returning();
+      
+    console.log(`Created enrollment request:`, created);
+    return created;
+  }
+  
+  async updateEnrollmentRequestStatus(
+    userId: number,
+    courseId: number,
+    status: string,
+    reviewedBy: number
+  ): Promise<EnrollmentRequest | undefined> {
+    console.log(
+      `Updating enrollment request status: userId=${userId}, courseId=${courseId}, status=${status}, reviewedBy=${reviewedBy}`
+    );
+    
+    const now = new Date();
+    const [updated] = await this.db
+      .update(enrollmentRequests)
+      .set({
+        status: status,
+        reviewedBy: reviewedBy,
+        reviewedAt: now
+      })
+      .where(
+        and(eq(enrollmentRequests.userId, userId), eq(enrollmentRequests.courseId, courseId)),
+      )
+      .returning();
+      
+    console.log(`Updated enrollment request result:`, updated);
+    return updated;
+  }
+  
+  async deleteEnrollmentRequest(userId: number, courseId: number): Promise<boolean> {
+    console.log(
+      `Deleting enrollment request for userId=${userId}, courseId=${courseId}`
+    );
+    
+    const result = await this.db
+      .delete(enrollmentRequests)
+      .where(
+        and(eq(enrollmentRequests.userId, userId), eq(enrollmentRequests.courseId, courseId)),
+      );
+      
+    console.log(`Deletion result:`, result);
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
 
   // Doubt Session Methods
   async getDoubtSession(id: number): Promise<DoubtSession | undefined> {
