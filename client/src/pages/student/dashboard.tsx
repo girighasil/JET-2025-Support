@@ -2,7 +2,7 @@ import { Layout } from '@/components/ui/layout';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { CourseCard } from '@/components/dashboard/course-card';
 import { TestCard } from '@/components/dashboard/test-card';
-import { Book, FileText, Clock } from 'lucide-react';
+import { Calendar, Book, FileText, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';

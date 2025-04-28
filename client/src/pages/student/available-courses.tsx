@@ -166,7 +166,7 @@ export default function AvailableCourses() {
                   <div className="text-sm text-gray-500 flex flex-col gap-2">
                     <div className="flex items-center">
                       <GraduationCap className="h-4 w-4 mr-2" />
-                      <span>Created by {course.creatorName || "Unknown"}</span>
+                      {/*<span>Created by {course.creatorName || "Unknown"}</span>*/}
                     </div>
                     {course.modules && (
                       <div className="flex items-center">
