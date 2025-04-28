@@ -1,8 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, FileText } from 'lucide-react';
+import { LoadingButton } from '@/components/ui/loading-button';
+import { Calendar, Clock, FileText, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigation } from '@/lib/navigation';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface TestCardProps {
   id: number;
@@ -11,11 +15,14 @@ interface TestCardProps {
   scheduledFor?: Date | string | null;
   duration: number; // in minutes
   questionCount: number;
-  status: 'upcoming' | 'available' | 'completed' | 'expired';
+  status: 'upcoming' | 'available' | 'completed' | 'expired' | 'locked';
   score?: number;
   testType?: 'practice' | 'formal';
   visibility?: 'public' | 'private';
   onStartTest?: (testId: number) => void;
+  hasEnrollmentRequest?: boolean;
+  enrollmentRequestStatus?: 'pending' | 'approved' | 'rejected';
+  courseId?: number | null;
 }
 
 export function TestCard({
@@ -30,8 +37,14 @@ export function TestCard({
   testType = 'practice',
   visibility = 'private',
   onStartTest,
+  hasEnrollmentRequest = false,
+  enrollmentRequestStatus = 'pending',
+  courseId = null
 }: TestCardProps) {
   const { navigate } = useNavigation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Status badge styling
   const statusConfig: Record<string, { label: string; color: string }> = {
@@ -39,12 +52,49 @@ export function TestCard({
     available: { label: 'Available', color: 'bg-green-500' },
     completed: { label: 'Completed', color: 'bg-blue-500' },
     expired: { label: 'Expired', color: 'bg-gray-500' },
+    locked: { label: 'Locked', color: 'bg-gray-500' }
   };
 
   // Format date if available
   const formattedDate = scheduledFor 
     ? format(new Date(scheduledFor), 'MMMM d, yyyy · h:mm a')
     : 'Available now';
+
+  // Mutation for requesting test enrollment
+  const requestEnrollmentMutation = useMutation({
+    mutationFn: async () => {
+      setIsSubmitting(true);
+      return await apiRequest('POST', '/api/test-enrollment-requests', { testId: id });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Enrollment Request Submitted',
+        description: 'Your request to access this test has been submitted and is pending approval.',
+      });
+      // Refresh test data
+      queryClient.invalidateQueries({ queryKey: ['/api/available-tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/test-enrollment-requests'] });
+    },
+    onError: (error: any) => {
+      // Check if this is a 400 error suggesting to enroll in the course first
+      if (error.status === 400 && error.data?.courseId) {
+        toast({
+          title: 'Course Enrollment Required',
+          description: error.data.message || 'You must be enrolled in the course to access this test.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Request Failed',
+          description: error?.data?.message || 'Failed to submit enrollment request.',
+          variant: 'destructive',
+        });
+      }
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    }
+  });
 
   // Handle button click based on status
   const handleAction = () => {
@@ -60,6 +110,23 @@ export function TestCard({
       }
     } else if (status === 'completed') {
       navigate(`/student/tests/result/${id}`);
+    } else if (status === 'locked') {
+      if (hasEnrollmentRequest) {
+        // Already has a request
+        toast({
+          title: 'Enrollment Status',
+          description: `Your enrollment request is ${enrollmentRequestStatus}. ${
+            enrollmentRequestStatus === 'pending' 
+              ? 'Please wait for approval.' 
+              : enrollmentRequestStatus === 'rejected' 
+                ? 'Your request was rejected.' 
+                : ''
+          }`,
+        });
+      } else {
+        // Request enrollment
+        requestEnrollmentMutation.mutate();
+      }
     }
   };
 
@@ -69,6 +136,11 @@ export function TestCard({
     available: 'Start Test',
     completed: 'View Results',
     expired: 'View Details',
+    locked: hasEnrollmentRequest 
+      ? enrollmentRequestStatus === 'pending' 
+        ? 'Enrollment Pending' 
+        : 'Request Again' 
+      : 'Request Enrollment'
   };
 
   return (
@@ -124,13 +196,25 @@ export function TestCard({
               </span>
             </div>
           )}
+          
+          {status === 'locked' && (
+            <div className="flex items-center gap-2 text-sm mt-2 text-gray-600">
+              <Lock className="h-4 w-4 text-gray-500" />
+              <span>
+                {hasEnrollmentRequest 
+                  ? `Enrollment request ${enrollmentRequestStatus}` 
+                  : "Requires enrollment approval"}
+              </span>
+            </div>
+          )}
         </div>
         
         <Button 
           onClick={handleAction}
           className="w-full mt-4"
-          variant={status === 'expired' ? 'outline' : 'default'}
-          disabled={status === 'expired'}
+          variant={status === 'expired' || (status === 'locked' && hasEnrollmentRequest && enrollmentRequestStatus === 'pending') ? 'outline' : 'default'}
+          disabled={status === 'expired' || (status === 'locked' && hasEnrollmentRequest && enrollmentRequestStatus === 'pending')}
+          isLoading={isSubmitting}
         >
           {buttonText[status]}
         </Button>
