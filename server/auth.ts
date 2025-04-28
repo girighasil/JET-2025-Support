@@ -106,16 +106,28 @@ export function setupAuth(app: Express) {
     try {
       const userData = req.body;
       
+      // Convert username to lowercase for case-insensitive checks
+      if (userData.username) {
+        userData.username = userData.username.toLowerCase();
+      }
+      
       // Check if username exists
       const existingUsername = await storage.getUserByUsername(userData.username);
       if (existingUsername) {
         return res.status(400).json({ message: "Username already exists" });
       }
       
-      // Check if email exists
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
+      // Check if email exists (only if email is provided)
+      if (userData.email && userData.email.trim() !== '') {
+        const existingEmail = await storage.getUserByEmail(userData.email);
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+      }
+      
+      // Check if mobile number exists
+      if (!userData.mobileNumber) {
+        return res.status(400).json({ message: "Mobile number is required" });
       }
       
       // Create user with student role by default
@@ -128,6 +140,10 @@ export function setupAuth(app: Express) {
       const { password: _, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
+      console.error("Registration error:", error);
+      if (error.message && error.message.includes('mobile_number_unique')) {
+        return res.status(400).json({ message: "Mobile number already in use" });
+      }
       res.status(500).json({ message: "Server error" });
     }
   });
