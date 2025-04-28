@@ -210,6 +210,32 @@ async function pushSchema() {
     `);
     console.log('Created notifications table');
 
+    // Create site_config table
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "site_config" (
+        "id" SERIAL PRIMARY KEY,
+        "key" TEXT NOT NULL UNIQUE,
+        "value" JSONB,
+        "updated_at" TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('Created site_config table');
+
+    // Create promo_banners table
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "promo_banners" (
+        "id" SERIAL PRIMARY KEY,
+        "text" TEXT NOT NULL,
+        "url" TEXT,
+        "is_active" BOOLEAN NOT NULL DEFAULT true,
+        "order" INTEGER NOT NULL DEFAULT 1,
+        "start_date" TIMESTAMP,
+        "end_date" TIMESTAMP,
+        "created_at" TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('Created promo_banners table');
+
     console.log('Schema successfully pushed to database!');
   } catch (error) {
     console.error('Error pushing schema to database:', error);
