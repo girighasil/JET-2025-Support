@@ -132,7 +132,7 @@ export default function StudentCourses() {
       <Tabs defaultValue="myCourses" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="myCourses">My Courses</TabsTrigger>
-          <TabsTrigger value="availableCourses">Available Courses</TabsTrigger>
+          <TabsTrigger value="available">Available Courses</TabsTrigger>
         </TabsList>
         
         {/* My Courses Tab */}
