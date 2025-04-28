@@ -261,6 +261,35 @@ export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({
   enrolledAt: true,
 });
 
+// Enrollment Request model
+export const enrollmentRequests = pgTable(
+  "enrollment_requests",
+  {
+    userId: integer("user_id").notNull(), // Reference to users.id
+    courseId: integer("course_id").notNull(), // Reference to courses.id
+    requestedAt: timestamp("requested_at").defaultNow(),
+    status: text("status").notNull().default("pending"), // "pending", "approved", "rejected"
+    notes: text("notes"), // Student's reason for enrollment or admin's reason for rejection
+    reviewedBy: integer("reviewed_by"), // Reference to users.id (admin who reviewed)
+    reviewedAt: timestamp("reviewed_at"),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.userId, table.courseId] }),
+    };
+  },
+);
+
+export const insertEnrollmentRequestSchema = createInsertSchema(enrollmentRequests).omit({
+  requestedAt: true,
+  status: true,
+  reviewedBy: true,
+  reviewedAt: true,
+});
+
+export type EnrollmentRequest = typeof enrollmentRequests.$inferSelect;
+export type InsertEnrollmentRequest = z.infer<typeof insertEnrollmentRequestSchema>;
+
 // Doubt Session model
 export const doubtSessions = pgTable("doubt_sessions", {
   id: serial("id").primaryKey(),
