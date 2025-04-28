@@ -352,6 +352,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    // If email is null or empty, return undefined
+    if (!email) {
+      return undefined;
+    }
+    
     // Convert email to lowercase for case-insensitive comparison
     const lowercaseEmail = email.toLowerCase();
     
@@ -362,7 +367,7 @@ export class DatabaseStorage implements IStorage {
     
     // Find the user with a case-insensitive comparison
     const user = allUsers.find(user => 
-      user.email.toLowerCase() === lowercaseEmail
+      user.email && user.email.toLowerCase() === lowercaseEmail
     );
     
     return user;
@@ -375,7 +380,7 @@ export class DatabaseStorage implements IStorage {
     const userData = { 
       ...insertUser, 
       username: insertUser.username.toLowerCase(),
-      email: insertUser.email.toLowerCase(),
+      email: insertUser.email ? insertUser.email.toLowerCase() : null,
       password: hashedPassword 
     };
     
