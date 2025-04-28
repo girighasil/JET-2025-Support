@@ -140,15 +140,61 @@ async function safeJsonParse(res: Response): Promise<any> {
   }
 }
 
+/**
+ * Makes an API request with consistent parameter handling
+ * This is the enhanced version of the queryClient.ts apiRequest function
+ * It uses the standardized parameter order (method, url, data, options)
+ */
 export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-  options?: { isFormData?: boolean },
+  methodOrUrl: string,
+  urlOrData?: string | unknown,
+  dataOrOptions?: unknown | { isFormData?: boolean },
+  optionsOrUndefined?: { isFormData?: boolean },
 ): Promise<Response> {
   try {
-    // Convert PATCH requests to PUT
-    const useMethod = method === "PATCH" ? "PUT" : method;
+    // Determine parameter order by analyzing the first parameter
+    // If it starts with '/', it's a URL, so we use the old order (url, method, data, options)
+    // Otherwise, use the new order (method, url, data, options)
+    const isLegacyFormat = methodOrUrl.startsWith('/');
+    
+    // Set the parameters based on the detected format
+    let url: string;
+    let method: string;
+    let data: unknown | undefined;
+    let options: { isFormData?: boolean } | undefined;
+    
+    if (isLegacyFormat) {
+      // Legacy format: apiRequest(url, method, data, options)
+      url = methodOrUrl;
+      method = urlOrData as string || 'GET';
+      data = dataOrOptions;
+      options = optionsOrUndefined;
+      console.debug('Using legacy parameter order in enhanced client: (url, method, data, options)');
+    } else {
+      // New format: apiRequest(method, url, data, options)
+      method = methodOrUrl;
+      url = urlOrData as string;
+      data = dataOrOptions;
+      options = optionsOrUndefined;
+    }
+    
+    // Validate method and URL
+    if (!url || typeof url !== 'string') {
+      throw new Error(`Invalid URL: ${url}. Please provide a valid URL string.`);
+    }
+    
+    if (!method || typeof method !== 'string') {
+      throw new Error(`Invalid HTTP method: ${method}. Please provide a valid HTTP method.`);
+    }
+    
+    // Validate HTTP method
+    const validMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+    if (!validMethods.includes(method.toUpperCase())) {
+      throw new Error(`Invalid HTTP method: ${method}. Must be one of: ${validMethods.join(', ')}`);
+    }
+    
+    // Normalize the method
+    const useMethod = method.toUpperCase() === "PATCH" ? "PUT" : method.toUpperCase();
 
     // Determine if we should handle as form data
     const isFormData = options?.isFormData || false;
@@ -175,6 +221,9 @@ export async function apiRequest(
   } catch (error: any) {
     // Skip error handling for 401s during logout
     if (!(isLoggingOut && error?.status === 401)) {
+      // Log detailed error information
+      console.error(`API Error in ${useMethod} ${url}:`, error);
+      
       // Handle API errors with user-friendly messages
       handleApiError(error);
     } else {
