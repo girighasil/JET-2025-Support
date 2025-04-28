@@ -6,6 +6,7 @@ import {
   questions, Question, InsertQuestion,
   testAttempts, TestAttempt, InsertTestAttempt,
   enrollments, Enrollment, InsertEnrollment,
+  enrollmentRequests, EnrollmentRequest, InsertEnrollmentRequest,
   doubtSessions, DoubtSession, InsertDoubtSession,
   studyTimes, StudyTime, InsertStudyTime,
   notifications, Notification, InsertNotification
@@ -70,6 +71,17 @@ export interface IStorage {
   createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment>;
   updateEnrollment(userId: number, courseId: number, enrollment: Partial<InsertEnrollment>): Promise<Enrollment | undefined>;
   deleteEnrollment(userId: number, courseId: number): Promise<boolean>;
+  
+  // Enrollment Request Methods
+  getEnrollmentRequest(userId: number, courseId: number): Promise<EnrollmentRequest | undefined>;
+  listEnrollmentRequestsByUser(userId: number): Promise<EnrollmentRequest[]>;
+  listEnrollmentRequestsByCourse(courseId: number): Promise<EnrollmentRequest[]>;
+  listEnrollmentRequestsByStatus(status: string): Promise<EnrollmentRequest[]>;
+  listAllEnrollmentRequests(): Promise<EnrollmentRequest[]>;
+  createEnrollmentRequest(request: InsertEnrollmentRequest): Promise<EnrollmentRequest>;
+  updateEnrollmentRequestStatus(userId: number, courseId: number, 
+    status: string, reviewedBy: number): Promise<EnrollmentRequest | undefined>;
+  deleteEnrollmentRequest(userId: number, courseId: number): Promise<boolean>;
   
   // Doubt Session Methods
   getDoubtSession(id: number): Promise<DoubtSession | undefined>;
