@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SquareRadical, Youtube, MessageCircle } from "lucide-react";
 import MobileMenu from "@/components/layout/MobileMenu";
 import PromoBanner from "@/components/layout/PromoBanner";
+import HeroSection from "@/components/home/HeroSection";
 import WhyChooseUs from "@/components/home/WhyChooseUs";
 import ImportantInstructions from "@/components/home/ImportantInstructions";
 import HelpDeskInstructions from "@/components/home/HelpDeskInstructions";
+import AlertPopup from "@/components/home/AlertPopup";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -57,9 +60,12 @@ export default function HomePage() {
   }, [user, isLoading, setLocation]);
 
   return (
-    <div className="min-h-screen bg-stone-50 w-full overflow-x-hidden">      
+    <div className="min-h-screen bg-stone-50 w-full overflow-x-hidden">
+      {/* Alert popup that shows on page load */}
+      <AlertPopup />
+      
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-200 shadow-sm">
-        <div className="responsive-container py-4 flex flex-wrap items-center justify-between">
+        <div className="responsive-container py-4 flex flex-wrap items-center justify-between space-y-3">
           <div className="flex items-center">
             <button onClick={toggleMobileMenu} aria-label="Toggle menu">
               {useCustomLogo && logoUrl ? (
@@ -129,15 +135,10 @@ export default function HomePage() {
           isOpen={isMobileMenuOpen}
           onClose={toggleMobileMenu}
           links={navLinks}
-        />
-
-        {/* Sign in / Registration Box */}
-        
-        
-        {/* Help Desk Sidebar */}
-        <HelpDeskInstructions />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mx-auto max-w-[95%] lg:max-w-6xl">
+        />           
+               
+                
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mb-4 mx-auto max-w-[97%] lg:max-w-6xl">
           <div className="bg-gradient-to-b from-amber-100 to-amber-50 p-6 sm:p-6 rounded-lg border border-amber-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-800 flex items-center justify-center">
               <svg
@@ -233,8 +234,8 @@ export default function HomePage() {
               </Button>              
             </div>            
           </div>
-          <WhyChooseUs />
-          <ImportantInstructions/>
+                   
+          
           {/*<div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-gray-800 flex items-center justify-center">
               <svg
@@ -368,7 +369,14 @@ export default function HomePage() {
             </div>
           </div> */}
         </div>
+        <main className="mx-auto max-w-[97%] space-y-3 py-4">   
+          <HeroSection /> 
+          <WhyChooseUs />
+          <HelpDeskInstructions />
+          <ImportantInstructions/>
+          </main>
       </div>
+      
     </div>
   );
 }
