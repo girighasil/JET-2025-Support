@@ -154,17 +154,18 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
           <DialogTitle>Import Questions</DialogTitle>
           <DialogDescription>
             Upload a file with questions to import them into this test. 
-            We support Excel (.xlsx), CSV (.csv), and Word (.docx) files.
+            We support Excel (.xlsx), CSV (.csv), Word (.docx), and PDF (.pdf) files.
             All formats support Hindi and other languages for all question content.
           </DialogDescription>
         </DialogHeader>
 
         {!uploadResult ? (
           <Tabs defaultValue="excel" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="excel">Excel Format</TabsTrigger>
-              <TabsTrigger value="csv">CSV Format</TabsTrigger>
-              <TabsTrigger value="word">Word Format</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="excel">Excel</TabsTrigger>
+              <TabsTrigger value="csv">CSV</TabsTrigger>
+              <TabsTrigger value="word">Word</TabsTrigger>
+              <TabsTrigger value="pdf">PDF</TabsTrigger>
             </TabsList>
             
             <TabsContent value="excel" className="space-y-4 mt-4">
@@ -247,6 +248,34 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                 </div>
               </div>
             </TabsContent>
+            
+            <TabsContent value="pdf" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <p className="text-sm">
+                  Use PDF format when you need to import questions from existing PDF documents. Format your PDF as follows:
+                </p>
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                  <li>Each question should start with "Q:", "Question:", or numbered like "1." or "[1]"</li>
+                  <li>For MCQs, list options with A), B), C), etc. or A., B., C., etc.</li>
+                  <li>Mark correct answers with "*" (e.g., "*A) Option text")</li>
+                  <li>Alternative: Add "Correct Answer: A" or "Answer: B" to mark the correct option</li>
+                  <li>Add "Explanation:" followed by text to include explanations</li>
+                  <li>Add "Points:" followed by a number for custom point values</li>
+                  <li>Use "Type: [type]" to specify question type (defaults to mcq)</li>
+                  <li>All content supports Hindi and other languages</li>
+                </ul>
+                <div className="mt-3">
+                  <a 
+                    href="/api/templates/sample-questions.pdf" 
+                    download
+                    className="text-xs text-primary hover:underline inline-flex items-center"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Download Sample PDF Template
+                  </a>
+                </div>
+              </div>
+            </TabsContent>
 
             <div className="space-y-4 mt-6">
               <div className="space-y-2">
@@ -254,11 +283,11 @@ export default function ImportQuestions({ testId, onImportComplete }: ImportQues
                 <Input
                   id="import-file"
                   type="file"
-                  accept=".xlsx,.xls,.csv,.docx,.doc"
+                  accept=".xlsx,.xls,.csv,.docx,.doc,.pdf"
                   onChange={(e) => setImportFile(e.target.files?.[0] || null)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Accepted formats: Excel (.xlsx, .xls), CSV (.csv), Word (.docx, .doc)
+                  Accepted formats: Excel (.xlsx, .xls), CSV (.csv), Word (.docx, .doc), PDF (.pdf)
                 </p>
               </div>
               

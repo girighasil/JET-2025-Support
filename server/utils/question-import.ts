@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import XLSX from 'xlsx';  // Using default import instead of * as import
 import mammoth from 'mammoth';
+import pdfParse from 'pdf-parse';
 import { z } from 'zod';
 
 // Define the question structure
@@ -438,6 +439,346 @@ export async function parseWordQuestions(filePath: string): Promise<{
 /**
  * Parse questions from a file based on its extension
  */
+/**
+ * Parse questions from a PDF file
+ */
+export async function parsePdfQuestions(filePath: string): Promise<{ 
+  questions: ParsedQuestion[], 
+  errors: string[] 
+}> {
+  try {
+    // Read the PDF file
+    const dataBuffer = fs.readFileSync(filePath);
+    
+    // Extract text from the PDF
+    const pdfData = await pdfParse(dataBuffer);
+    const text = pdfData.text;
+    
+    const questions: ParsedQuestion[] = [];
+    const errors: string[] = [];
+    
+    // We'll use a similar approach to Word documents, looking for question markers
+    // Try different formats to be more flexible
+    const questionPrefixes = [
+      /(?:^|\n)(?:Q:|Question:|Question\s+\d+:)\s*(.*?)(?=(?:\n(?:Q:|Question:|Question\s+\d+:))|$)/gs,
+      /(?:^|\n)(?:\d+\.)\s*(.*?)(?=(?:\n(?:\d+\.))|$)/gs,
+      /(?:^|\n)(?:\[\d+\])\s*(.*?)(?=(?:\n(?:\[\d+\]))|$)/gs
+    ];
+    
+    let totalQuestions = 0;
+    let foundQuestions = false;
+    
+    // Try each regex pattern until we find questions
+    for (const regex of questionPrefixes) {
+      let questionMatch;
+      let questionIndex = 0;
+      const questionsForThisPattern: ParsedQuestion[] = [];
+      const errorsForThisPattern: string[] = [];
+      
+      // Reset the regex to start from the beginning of the text
+      regex.lastIndex = 0;
+      
+      while ((questionMatch = regex.exec(text))) {
+        questionIndex++;
+        foundQuestions = true;
+        
+        try {
+          const questionBlock = questionMatch[1].trim();
+          if (!questionBlock) {
+            errorsForThisPattern.push(`Question ${questionIndex}: Empty question text`);
+            continue;
+          }
+          
+          // Default to MCQ type unless specified
+          let type: 'mcq' | 'truefalse' | 'fillblank' | 'subjective' = 'mcq';
+          let questionText = '';
+          let options: Array<{ id: string; text: string }> = [];
+          let correctAnswer: any = null;
+          let points: number | undefined;
+          let negativePoints: number | undefined;
+          let explanation: string | undefined;
+          
+          // Try to extract type, points, negative points and explanation
+          // This is the same approach as in Word document parsing
+          const typeRegex = /Type:\s*(\w+)/i;
+          const typeMatch = questionBlock.match(typeRegex);
+          if (typeMatch) {
+            const specifiedType = typeMatch[1].toLowerCase();
+            if (['mcq', 'truefalse', 'fillblank', 'subjective'].includes(specifiedType)) {
+              type = specifiedType as any;
+            } else {
+              errorsForThisPattern.push(`Question ${questionIndex}: Invalid type "${specifiedType}"`);
+            }
+          }
+          
+          const pointsRegex = /Points:\s*([\d.]+)/i;
+          const pointsMatch = questionBlock.match(pointsRegex);
+          if (pointsMatch) {
+            points = parseFloat(pointsMatch[1]);
+          }
+          
+          const negPointsRegex = /Negative Points:\s*([\d.]+)/i;
+          const negPointsMatch = questionBlock.match(negPointsRegex);
+          if (negPointsMatch) {
+            negativePoints = parseFloat(negPointsMatch[1]);
+          }
+          
+          const explanationLines = questionBlock.split('\n')
+            .filter(line => line.match(/^Explanation:/i))
+            .map(line => line.replace(/^Explanation:/i, '').trim());
+            
+          if (explanationLines.length > 0) {
+            explanation = explanationLines[0];
+          }
+          
+          // PDF format can be more varied, so we'll try different option formats
+          const optionPatterns = [
+            /([A-D])\)\s*(.*?)(?=(?:[A-D]\))|$)/gs,  // A) Option text
+            /([A-D])[\.\)]\s*(.*?)(?=(?:[A-D][\.\)])|$)/gs, // A. Option text or A) Option text
+            /Option\s+([A-D]):\s*(.*?)(?=(?:Option\s+[A-D]:)|$)/gis // Option A: Option text
+          ];
+          
+          // Extract question text (everything before the first option)
+          const lines = questionBlock.split('\n');
+          
+          // Find the first line that might be an option
+          let questionEndIndex = -1;
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (/^[A-D][\.\)]/.test(line) || // A. or A)
+                /^Option\s+[A-D]:/i.test(line) || // Option A:
+                /^(True|False)[:.]/i.test(line) || // True/False format
+                /^Answer[:.]/i.test(line)) { // Fill in blank format
+              questionEndIndex = i;
+              break;
+            }
+          }
+          
+          if (questionEndIndex === -1) {
+            // No clear options found, treat entire block as question
+            questionText = questionBlock
+              .replace(typeRegex, '')
+              .replace(pointsRegex, '')
+              .replace(negPointsRegex, '')
+              .replace(/^Explanation:.*$/im, '')
+              .trim();
+          } else {
+            // Extract question text as everything before options
+            questionText = lines.slice(0, questionEndIndex).join('\n')
+              .replace(typeRegex, '')
+              .replace(pointsRegex, '')
+              .replace(negPointsRegex, '')
+              .replace(/^Explanation:.*$/im, '')
+              .trim();
+          }
+          
+          // For MCQ, extract options and correct answers
+          if (type === 'mcq') {
+            let foundOptions = false;
+            const optionMap = new Map<string, string>();
+            let correctAnswers: string[] = [];
+            
+            for (const optionRegex of optionPatterns) {
+              optionRegex.lastIndex = 0;  // Reset regex to start from beginning
+              let optionMatch;
+              while ((optionMatch = optionRegex.exec(questionBlock))) {
+                foundOptions = true;
+                const optionId = optionMatch[1].toLowerCase();
+                let optionText = optionMatch[2].trim();
+                
+                // Check if this option is marked as correct with an asterisk
+                if (optionText.startsWith('*')) {
+                  optionText = optionText.substring(1).trim();
+                  correctAnswers.push(optionId);
+                }
+                
+                optionMap.set(optionId, optionText);
+              }
+              
+              if (foundOptions) break;  // If options found with this pattern, stop trying others
+            }
+            
+            if (!foundOptions || optionMap.size < 2) {
+              // If no options found with standard patterns, be more flexible and try to extract any 
+              // potential options with alphabetic markers
+              const flexibleOptionRegex = /([A-D])(?:[\.\)]|\s*-)\s*([^A-D\n].+?)(?=(?:\n[A-D](?:[\.\)]|\s*-))|$)/gs;
+              let optionMatch;
+              while ((optionMatch = flexibleOptionRegex.exec(questionBlock))) {
+                foundOptions = true;
+                const optionId = optionMatch[1].toLowerCase();
+                let optionText = optionMatch[2].trim();
+                
+                if (optionText.startsWith('*')) {
+                  optionText = optionText.substring(1).trim();
+                  correctAnswers.push(optionId);
+                }
+                
+                optionMap.set(optionId, optionText);
+              }
+            }
+            
+            if (!foundOptions || optionMap.size < 2) {
+              errorsForThisPattern.push(`Question ${questionIndex}: Could not find valid MCQ options`);
+              continue;
+            }
+            
+            // Create options array
+            options = Array.from(optionMap.entries()).map(([id, text]) => ({ id, text }));
+            
+            // If no options were marked with asterisks, look for explicit correct answer
+            if (correctAnswers.length === 0) {
+              // Try different patterns for correct answer marking
+              const answerPatterns = [
+                /Correct(?:\s+Answer)?[s:]?\s*([A-D,\s]+)/i,
+                /Answer[s:]?\s*([A-D,\s]+)/i,
+                /(?:The\s+)?correct\s+(?:answer|option)\s+is\s*([A-D,\s]+)/i
+              ];
+              
+              for (const pattern of answerPatterns) {
+                const answersMatch = questionBlock.match(pattern);
+                if (answersMatch) {
+                  const answerText = answersMatch[1].trim();
+                  answerText.split(/\s*[,;]\s*/).forEach(ans => {
+                    const cleanAns = ans.trim().toLowerCase();
+                    if (/^[a-d]$/.test(cleanAns)) {
+                      correctAnswers.push(cleanAns);
+                    }
+                  });
+                  if (correctAnswers.length > 0) break;
+                }
+              }
+            }
+            
+            if (correctAnswers.length === 0) {
+              // If still no correct answers, check if any option text contains phrases indicating the correct answer
+              for (const [id, text] of optionMap.entries()) {
+                const lowerText = text.toLowerCase();
+                if (lowerText.includes('correct') || 
+                    lowerText.includes('right answer') || 
+                    lowerText.includes('this is the answer')) {
+                  correctAnswers.push(id);
+                }
+              }
+            }
+            
+            if (correctAnswers.length === 0) {
+              errorsForThisPattern.push(`Question ${questionIndex}: No correct answer specified for MCQ question`);
+              continue;
+            }
+            
+            correctAnswer = correctAnswers;
+          } else if (type === 'truefalse') {
+            // Look for true/false indicators
+            const trueRegex = /^True[:.]/im;
+            const falseRegex = /^False[:.]/im;
+            const answerRegex = /(?:Correct\s+Answer|Answer)[s:]?\s*(True|False)/i;
+            
+            if (questionBlock.match(trueRegex) && questionBlock.indexOf('*True') !== -1) {
+              correctAnswer = true;
+            } else if (questionBlock.match(falseRegex) && questionBlock.indexOf('*False') !== -1) {
+              correctAnswer = false;
+            } else {
+              const answerMatch = questionBlock.match(answerRegex);
+              if (answerMatch) {
+                correctAnswer = answerMatch[1].toLowerCase() === 'true';
+              } else {
+                // Look for any indication of a true/false answer in the text
+                const lowerBlock = questionBlock.toLowerCase();
+                if (lowerBlock.includes('answer is true') || 
+                    lowerBlock.includes('answer: true') || 
+                    lowerBlock.includes('correct: true')) {
+                  correctAnswer = true;
+                } else if (lowerBlock.includes('answer is false') || 
+                           lowerBlock.includes('answer: false') || 
+                           lowerBlock.includes('correct: false')) {
+                  correctAnswer = false;
+                } else {
+                  // Default to true if we can't determine
+                  correctAnswer = true;
+                  errorsForThisPattern.push(`Question ${questionIndex}: Could not determine correct answer for True/False question, defaulting to True`);
+                }
+              }
+            }
+          } else if (type === 'fillblank') {
+            // Look for explicit answer
+            const answerRegex = /(?:Answer|Correct\s+Answer)[s:]?\s*(.+?)(?=\n|$)/i;
+            const answerMatch = questionBlock.match(answerRegex);
+            if (answerMatch) {
+              correctAnswer = answerMatch[1].trim();
+            } else {
+              errorsForThisPattern.push(`Question ${questionIndex}: No answer specified for Fill in the Blank question`);
+              continue;
+            }
+          } else if (type === 'subjective') {
+            // Look for keywords
+            const keywordsRegex = /(?:Keywords|Key\s+Words|Key\s+Points)[:.]\s*(.*?)(?=\n|$)/i;
+            const keywordsMatch = questionBlock.match(keywordsRegex);
+            if (keywordsMatch) {
+              correctAnswer = keywordsMatch[1]
+                .split(/[,;]/)
+                .map((k: string) => k.trim())
+                .filter((k: string) => k.length > 0);
+            } else {
+              correctAnswer = []; // Keywords are optional for subjective questions
+            }
+          }
+          
+          if (!questionText) {
+            errorsForThisPattern.push(`Question ${questionIndex}: Empty question text after parsing`);
+            continue;
+          }
+          
+          const parsedQuestion: ParsedQuestion = {
+            type,
+            question: questionText,
+            correctAnswer
+          };
+          
+          if (options.length > 0) {
+            parsedQuestion.options = options;
+          }
+          
+          if (points !== undefined) {
+            parsedQuestion.points = points;
+          }
+          
+          if (negativePoints !== undefined) {
+            parsedQuestion.negativePoints = negativePoints;
+          }
+          
+          if (explanation) {
+            parsedQuestion.explanation = explanation;
+          }
+          
+          questionsForThisPattern.push(parsedQuestion);
+        } catch (err: any) {
+          errorsForThisPattern.push(`Question ${questionIndex}: ${err.message}`);
+        }
+      }
+      
+      if (questionsForThisPattern.length > 0) {
+        // If we found questions with this pattern, use them
+        questions.push(...questionsForThisPattern);
+        errors.push(...errorsForThisPattern);
+        totalQuestions += questionsForThisPattern.length;
+        break; // Stop trying other patterns
+      }
+    }
+    
+    if (totalQuestions === 0 && !foundQuestions) {
+      // If no questions were found with any pattern, provide a helpful error message
+      errors.push('No questions found in the PDF. Make sure each question starts with "Q:", "Question:", or a numbered format like "1." or "[1]".');
+    }
+    
+    return { questions, errors };
+  } catch (err: any) {
+    return { 
+      questions: [], 
+      errors: [`Failed to parse PDF file: ${err.message}`] 
+    };
+  }
+}
+
 export async function parseQuestionsFromFile(filePath: string): Promise<{ 
   questions: ParsedQuestion[], 
   errors: string[] 
@@ -452,10 +793,12 @@ export async function parseQuestionsFromFile(filePath: string): Promise<{
     // For CSV files, we'll treat them like Excel files
     // XLSX can read CSV files as well
     return parseExcelQuestions(filePath);
+  } else if (['.pdf'].includes(extension)) {
+    return parsePdfQuestions(filePath);
   } else {
     return {
       questions: [],
-      errors: [`Unsupported file format: ${extension}. Please upload an Excel, CSV, or Word document.`]
+      errors: [`Unsupported file format: ${extension}. Please upload an Excel, CSV, Word, or PDF document.`]
     };
   }
 }
