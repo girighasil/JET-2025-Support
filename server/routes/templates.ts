@@ -25,6 +25,8 @@ router.get('/:filename', (req, res) => {
     contentType = 'text/csv';
   } else if (filename.endsWith('.docx')) {
     contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  } else if (filename.endsWith('.pdf')) {
+    contentType = 'application/pdf';
   }
 
   // Set headers for download
