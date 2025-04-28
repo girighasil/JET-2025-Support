@@ -57,9 +57,8 @@ export default function EnrollmentRequests() {
   // Approve request mutation
   const approveMutation = useMutation({
     mutationFn: (requestData: { userId: number; courseId: number }) => {
-      return apiRequest(`/api/enrollment-requests/${requestData.userId}/${requestData.courseId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "approved" }),
+      return apiRequest("PATCH", `/api/enrollment-requests/${requestData.userId}/${requestData.courseId}`, { 
+        status: "approved" 
       });
     },
     onSuccess: () => {
@@ -83,12 +82,9 @@ export default function EnrollmentRequests() {
   // Reject request mutation
   const rejectMutation = useMutation({
     mutationFn: (data: { userId: number; courseId: number; notes: string }) => {
-      return apiRequest(`/api/enrollment-requests/${data.userId}/${data.courseId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ 
-          status: "rejected",
-          notes: data.notes
-        }),
+      return apiRequest("PATCH", `/api/enrollment-requests/${data.userId}/${data.courseId}`, { 
+        status: "rejected",
+        notes: data.notes
       });
     },
     onSuccess: () => {
