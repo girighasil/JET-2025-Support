@@ -26,7 +26,9 @@ const loginSchema = z.object({
 // Register form schema
 const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  mobileNumber: z.string().min(10, 'Mobile number must be at least 10 digits')
+    .regex(/^\+?[0-9]+$/, 'Mobile number must contain only digits and optionally a + prefix'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
   fullName: z.string().min(2, 'Full name is required'),
@@ -58,6 +60,7 @@ export function AuthForm() {
     defaultValues: {
       username: '',
       email: '',
+      mobileNumber: '',
       password: '',
       confirmPassword: '',
       fullName: '',
@@ -124,6 +127,7 @@ export function AuthForm() {
       registerForm.reset({
         username: '',
         email: '',
+        mobileNumber: '',
         password: '',
         confirmPassword: '',
         fullName: '',
@@ -243,9 +247,22 @@ export function AuthForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Email (Optional)</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="your.email@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={registerForm.control}
+                  name="mobileNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile Number</FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="+1234567890" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

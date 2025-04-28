@@ -16,7 +16,8 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").unique(),  // Made optional
+  mobileNumber: text("mobile_number").notNull().unique(), // Added mobile number as mandatory
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default("student"), // "admin", "teacher", "student"
   avatar: text("avatar"),
@@ -26,6 +27,10 @@ export const users = pgTable("users", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+})
+.extend({
+  email: z.string().email().optional(),  // Make email optional but validate format if provided
+  mobileNumber: z.string().min(10).max(15).regex(/^\+?[0-9]+$/, "Mobile number must contain only digits and optionally a + prefix"),
 });
 
 // Course model

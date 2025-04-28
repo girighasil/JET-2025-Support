@@ -11,7 +11,8 @@ declare global {
     interface User {
       id: number;
       username: string;
-      email: string;
+      email?: string | null;
+      mobileNumber: string;
       fullName: string;
       role: string;
     }
@@ -43,7 +44,9 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        // Convert username to lowercase for case-insensitive authentication
+        const lowercaseUsername = username.toLowerCase();
+        const user = await storage.getUserByUsername(lowercaseUsername);
         
         if (!user) {
           return done(null, false, { message: "Incorrect username" });
