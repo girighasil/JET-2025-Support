@@ -94,7 +94,7 @@ export default function TestCreator() {
   // Create test mutation
   const createTestMutation = useMutation({
     mutationFn: async (testData: z.infer<typeof testSchema>) => {
-      const res = await apiRequest("POST", "/api/tests", testData);
+      const res = await apiRequest("/api/tests", "POST", testData);
       return res.json();
     },
     onSuccess: (data) => {
@@ -117,7 +117,7 @@ export default function TestCreator() {
   // Update test mutation
   const updateTestMutation = useMutation({
     mutationFn: async (testData: z.infer<typeof testSchema>) => {
-      const res = await apiRequest("PUT", `/api/tests/${testId}`, testData);
+      const res = await apiRequest(`/api/tests/${testId}`, "PUT", testData);
       return res.json();
     },
     onSuccess: () => {
