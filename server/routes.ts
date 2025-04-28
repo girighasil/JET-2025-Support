@@ -41,7 +41,8 @@ declare global {
     interface User {
       id: number;
       username: string;
-      email: string;
+      email?: string | null;
+      mobileNumber: string;
       fullName: string;
       role: string;
     }

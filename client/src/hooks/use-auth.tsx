@@ -15,7 +15,8 @@ import { safeFetch } from "@/lib/safeFetch";
 export interface User {
   id: number;
   username: string;
-  email: string;
+  email?: string | null;
+  mobileNumber: string;
   fullName: string;
   role: "admin" | "teacher" | "student";
   avatar?: string;
@@ -35,7 +36,8 @@ interface AuthContextType {
 export interface RegisterData {
   username: string;
   password: string;
-  email: string;
+  email?: string;
+  mobileNumber: string;
   fullName: string;
   role?: "admin" | "teacher" | "student";
 }
