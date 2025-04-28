@@ -172,7 +172,7 @@ export default function ManageCourses() {
   // Create course mutation
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: z.infer<typeof courseSchema>) => {
-      const res = await apiRequest("POST", "/api/courses", courseData);
+      const res = await apiRequest("/api/courses", "POST", courseData);
       return res.json();
     },
     onSuccess: () => {
@@ -198,7 +198,7 @@ export default function ManageCourses() {
       id: number;
       data: z.infer<typeof courseSchema>;
     }) => {
-      const res = await apiRequest("PUT", `/api/courses/${id}`, data);
+      const res = await apiRequest(`/api/courses/${id}`, "PUT", data);
       return res.json();
     },
     onSuccess: () => {
@@ -219,7 +219,7 @@ export default function ManageCourses() {
   // Delete course mutation
   const deleteCourseMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/courses/${id}`, {});
+      const res = await apiRequest(`/api/courses/${id}`, "DELETE", {});
       return res.json();
     },
     onSuccess: () => {
@@ -424,7 +424,7 @@ export default function ManageCourses() {
       userId: number;
       courseId: number;
     }) => {
-      const res = await apiRequest("POST", "/api/enrollments", {
+      const res = await apiRequest("/api/enrollments", "POST", {
         userId,
         courseId,
       });
@@ -545,7 +545,7 @@ export default function ManageCourses() {
 
           // Attempt enrollment with detailed error capture using apiRequest for consistency
           try {
-            const result = await apiRequest("POST", "/api/enrollments", {
+            const result = await apiRequest("/api/enrollments", "POST", {
               userId,
               courseId: enrollmentCourse.id,
             }).then((res) => res.json());
