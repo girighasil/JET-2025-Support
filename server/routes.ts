@@ -1965,10 +1965,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/doubt-sessions", isAuthenticated, async (req, res) => {
     try {
+      // Pre-process the scheduledFor field - convert string to Date object
+      let requestBody = { ...req.body };
+      
+      if (requestBody.scheduledFor && typeof requestBody.scheduledFor === 'string') {
+        try {
+          requestBody.scheduledFor = new Date(requestBody.scheduledFor);
+          console.log("Converted scheduledFor from string to Date:", requestBody.scheduledFor);
+        } catch (e) {
+          console.error("Failed to convert scheduledFor to Date:", e);
+          return res.status(400).json({ message: "Invalid date format for scheduledFor" });
+        }
+      }
+      
       // Students can only create sessions for themselves
       const sessionData = insertDoubtSessionSchema.parse({
-        ...req.body,
-        userId: req.user.role === "student" ? req.user.id : req.body.userId,
+        ...requestBody,
+        userId: req.user.role === "student" ? req.user.id : requestBody.userId,
       });
 
       // Check if user exists if not a student creating for themselves
@@ -2001,7 +2014,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/doubt-sessions/:id", isAuthenticated, async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
-      const sessionData = insertDoubtSessionSchema.partial().parse(req.body);
+      
+      // Pre-process the scheduledFor field - convert string to Date object
+      let requestBody = { ...req.body };
+      
+      if (requestBody.scheduledFor && typeof requestBody.scheduledFor === 'string') {
+        try {
+          requestBody.scheduledFor = new Date(requestBody.scheduledFor);
+          console.log("Converted scheduledFor from string to Date in PUT request:", requestBody.scheduledFor);
+        } catch (e) {
+          console.error("Failed to convert scheduledFor to Date:", e);
+          return res.status(400).json({ message: "Invalid date format for scheduledFor" });
+        }
+      }
+      
+      const sessionData = insertDoubtSessionSchema.partial().parse(requestBody);
 
       // Check if session exists
       const existingSession = await storage.getDoubtSession(sessionId);
@@ -2077,10 +2104,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/study-times", isAuthenticated, async (req, res) => {
     try {
+      // Pre-process date fields - convert string to Date object
+      let requestBody = { ...req.body };
+      
+      if (requestBody.startedAt && typeof requestBody.startedAt === 'string') {
+        try {
+          requestBody.startedAt = new Date(requestBody.startedAt);
+        } catch (e) {
+          return res.status(400).json({ message: "Invalid date format for startedAt" });
+        }
+      }
+      
+      if (requestBody.endedAt && typeof requestBody.endedAt === 'string') {
+        try {
+          requestBody.endedAt = new Date(requestBody.endedAt);
+        } catch (e) {
+          return res.status(400).json({ message: "Invalid date format for endedAt" });
+        }
+      }
+      
       // Students can only create study times for themselves
       const studyTimeData = insertStudyTimeSchema.parse({
-        ...req.body,
-        userId: req.user.role === "student" ? req.user.id : req.body.userId,
+        ...requestBody,
+        userId: req.user.role === "student" ? req.user.id : requestBody.userId,
       });
 
       // Validate references if provided
@@ -2119,7 +2165,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/study-times/:id", isAuthenticated, async (req, res) => {
     try {
       const studyTimeId = parseInt(req.params.id);
-      const studyTimeData = insertStudyTimeSchema.partial().parse(req.body);
+      
+      // Pre-process date fields - convert string to Date object
+      let requestBody = { ...req.body };
+      
+      if (requestBody.startedAt && typeof requestBody.startedAt === 'string') {
+        try {
+          requestBody.startedAt = new Date(requestBody.startedAt);
+        } catch (e) {
+          return res.status(400).json({ message: "Invalid date format for startedAt" });
+        }
+      }
+      
+      if (requestBody.endedAt && typeof requestBody.endedAt === 'string') {
+        try {
+          requestBody.endedAt = new Date(requestBody.endedAt);
+        } catch (e) {
+          return res.status(400).json({ message: "Invalid date format for endedAt" });
+        }
+      }
+      
+      const studyTimeData = insertStudyTimeSchema.partial().parse(requestBody);
 
       // Check if study time exists
       const existingStudyTime = await storage.getStudyTime(studyTimeId);

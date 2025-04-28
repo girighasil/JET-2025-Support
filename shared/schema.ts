@@ -302,9 +302,18 @@ export const doubtSessions = pgTable("doubt_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertDoubtSessionSchema = createInsertSchema(doubtSessions).omit({
+export const insertDoubtSessionSchema = createInsertSchema(doubtSessions)
+.omit({
   id: true,
   createdAt: true,
+})
+.extend({
+  scheduledFor: z.union([
+    z.date(),
+    z.string().refine(val => !isNaN(Date.parse(val)), {
+      message: 'Invalid date format',
+    }).transform(val => new Date(val))
+  ])
 });
 
 // Study Time tracking model
