@@ -198,7 +198,7 @@ export async function apiRequest(
     }
     
     // Normalize the method
-    useMethod = method.toUpperCase() === "PATCH" ? "PUT" : method.toUpperCase();
+    useMethod = method.toUpperCase();
 
     // Determine if we should handle as form data
     const isFormData = options?.isFormData || false;
