@@ -130,6 +130,16 @@ export const insertTestSchema = baseTestSchema.extend({
     .string()
     .regex(/^\d*\.?\d*$/)
     .optional(),
+  // Test visibility: "private" (only for enrolled students) or "public" (available to all)
+  visibility: z
+    .enum(["private", "public"])
+    .default("private")
+    .optional(),
+  // Test type: "formal" (counts for grade/progress) or "practice" (for learning)
+  testType: z
+    .enum(["formal", "practice"])
+    .default("formal")
+    .optional(),
 });
 
 // Question model
