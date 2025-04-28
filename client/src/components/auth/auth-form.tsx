@@ -28,7 +28,11 @@ const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
   fullName: z.string().min(2, 'Full name is required'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 export function AuthForm() {
@@ -55,6 +59,7 @@ export function AuthForm() {
       username: '',
       email: '',
       password: '',
+      confirmPassword: '',
       fullName: '',
     },
   });
@@ -73,8 +78,10 @@ export function AuthForm() {
   async function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
     setIsPending(true);
     try {
+      // Remove confirmPassword before sending to the API
+      const { confirmPassword, ...registerData } = values;
       const userData: RegisterData = {
-        ...values,
+        ...registerData,
         role: 'student', // Default role for new registrations
       };
       await register(userData);
@@ -110,9 +117,31 @@ export function AuthForm() {
     }
   };
 
+  // Function to handle tab changes
+  const handleTabChange = (value: string) => {
+    // Reset form fields when switching tabs
+    if (value === 'login') {
+      registerForm.reset({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        fullName: '',
+      });
+    } else {
+      loginForm.reset({
+        username: '',
+        password: '',
+      });
+    }
+    
+    // Update the active tab
+    setActiveTab(value);
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
-      <Tabs defaultValue="login" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
+      <Tabs defaultValue="login" value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Sign In</TabsTrigger>
           <TabsTrigger value="register">Register</TabsTrigger>
@@ -248,6 +277,19 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={registerForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <Button type="submit" className="w-full" disabled={isPending}>
                   {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Register
@@ -262,7 +304,7 @@ export function AuthForm() {
         <p className="text-sm text-gray-600">
           {isLogin ? "Don't have an account? " : "Already have an account? "}
           <button
-            onClick={() => setActiveTab(isLogin ? "register" : "login")}
+            onClick={() => handleTabChange(isLogin ? "register" : "login")}
             className="text-primary hover:underline"
             type="button"
           >
