@@ -17,6 +17,7 @@ import {
   insertTestAttemptSchema,
   insertEnrollmentSchema,
   insertEnrollmentRequestSchema,
+  insertTestEnrollmentRequestSchema,
   insertDoubtSessionSchema,
   insertStudyTimeSchema,
   insertSiteConfigSchema,
@@ -25,6 +26,7 @@ import {
   promoBanners,
   enrollments as enrollmentsTable,
   enrollmentRequests,
+  testEnrollmentRequests,
 } from "@shared/schema";
 
 // Import route modules
