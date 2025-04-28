@@ -109,7 +109,11 @@ export default function StudentDoubts() {
 
   // Handle form submission
   function onSubmit(values: z.infer<typeof sessionSchema>) {
-    createSessionMutation.mutate(values);
+    // Convert scheduledFor string to Date object before submitting
+    createSessionMutation.mutate({
+      ...values,
+      scheduledFor: new Date(values.scheduledFor).toISOString()
+    });
   }
 
   // Get status badge color
