@@ -572,34 +572,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (enrollment) => enrollment.courseId,
       );
 
-      // Get tests that are active
+      // Get test enrollment requests for this user
+      const testEnrollmentRequests = await storage.listTestEnrollmentRequestsByUser(req.user.id);
+
+      // Get all active tests
       const activeTests = await storage.listTests({
         isActive: true
       });
 
-      // Filter tests based on visibility and test type
-      const availableTests = activeTests.filter((test) => {
-        // Case 1: Public tests (both practice and formal) are always available
+      // Include all tests but mark their access status
+      const allTestsWithAccessStatus = activeTests.map((test) => {
+        let accessStatus = 'locked'; // Default status for all tests
+        let enrollmentRequest = null;
+
+        // Find if there's an enrollment request for this test
+        const request = testEnrollmentRequests.find(req => req.testId === test.id);
+        if (request) {
+          enrollmentRequest = request;
+        }
+
+        // Case 1: Public tests are always accessible
         if (test.visibility === "public") {
           // But for formal tests, still require course enrollment
           if (test.testType === "formal" && test.courseId) {
-            return enrolledCourseIds.includes(test.courseId);
+            accessStatus = enrolledCourseIds.includes(test.courseId) ? 'accessible' : 'locked';
+          } else {
+            accessStatus = 'accessible'; // Public practice tests accessible to all
           }
-          return true; // Public practice tests available to all
         }
-        
         // Case 2: Private tests require course enrollment
-        if (test.visibility === "private" && test.courseId) {
-          return enrolledCourseIds.includes(test.courseId);
+        else if (test.visibility === "private" && test.courseId) {
+          accessStatus = enrolledCourseIds.includes(test.courseId) ? 'accessible' : 'locked';
         }
-        
-        // Case 3: Tests not associated with any course (standalone)
-        // These are available if public, or if private and the user is admin/teacher
-        if (!test.courseId) {
-          return test.visibility === "public";
-        }
-        
-        return false;
+
+        return {
+          ...test,
+          accessStatus,
+          hasEnrollmentRequest: !!request, 
+          enrollmentRequestStatus: request?.status
+        };
       });
 
       // Get test attempts for this user to check which tests have been taken
@@ -607,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add metadata to each test
       const testsWithMetadata = await Promise.all(
-        availableTests.map(async (test) => {
+        allTestsWithAccessStatus.map(async (test) => {
           // Find attempts for this test
           const attempts = userAttempts.filter(
             (attempt) => attempt.testId === test.id,
