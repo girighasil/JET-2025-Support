@@ -39,6 +39,11 @@ export function SidebarNav({ className }: SidebarNavProps) {
       icon: BookOpen,
     },
     {
+      title: "Available Courses",
+      href: "/student/available-courses",
+      icon: BookOpen,
+    },
+    {
       title: "Tests",
       href: "/student/tests",
       icon: FileText,
@@ -80,6 +85,11 @@ export function SidebarNav({ className }: SidebarNavProps) {
     {
       title: "Manage Enrollments",
       href: "/admin/manage-enrollments",
+      icon: BookOpen,
+    },
+    {
+      title: "Enrollment Requests",
+      href: "/admin/enrollment-requests",
       icon: BookOpen,
     },
     {

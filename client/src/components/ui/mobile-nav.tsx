@@ -34,6 +34,11 @@ export function MobileNav({ className }: MobileNavProps) {
       icon: BookOpen,
     },
     {
+      title: "Available",
+      href: "/student/available-courses",
+      icon: BookOpen,
+    },
+    {
       title: "Tests",
       href: "/student/tests",
       icon: FileText,
@@ -70,6 +75,11 @@ export function MobileNav({ className }: MobileNavProps) {
     {
       title: "Students",
       href: "/admin/manage-students",
+      icon: Users,
+    },
+    {
+      title: "Requests",
+      href: "/admin/enrollment-requests",
       icon: Users,
     },
     {

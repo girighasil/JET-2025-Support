@@ -14,6 +14,7 @@ import StudentTestAttempt from "@/pages/student/test-attempt";
 import StudentTestResult from "@/pages/student/test-result";
 import StudentDoubts from "@/pages/student/doubts";
 import StudentProfile from "@/pages/student/profile";
+import AvailableCourses from "@/pages/student/available-courses";
 
 // Admin Pages
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -23,6 +24,7 @@ import TestCreator from "@/pages/admin/test-creator";
 import QuestionManager from "@/pages/admin/question-manager";
 import ManageStudents from "@/pages/admin/manage-students";
 import ManageEnrollments from "@/pages/admin/manage-enrollments";
+import EnrollmentRequests from "@/pages/admin/enrollment-requests";
 import SessionSchedule from "@/pages/admin/session-schedule";
 import Analytics from "@/pages/admin/analytics";
 import AnalyticsDashboard from "@/pages/admin/analytics-dashboard";
@@ -99,6 +101,13 @@ function App() {
             roles={["student"]}
           />
         </Route>
+        <Route path="/student/available-courses">
+          <ProtectedRoute
+            path="/student/available-courses"
+            component={AvailableCourses}
+            roles={["student"]}
+          />
+        </Route>
 
         {/* Admin Routes */}
         <Route path="/admin/dashboard">
@@ -155,6 +164,13 @@ function App() {
             path="/admin/manage-enrollments"
             component={ManageEnrollments}
             roles={["admin"]}
+          />
+        </Route>
+        <Route path="/admin/enrollment-requests">
+          <ProtectedRoute
+            path="/admin/enrollment-requests"
+            component={EnrollmentRequests}
+            roles={["admin", "teacher"]}
           />
         </Route>
         <Route path="/admin/session-schedule">
