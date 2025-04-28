@@ -335,24 +335,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await this.db
+    // Convert username to lowercase for case-insensitive comparison
+    const lowercaseUsername = username.toLowerCase();
+    
+    // Select all users and filter case-insensitively
+    const allUsers = await this.db
       .select()
-      .from(users)
-      .where(eq(users.username, username));
+      .from(users);
+    
+    // Find the user with a case-insensitive comparison
+    const user = allUsers.find(user => 
+      user.username.toLowerCase() === lowercaseUsername
+    );
+    
     return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await this.db
+    // Convert email to lowercase for case-insensitive comparison
+    const lowercaseEmail = email.toLowerCase();
+    
+    // Select all users and filter case-insensitively
+    const allUsers = await this.db
       .select()
-      .from(users)
-      .where(eq(users.email, email));
+      .from(users);
+    
+    // Find the user with a case-insensitive comparison
+    const user = allUsers.find(user => 
+      user.email.toLowerCase() === lowercaseEmail
+    );
+    
     return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const hashedPassword = await hash(insertUser.password);
-    const userData = { ...insertUser, password: hashedPassword };
+    
+    // Store username and email in lowercase for consistency
+    const userData = { 
+      ...insertUser, 
+      username: insertUser.username.toLowerCase(),
+      email: insertUser.email.toLowerCase(),
+      password: hashedPassword 
+    };
+    
     const [user] = await this.db.insert(users).values(userData).returning();
     return user;
   }
