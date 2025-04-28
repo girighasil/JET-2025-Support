@@ -454,15 +454,29 @@ export class DatabaseStorage implements IStorage {
     return test;
   }
 
-  async listTests(courseId?: number, isActive?: boolean): Promise<Test[]> {
+  async listTests(opts?: {
+    courseId?: number;
+    isActive?: boolean;
+    visibility?: 'public' | 'private';
+    testType?: 'formal' | 'practice';
+  }): Promise<Test[]> {
+    const { courseId, isActive, visibility, testType } = opts || {};
     let query = this.db.select().from(tests);
-
+    
     if (courseId !== undefined) {
       query = query.where(eq(tests.courseId, courseId));
     }
 
     if (isActive !== undefined) {
       query = query.where(eq(tests.isActive, isActive));
+    }
+    
+    if (visibility !== undefined) {
+      query = query.where(eq(tests.visibility, visibility));
+    }
+    
+    if (testType !== undefined) {
+      query = query.where(eq(tests.testType, testType));
     }
 
     return await query;
