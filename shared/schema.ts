@@ -107,6 +107,8 @@ export const tests = pgTable("tests", {
   hasNegativeMarking: boolean("has_negative_marking").notNull().default(false), // Whether test has negative marking
   defaultNegativeMarking: text("default_negative_marking").default("0"), // Default points to deduct for wrong answers (as text to support decimals)
   defaultPoints: text("default_points").default("1"), // Default points for correct answers (as text to support decimals)
+  visibility: text("visibility").notNull().default("private"), // "private" (enrolled only) or "public" (all students)
+  testType: text("test_type").notNull().default("formal"), // "formal" or "practice"
   createdAt: timestamp("created_at").defaultNow(),
 });
 
