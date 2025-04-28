@@ -15,7 +15,7 @@ const AlertPopup: React.FC = () => {
   // Alert data - this would ideally come from an API
   const alerts: AlertItem[] = [
     {
-      text: "Updated on 28-04-2025 : JET form filling will be started from 04:00 PM today (28.04.2025).",
+      text: "JET form filling will be started from 04:00 PM today (28.04.2025).",
       date: "28-04-2025"
     },
     {
@@ -27,11 +27,11 @@ const AlertPopup: React.FC = () => {
       date: ""
     },
     {
-      text: "Updated on 25-04-2025 : All information related to this examination will be communicated only on website.",
+      text: "All information related to this examination will be communicated on official website.",
       date: "25-04-2025"
     },
     {
-      text: "इस परीक्षा से संबंधित सभी जानकारी केवल वेबसाइट पर दी जाएगी।",
+      text: "इस परीक्षा से संबंधित सभी जानकारी अधिकारिक वेबसाइट पर दी जाएगी।",
       date: ""
     }
   ];

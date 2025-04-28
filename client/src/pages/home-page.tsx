@@ -234,6 +234,101 @@ export default function HomePage() {
               </Button>              
             </div>            
           </div>
+          <div className="bg-gradient-to-b from-amber-50 to-amber-100 p-6 sm:p-6 rounded-lg border border-amber-200">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-800 flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Important Alerts
+            </h2>
+            <ul className="text-left space-y-3 sm:space-y-4 text-xm sm:text-base">
+              <li className="flex">
+                <span className="mr-3 text-amber-600 flex-shrink-0">•</span>
+                <p className="text-gray-700">
+                  <strong>JET form filling will be started from 28.04.2025</strong>{" "}
+                  candidate must read and understand the instructions given in
+                  the JET Booklet-2025                  
+                </p>
+              </li>
+              <li className="flex">
+                <span className="mr-3 text-amber-600 flex-shrink-0">•</span>
+                <p className="text-gray-700">
+                  <strong>Last date of Form filling: 28.05.2025 (without late fee) </strong> and 31.05.2025 (with late fee)
+                </p>
+              </li>
+              <li className="flex">
+                <span className="mr-3 text-amber-600 flex-shrink-0">•</span>
+                <p className="text-gray-700">
+                  <strong>Date of Exam: 29.06.2025</strong> .
+                </p>
+              </li>
+            </ul>
+
+            <div className="mt-4">
+              <Button
+                className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
+                onClick={(e) => {
+                  e.preventDefault();
+
+                  // Force the correct YouTube channel URL with subscription confirmation
+                  const youtubeUrl = "https://www.youtube.com/@JET2025Support?sub_confirmation=1";
+
+                  // Open in new window with correct security attributes
+                  const newWindow = window.open(
+                    youtubeUrl, 
+                    '_blank', 
+                    'noopener,noreferrer'
+                  );
+
+                  // Additional security for older browsers
+                  if (newWindow) {
+                    newWindow.opener = null;
+                  }
+
+                  // Log for debugging
+                  console.log("Opening YouTube URL:", youtubeUrl);
+                }}
+              >
+                <Youtube className="h-5 w-5" />
+                Subscribe YouTube
+              </Button>
+            </div>
+
+            <div className="mt-4">
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Make sure WhatsApp URL starts with https://
+                  let whatsappUrl = config?.social?.whatsapp || 
+                    "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
+
+                  // Ensure URL has proper protocol
+                  if (!whatsappUrl.startsWith('http')) {
+                    whatsappUrl = 'https://' + whatsappUrl;
+                  }
+
+                  // Open in new window using proper window.open() method
+                  const newWindow = window.open(whatsappUrl, '_blank');
+                  if (newWindow) {
+                    newWindow.opener = null;
+                  }
+                }}
+              >
+                <MessageCircle className="h-5 w-5" />
+                Join WhatsApp
+              </Button>              
+            </div>            
+          </div>
                    
           
           {/*<div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
