@@ -201,7 +201,8 @@ async function pushSchema() {
         "title" TEXT NOT NULL,
         "message" TEXT NOT NULL,
         "type" TEXT NOT NULL,
-        "related_id" INTEGER,
+        "resource_id" INTEGER,
+        "resource_type" TEXT,
         "is_read" BOOLEAN NOT NULL DEFAULT false,
         "read_at" TIMESTAMP,
         "created_at" TIMESTAMP DEFAULT NOW()

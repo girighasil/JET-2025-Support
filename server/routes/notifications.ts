@@ -134,7 +134,7 @@ export const registerNotificationRoutes = (app: Express) => {
         return res.status(403).json({ message: "Not authorized" });
       }
 
-      const { userId, title, message, type, resourceId, resourceType } =
+      const { userId, title, message, type, relatedId } =
         req.body;
 
       const [createdNotification] = await db
@@ -144,8 +144,7 @@ export const registerNotificationRoutes = (app: Express) => {
           title,
           message,
           type,
-          resourceId,
-          resourceType,
+          relatedId,
           isRead: false,
           createdAt: new Date(),
         })
