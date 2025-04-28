@@ -553,6 +553,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
+  
+  // List available tests for students (including public practice tests)
+  app.get("/api/available-tests", isAuthenticated, async (req, res) => {
+    try {
+      if (req.user.role !== "student") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Get enrollments to determine which courses the student is enrolled in
+      const enrollments = await storage.listEnrollmentsByUser(req.user.id);
+      const enrolledCourseIds = enrollments.map(
+        (enrollment) => enrollment.courseId,
+      );
+
+      // Get tests that are active
+      const activeTests = await storage.listTests({
+        isActive: true
+      });
+
+      // Filter tests based on visibility and test type
+      const availableTests = activeTests.filter((test) => {
+        // Case 1: Public tests (both practice and formal) are always available
+        if (test.visibility === "public") {
+          // But for formal tests, still require course enrollment
+          if (test.testType === "formal" && test.courseId) {
+            return enrolledCourseIds.includes(test.courseId);
+          }
+          return true; // Public practice tests available to all
+        }
+        
+        // Case 2: Private tests require course enrollment
+        if (test.visibility === "private" && test.courseId) {
+          return enrolledCourseIds.includes(test.courseId);
+        }
+        
+        // Case 3: Tests not associated with any course (standalone)
+        // These are available if public, or if private and the user is admin/teacher
+        if (!test.courseId) {
+          return test.visibility === "public";
+        }
+        
+        return false;
+      });
+
+      // Get test attempts for this user to check which tests have been taken
+      const userAttempts = await storage.getTestAttemptsByUser(req.user.id);
+
+      // Add metadata to each test
+      const testsWithMetadata = await Promise.all(
+        availableTests.map(async (test) => {
+          // Find attempts for this test
+          const attempts = userAttempts.filter(
+            (attempt) => attempt.testId === test.id,
+          );
+          const latestAttempt = attempts.length
+            ? attempts.reduce((latest, attempt) =>
+                new Date(attempt.startedAt) > new Date(latest.startedAt)
+                  ? attempt
+                  : latest,
+              )
+            : null;
+
+          // Add creator name
+          const creator = await storage.getUser(test.createdBy);
+
+          return {
+            ...test,
+            creatorName: creator
+              ? creator.fullName || creator.username
+              : "Unknown",
+            attempts: attempts.length,
+            latestAttempt: latestAttempt
+              ? {
+                  id: latestAttempt.id,
+                  status: latestAttempt.status,
+                  score: latestAttempt.score,
+                  startedAt: latestAttempt.startedAt,
+                  completedAt: latestAttempt.completedAt,
+                }
+              : null,
+          };
+        }),
+      );
+
+      res.json(testsWithMetadata);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
 
   app.get("/api/tests/:id", isAuthenticated, async (req, res) => {
     try {
