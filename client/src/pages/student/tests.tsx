@@ -75,9 +75,9 @@ export default function StudentTests() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
-  // Fetch all active tests
+  // Fetch available tests (includes public practice tests)
   const { data: tests = [], isLoading: isTestsLoading } = useQuery({
-    queryKey: ['/api/tests', { isActive: true }],
+    queryKey: ['/api/available-tests'],
   });
   
   // Fetch test attempts
@@ -189,6 +189,8 @@ export default function StudentTests() {
                   duration={test.duration}
                   questionCount={10} // Would come from API
                   status="available"
+                  testType={test.testType}
+                  visibility={test.visibility}
                   onStartTest={handleStartTest}
                 />
               ))}
@@ -230,6 +232,8 @@ export default function StudentTests() {
                   duration={test.duration}
                   questionCount={10} // Would come from API
                   status="upcoming"
+                  testType={test.testType}
+                  visibility={test.visibility}
                 />
               ))}
             </div>
