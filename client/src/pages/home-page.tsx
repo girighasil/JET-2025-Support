@@ -159,7 +159,7 @@ export default function HomePage() {
               <li className="flex">
                 <span className="mr-3 text-amber-600 flex-shrink-0">•</span>
                 <p className="text-gray-700">
-                  <strong>JET form filling will be started from 28.04.2025</strong>{" "}
+                  <strong>JET form filling will be started  from 04:00 PM today (28.04.2025).</strong>{" "}
                   candidate must read and understand the instructions given in
                   the JET Booklet-2025                  
                 </p>
