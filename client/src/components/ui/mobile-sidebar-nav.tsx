@@ -38,6 +38,11 @@ export function MobileSidebarNav({ className, onItemClick }: MobileSidebarNavPro
       icon: BookOpen,
     },
     {
+      title: "Available Courses",
+      href: "/student/available-courses",
+      icon: BookOpen,
+    },
+    {
       title: "Tests",
       href: "/student/tests",
       icon: FileText,
@@ -79,6 +84,11 @@ export function MobileSidebarNav({ className, onItemClick }: MobileSidebarNavPro
     {
       title: "Manage Enrollments",
       href: "/admin/manage-enrollments",
+      icon: Users,
+    },
+    {
+      title: "Enrollment-requests",
+      href: "/admin/enrollment-requests",
       icon: BookOpen,
     },
     {

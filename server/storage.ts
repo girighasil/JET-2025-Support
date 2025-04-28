@@ -7,6 +7,7 @@ import {
   testAttempts, TestAttempt, InsertTestAttempt,
   enrollments, Enrollment, InsertEnrollment,
   enrollmentRequests, EnrollmentRequest, InsertEnrollmentRequest,
+  testEnrollmentRequests, TestEnrollmentRequest, InsertTestEnrollmentRequest,
   doubtSessions, DoubtSession, InsertDoubtSession,
   studyTimes, StudyTime, InsertStudyTime,
   notifications, Notification, InsertNotification
@@ -112,6 +113,17 @@ export interface IStorage {
   
   // Course Update Notification Methods
   notifyCourseUpdate(courseId: number, updateType: string, message: string): Promise<void>;
+  
+  // Test Enrollment Request Methods
+  getTestEnrollmentRequest(userId: number, testId: number): Promise<TestEnrollmentRequest | undefined>;
+  listTestEnrollmentRequestsByUser(userId: number): Promise<TestEnrollmentRequest[]>;
+  listTestEnrollmentRequestsByTest(testId: number): Promise<TestEnrollmentRequest[]>;
+  listTestEnrollmentRequestsByStatus(status: string): Promise<TestEnrollmentRequest[]>;
+  listAllTestEnrollmentRequests(): Promise<TestEnrollmentRequest[]>;
+  createTestEnrollmentRequest(request: InsertTestEnrollmentRequest): Promise<TestEnrollmentRequest>;
+  updateTestEnrollmentRequestStatus(userId: number, testId: number, 
+    status: string, reviewedBy: number): Promise<TestEnrollmentRequest | undefined>;
+  deleteTestEnrollmentRequest(userId: number, testId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

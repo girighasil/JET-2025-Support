@@ -15,6 +15,7 @@ export default function MobileNavigation() {
   const studentLinks = [
     { label: "Home", href: "/student/dashboard", icon: <Home className="text-xl" /> },
     { label: "Courses", href: "/student/courses", icon: <BookOpen className="text-xl" /> },
+    { label: "Available", href: "/student/available-courses", icon: <BookOpen className="text-xl" /> },
     { label: "Tests", href: "/student/tests", icon: <ClipboardCheck className="text-xl" /> },
     { label: "Doubts", href: "/student/doubts", icon: <HelpCircle className="text-xl" /> },
     { label: "Profile", href: "/student/profile", icon: <User className="text-xl" /> },

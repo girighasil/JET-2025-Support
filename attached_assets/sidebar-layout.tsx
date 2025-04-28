@@ -30,6 +30,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const studentLinks = [
     { label: "Dashboard", href: "/student/dashboard", icon: <Home className="h-5 w-5" /> },
     { label: "My Courses", href: "/student/courses", icon: <BookOpen className="h-5 w-5" /> },
+    { label: "Available Courses", href: "/student/available-courses", icon: <BookOpen className="h-5 w-5" /> },
     { label: "Test Series", href: "/student/tests", icon: <ClipboardCheck className="h-5 w-5" /> },
     { label: "Doubt Sessions", href: "/student/doubts", icon: <HelpCircle className="h-5 w-5" /> },
     { label: "My Profile", href: "/student/profile", icon: <User className="h-5 w-5" /> },
