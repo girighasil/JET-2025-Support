@@ -1965,21 +1965,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/doubt-sessions", isAuthenticated, async (req, res) => {
     try {
+      // Log the original incoming data for debugging
+      console.log("Doubt session request body:", JSON.stringify(req.body));
+      console.log("scheduledFor type:", typeof req.body.scheduledFor);
+      
       // Pre-process the scheduledFor field - convert string to Date object
       let requestBody = { ...req.body };
       
       if (requestBody.scheduledFor && typeof requestBody.scheduledFor === 'string') {
         try {
+          console.log("Converting scheduledFor string to Date:", requestBody.scheduledFor);
           requestBody.scheduledFor = new Date(requestBody.scheduledFor);
-          console.log("Converted scheduledFor from string to Date:", requestBody.scheduledFor);
+          console.log("Converted scheduledFor result:", requestBody.scheduledFor);
+          console.log("scheduledFor type after conversion:", typeof requestBody.scheduledFor);
+          console.log("Is Date instance:", requestBody.scheduledFor instanceof Date);
         } catch (e) {
           console.error("Failed to convert scheduledFor to Date:", e);
           return res.status(400).json({ message: "Invalid date format for scheduledFor" });
         }
       }
       
+      // Create a custom validator to handle the date conversion directly
+      const customValidator = insertDoubtSessionSchema.transform((data) => {
+        // Force the scheduledFor to be a Date type if it's a string
+        if (data.scheduledFor && typeof data.scheduledFor === 'string') {
+          return {
+            ...data,
+            scheduledFor: new Date(data.scheduledFor)
+          };
+        }
+        return data;
+      });
+      
       // Students can only create sessions for themselves
-      const sessionData = insertDoubtSessionSchema.parse({
+      const sessionData = customValidator.parse({
         ...requestBody,
         userId: req.user.role === "student" ? req.user.id : requestBody.userId,
       });
@@ -2015,6 +2034,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = parseInt(req.params.id);
       
+      // Log the original incoming data for debugging
+      console.log("Doubt session PUT request body:", JSON.stringify(req.body));
+      
       // Pre-process the scheduledFor field - convert string to Date object
       let requestBody = { ...req.body };
       
@@ -2028,7 +2050,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const sessionData = insertDoubtSessionSchema.partial().parse(requestBody);
+      // Create a custom validator to handle the date conversion directly
+      const customValidator = insertDoubtSessionSchema.partial().transform((data) => {
+        // Force the scheduledFor to be a Date type if it's a string
+        if (data.scheduledFor && typeof data.scheduledFor === 'string') {
+          return {
+            ...data,
+            scheduledFor: new Date(data.scheduledFor)
+          };
+        }
+        return data;
+      });
+      
+      const sessionData = customValidator.parse(requestBody);
 
       // Check if session exists
       const existingSession = await storage.getDoubtSession(sessionId);
@@ -2104,27 +2138,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/study-times", isAuthenticated, async (req, res) => {
     try {
+      // Log the original incoming data for debugging
+      console.log("Study time POST request body:", JSON.stringify(req.body));
+      
       // Pre-process date fields - convert string to Date object
       let requestBody = { ...req.body };
       
       if (requestBody.startedAt && typeof requestBody.startedAt === 'string') {
         try {
+          console.log("Converting startedAt string to Date:", requestBody.startedAt);
           requestBody.startedAt = new Date(requestBody.startedAt);
+          console.log("Converted startedAt result:", requestBody.startedAt);
         } catch (e) {
+          console.error("Failed to convert startedAt to Date:", e);
           return res.status(400).json({ message: "Invalid date format for startedAt" });
         }
       }
       
       if (requestBody.endedAt && typeof requestBody.endedAt === 'string') {
         try {
+          console.log("Converting endedAt string to Date:", requestBody.endedAt);
           requestBody.endedAt = new Date(requestBody.endedAt);
+          console.log("Converted endedAt result:", requestBody.endedAt);
         } catch (e) {
+          console.error("Failed to convert endedAt to Date:", e);
           return res.status(400).json({ message: "Invalid date format for endedAt" });
         }
       }
       
+      // Create a custom validator to handle the date conversion directly
+      const customValidator = insertStudyTimeSchema.transform((data) => {
+        // Force date conversions if needed
+        let transformed = { ...data };
+        
+        if (transformed.startedAt && typeof transformed.startedAt === 'string') {
+          transformed.startedAt = new Date(transformed.startedAt);
+        }
+        
+        if (transformed.endedAt && typeof transformed.endedAt === 'string') {
+          transformed.endedAt = new Date(transformed.endedAt);
+        }
+        
+        return transformed;
+      });
+      
       // Students can only create study times for themselves
-      const studyTimeData = insertStudyTimeSchema.parse({
+      const studyTimeData = customValidator.parse({
         ...requestBody,
         userId: req.user.role === "student" ? req.user.id : requestBody.userId,
       });
@@ -2166,26 +2225,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const studyTimeId = parseInt(req.params.id);
       
+      // Log the original incoming data for debugging
+      console.log("Study time PUT request body:", JSON.stringify(req.body));
+      
       // Pre-process date fields - convert string to Date object
       let requestBody = { ...req.body };
       
       if (requestBody.startedAt && typeof requestBody.startedAt === 'string') {
         try {
+          console.log("Converting startedAt string to Date:", requestBody.startedAt);
           requestBody.startedAt = new Date(requestBody.startedAt);
+          console.log("Converted startedAt result:", requestBody.startedAt);
         } catch (e) {
+          console.error("Failed to convert startedAt to Date:", e);
           return res.status(400).json({ message: "Invalid date format for startedAt" });
         }
       }
       
       if (requestBody.endedAt && typeof requestBody.endedAt === 'string') {
         try {
+          console.log("Converting endedAt string to Date:", requestBody.endedAt);
           requestBody.endedAt = new Date(requestBody.endedAt);
+          console.log("Converted endedAt result:", requestBody.endedAt);
         } catch (e) {
+          console.error("Failed to convert endedAt to Date:", e);
           return res.status(400).json({ message: "Invalid date format for endedAt" });
         }
       }
       
-      const studyTimeData = insertStudyTimeSchema.partial().parse(requestBody);
+      // Create a custom validator to handle the date conversion directly
+      const customValidator = insertStudyTimeSchema.partial().transform((data) => {
+        // Force date conversions if needed
+        let transformed = { ...data };
+        
+        if (transformed.startedAt && typeof transformed.startedAt === 'string') {
+          transformed.startedAt = new Date(transformed.startedAt);
+        }
+        
+        if (transformed.endedAt && typeof transformed.endedAt === 'string') {
+          transformed.endedAt = new Date(transformed.endedAt);
+        }
+        
+        return transformed;
+      });
+      
+      const studyTimeData = customValidator.parse(requestBody);
 
       // Check if study time exists
       const existingStudyTime = await storage.getStudyTime(studyTimeId);
