@@ -59,10 +59,7 @@ export default function AvailableCourses() {
   // Mutation for submitting enrollment request
   const mutation = useMutation({
     mutationFn: (values: EnrollmentRequestFormValues) => {
-      return apiRequest("/api/enrollment-requests", {
-        method: "POST",
-        body: JSON.stringify(values),
-      });
+      return apiRequest("POST", "/api/enrollment-requests", values);
     },
     onSuccess: () => {
       toast({
