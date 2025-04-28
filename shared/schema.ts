@@ -308,12 +308,26 @@ export const insertDoubtSessionSchema = createInsertSchema(doubtSessions)
   createdAt: true,
 })
 .extend({
-  scheduledFor: z.union([
-    z.date(),
-    z.string().refine(val => !isNaN(Date.parse(val)), {
-      message: 'Invalid date format',
-    }).transform(val => new Date(val))
-  ])
+  // Make string input the primary case, and just verify it can be converted to a date
+  scheduledFor: z.preprocess(
+    // For any input type, try to ensure it becomes a proper Date
+    (val) => {
+      // If it's already a Date, return it
+      if (val instanceof Date) return val;
+      // If it's a string, convert it to a Date
+      if (typeof val === 'string') {
+        const parsed = new Date(val);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+      // For anything else, return as is and let validation handle it
+      return val;
+    },
+    // After preprocessing, ensure it's a valid Date
+    z.date({
+      invalid_type_error: "scheduledFor must be a valid date",
+      required_error: "scheduledFor is required"
+    })
+  )
 });
 
 // Study Time tracking model
@@ -332,6 +346,44 @@ export const studyTimes = pgTable("study_times", {
 export const insertStudyTimeSchema = createInsertSchema(studyTimes).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Process dates for startedAt
+  startedAt: z.preprocess(
+    (val) => {
+      // If it's already a Date, return it
+      if (val instanceof Date) return val;
+      // If it's a string, convert it to a Date
+      if (typeof val === 'string') {
+        const parsed = new Date(val);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+      // For anything else, return as is and let validation handle it
+      return val;
+    },
+    z.date({
+      invalid_type_error: "startedAt must be a valid date",
+      required_error: "startedAt is required"
+    })
+  ),
+  // Process dates for endedAt
+  endedAt: z.preprocess(
+    (val) => {
+      // If null, undefined or empty string, return null (endedAt is optional)
+      if (val === null || val === undefined || val === '') return null;
+      // If it's already a Date, return it
+      if (val instanceof Date) return val;
+      // If it's a string, convert it to a Date
+      if (typeof val === 'string') {
+        const parsed = new Date(val);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+      // For anything else, return as is and let validation handle it
+      return val;
+    },
+    z.date({
+      invalid_type_error: "endedAt must be a valid date"
+    }).nullable()
+  )
 });
 
 // Types for the models
