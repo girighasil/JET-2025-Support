@@ -851,6 +851,154 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
+  // Test Enrollment Request Methods
+  async getTestEnrollmentRequest(
+    userId: number,
+    testId: number
+  ): Promise<TestEnrollmentRequest | undefined> {
+    console.log(`Getting test enrollment request for userId=${userId}, testId=${testId}`);
+    
+    const [request] = await this.db
+      .select()
+      .from(testEnrollmentRequests)
+      .where(
+        and(eq(testEnrollmentRequests.userId, userId), eq(testEnrollmentRequests.testId, testId)),
+      );
+      
+    return request;
+  }
+  
+  async listTestEnrollmentRequestsByUser(userId: number): Promise<TestEnrollmentRequest[]> {
+    console.log(`Listing test enrollment requests for userId=${userId}`);
+    
+    const requests = await this.db
+      .select()
+      .from(testEnrollmentRequests)
+      .where(eq(testEnrollmentRequests.userId, userId));
+      
+    return requests;
+  }
+  
+  async listTestEnrollmentRequestsByTest(testId: number): Promise<TestEnrollmentRequest[]> {
+    console.log(`Listing test enrollment requests for testId=${testId}`);
+    
+    const requests = await this.db
+      .select()
+      .from(testEnrollmentRequests)
+      .where(eq(testEnrollmentRequests.testId, testId));
+      
+    return requests;
+  }
+  
+  async listTestEnrollmentRequestsByStatus(status: string): Promise<TestEnrollmentRequest[]> {
+    console.log(`Listing test enrollment requests with status=${status}`);
+    
+    const requests = await this.db
+      .select()
+      .from(testEnrollmentRequests)
+      .where(eq(testEnrollmentRequests.status, status));
+      
+    return requests;
+  }
+  
+  async listAllTestEnrollmentRequests(): Promise<TestEnrollmentRequest[]> {
+    console.log(`Listing all test enrollment requests`);
+    
+    const requests = await this.db
+      .select()
+      .from(testEnrollmentRequests)
+      .orderBy(desc(testEnrollmentRequests.createdAt));
+      
+    return requests;
+  }
+  
+  async createTestEnrollmentRequest(request: InsertTestEnrollmentRequest): Promise<TestEnrollmentRequest> {
+    console.log(`Creating test enrollment request: userId=${request.userId}, testId=${request.testId}`);
+    
+    // Check if request already exists
+    const existingRequest = await this.getTestEnrollmentRequest(request.userId, request.testId);
+    if (existingRequest) {
+      return existingRequest;
+    }
+    
+    // Create new request
+    const [createdRequest] = await this.db
+      .insert(testEnrollmentRequests)
+      .values({
+        ...request,
+        status: request.status || "pending",
+        createdAt: new Date()
+      })
+      .returning();
+      
+    return createdRequest;
+  }
+  
+  async updateTestEnrollmentRequestStatus(
+    userId: number,
+    testId: number,
+    status: string,
+    reviewedBy: number
+  ): Promise<TestEnrollmentRequest | undefined> {
+    console.log(
+      `Updating test enrollment request status: userId=${userId}, testId=${testId}, status=${status}, reviewedBy=${reviewedBy}`
+    );
+    
+    const now = new Date();
+    const [updated] = await this.db
+      .update(testEnrollmentRequests)
+      .set({
+        status: status,
+        reviewedBy: reviewedBy,
+        reviewedAt: now
+      })
+      .where(
+        and(eq(testEnrollmentRequests.userId, userId), eq(testEnrollmentRequests.testId, testId)),
+      )
+      .returning();
+      
+    // If status is 'approved', also create the test enrollment
+    if (status === 'approved') {
+      console.log(`Request approved, checking if student can access test ${testId}`);
+      
+      // Get the test to find its courseId
+      const test = await this.getTest(testId);
+      if (test) {
+        console.log(`Test ${testId} belongs to course ${test.courseId}`);
+        
+        // For tests linked to courses, check if the student is enrolled in the course
+        if (test.courseId !== null) {
+          const enrollment = await this.getEnrollment(userId, test.courseId);
+          if (!enrollment) {
+            console.log(`Student ${userId} is not enrolled in course ${test.courseId}, creating enrollment`);
+            // Auto-enroll the student in the course if they're not already enrolled
+            await this.createEnrollment({
+              userId,
+              courseId: test.courseId,
+              progress: 0,
+              isCompleted: false,
+              enrolledAt: new Date()
+            });
+          }
+        }
+      }
+    }
+    
+    return updated;
+  }
+  
+  async deleteTestEnrollmentRequest(userId: number, testId: number): Promise<boolean> {
+    console.log(`Deleting test enrollment request: userId=${userId}, testId=${testId}`);
+    
+    const result = await this.db
+      .delete(testEnrollmentRequests)
+      .where(
+        and(eq(testEnrollmentRequests.userId, userId), eq(testEnrollmentRequests.testId, testId)),
+      );
+      
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
   // Doubt Session Methods
   async getDoubtSession(id: number): Promise<DoubtSession | undefined> {
     const [session] = await this.db
