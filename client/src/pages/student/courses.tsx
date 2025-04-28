@@ -303,8 +303,8 @@ export default function StudentCourses() {
                     </CardFooter>
                   </Card>
                 ))
-            ) : filterCourses(courses) && filterCourses(courses).length > 0 ? (
-              filterCourses(courses).map((course: any) => (
+                ) : filteredAvailableCourses && filteredAvailableCourses.length > 0 ? (
+                  filteredAvailableCourses.map((course: any) => (
                 <Card key={course.id} className="overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">

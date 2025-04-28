@@ -32,9 +32,12 @@ const registerSchema = z.object({
 });
 
 export function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [activeTab, setActiveTab] = useState("login");
   const [isPending, setIsPending] = useState(false);
   const { login, register } = useAuth();
+  
+  // Derived state to check if we're on the login tab
+  const isLogin = activeTab === "login";
 
   // Login form
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -109,7 +112,7 @@ export function AuthForm() {
 
   return (
     <Card className="w-full max-w-md mx-auto">
-      <Tabs defaultValue="login" onValueChange={(value) => setIsLogin(value === 'login')}>
+      <Tabs defaultValue="login" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Sign In</TabsTrigger>
           <TabsTrigger value="register">Register</TabsTrigger>
@@ -259,7 +262,7 @@ export function AuthForm() {
         <p className="text-sm text-gray-600">
           {isLogin ? "Don't have an account? " : "Already have an account? "}
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => setActiveTab(isLogin ? "register" : "login")}
             className="text-primary hover:underline"
             type="button"
           >
