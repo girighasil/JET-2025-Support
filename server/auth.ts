@@ -26,14 +26,14 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "maths-magic-town-secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
     store: new PostgresSessionStore({
       pool,
-      createTableIfMissing: true
-    })
+      createTableIfMissing: true,
+    }),
   };
 
   app.set("trust proxy", 1);
@@ -47,24 +47,28 @@ export function setupAuth(app: Express) {
         // Convert username to lowercase for case-insensitive authentication
         const lowercaseUsername = username.toLowerCase();
         const user = await storage.getUserByUsername(lowercaseUsername);
-        
+
         if (!user) {
-          return done(null, false, { message: "Incorrect username" });
+          return done(null, false, {
+            message: "Incorrect username or password",
+          });
         }
-        
+
         const isValid = await verifyPassword(password, user.password);
-        
+
         if (!isValid) {
-          return done(null, false, { message: "Incorrect password" });
+          return done(null, false, {
+            message: "Incorrect username or password",
+          });
         }
-        
+
         // Return user without password
         const { password: _, ...userWithoutPassword } = user;
         return done(null, userWithoutPassword);
       } catch (error) {
         return done(error);
       }
-    })
+    }),
   );
 
   passport.serializeUser((user, done) => {
@@ -91,7 +95,9 @@ export function setupAuth(app: Express) {
         return next(err);
       }
       if (!user) {
-        return res.status(401).json({ message: info.message || "Authentication failed" });
+        return res
+          .status(401)
+          .json({ message: info.message || "Authentication failed" });
       }
       req.logIn(user, (err) => {
         if (err) {
@@ -105,44 +111,48 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res) => {
     try {
       const userData = req.body;
-      
+
       // Convert username to lowercase for case-insensitive checks
       if (userData.username) {
         userData.username = userData.username.toLowerCase();
       }
-      
+
       // Check if username exists
-      const existingUsername = await storage.getUserByUsername(userData.username);
+      const existingUsername = await storage.getUserByUsername(
+        userData.username,
+      );
       if (existingUsername) {
         return res.status(400).json({ message: "Username already exists" });
       }
-      
+
       // Check if email exists (only if email is provided)
-      if (userData.email && userData.email.trim() !== '') {
+      if (userData.email && userData.email.trim() !== "") {
         const existingEmail = await storage.getUserByEmail(userData.email);
         if (existingEmail) {
           return res.status(400).json({ message: "Email already exists" });
         }
       }
-      
+
       // Check if mobile number exists
       if (!userData.mobileNumber) {
         return res.status(400).json({ message: "Mobile number is required" });
       }
-      
+
       // Create user with student role by default
       const user = await storage.createUser({
         ...userData,
-        role: userData.role || "student"
+        role: userData.role || "student",
       });
-      
+
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
       console.error("Registration error:", error);
-      if (error.message && error.message.includes('mobile_number_unique')) {
-        return res.status(400).json({ message: "Mobile number already in use" });
+      if (error.message && error.message.includes("mobile_number_unique")) {
+        return res
+          .status(400)
+          .json({ message: "Mobile number already in use" });
       }
       res.status(500).json({ message: "Server error" });
     }
