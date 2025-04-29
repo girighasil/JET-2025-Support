@@ -86,9 +86,9 @@ export default function SiteConfigManagement() {
   useEffect(() => {
     if (config) {
       // Initialize site settings
-      setSiteTitle(config.siteTitle || 'Maths Magic Town');
-      setTagline(config.tagline || 'Your Path to Success in Competitive Exams');
-      setInstituteName(config.instituteName || 'Maths Magic Town');
+      setSiteTitle(config.siteTitle || 'JET 2025 Support');
+      setTagline(config.tagline || 'Learn, Practic, Suceed');
+      setInstituteName(config.instituteName || 'JET 2025 Support');
       setLogoUrl(config.logoUrl || '');
       
       // Initialize exam information
@@ -123,7 +123,7 @@ export default function SiteConfigManagement() {
       
       // Initialize footer settings
       const footer = config.footer || {};
-      setFooterText(footer.text || '© 2025 Maths Magic Town. All rights reserved.');
+      setFooterText(footer.text || '© 2025 JET 2025 Support. All rights reserved.');
       setFooterAddress(footer.address || '123 Learning Street, Education City, IN 110001');
       setFooterPhone(footer.phone || '+91 98765 43210');
       setFooterEmail(footer.email || 'contact@mathsmagictown.com');
@@ -153,9 +153,9 @@ export default function SiteConfigManagement() {
       
       // Initialize SEO settings
       const seo = config.seo || {};
-      setSeoTitle(seo.title || 'Maths Magic Town - Competitive Exam Coaching');
-      setSeoDescription(seo.description || 'Expert coaching for JEE, NEET, NDA and other competitive exams. Get personalized doubt resolutions and comprehensive practice tests.');
-      setSeoKeywords(seo.keywords || 'math coaching, JEE preparation, competitive exam, doubt resolution, online math classes');
+      setSeoTitle(seo.title || 'JET 2025 Support - skrau, bikaner Rajasthan agriculture university entrance exam preparation');
+      setSeoDescription(seo.description || 'jet online application form, agriculture, university. online coaching, test series jet 2025.');
+      setSeoKeywords(seo.keywords || 'jet 2025, application, form, coaching, skrau, bikaner, agriculture, university, online coaching, test series jet 2025.');
       setOgImage(seo.ogImage || 'https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80');
       
       // Initialize theme settings

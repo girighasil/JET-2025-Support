@@ -2,14 +2,14 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SquareRadical, Youtube, MessageCircle } from "lucide-react";
+
 export default function HeroSection() {
   const { config, isLoading } = useSiteConfig();
 
   // Default values if config isn't loaded yet
   const hero = config.hero || {
     title: "Joint Entrance Test-2025",    
-    subtitle: "For Admission to Under Graduate Programmes in Agriculture & Allied Sciences in Rajasthan.",
+    subtitle: "For Admission to Under Graduate Programmes in Agriculture & Allied Sciences in Rajasthan. Here you will get all support from application form to Exam preparation by accessing online test series and Courses",
     primaryButtonText: "Explore Courses",
     primaryButtonUrl: "https://jetskrau2025.com/",
     secondaryButtonText: "Try Free Demo",
@@ -19,11 +19,11 @@ export default function HeroSection() {
 
   return (
     <section id="home" className="bg-gradient-to-r from-amber-50 to-orange-50 text-gray-800">
-      <div className="container mx-auto px-2 py-6 md:py-12">
-        <div className="flex flex-col md:flex-row items-center space-y-1">
+      <div className="container mx-auto px-1 py-6 md:py-12">
+        <div className="flex flex-col md:flex-row items-center">
           
           <motion.div 
-            className="md:w-1/2 mb-10 md:mb-0"
+            className="md:w-1/2 mb-2 md:mb-0"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -44,70 +44,15 @@ export default function HeroSection() {
                   {hero.title}
                 </h1>
                 
-                <p className="text-gray-700 text-center mb-6">
+                <p className="text-gray-700 text-center px-2 mb-6">
                   {hero.subtitle}
-                </p> 
-                <div className="mt-4">
-                  <Button
-                    className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
-                    onClick={(e) => {
-                      e.preventDefault();
-
-                      // Force the correct YouTube channel URL with subscription confirmation
-                      const youtubeUrl = "https://www.youtube.com/@JET2025Support?sub_confirmation=1";
-
-                      // Open in new window with correct security attributes
-                      const newWindow = window.open(
-                        youtubeUrl, 
-                        '_blank', 
-                        'noopener,noreferrer'
-                      );
-
-                      // Additional security for older browsers
-                      if (newWindow) {
-                        newWindow.opener = null;
-                      }
-
-                      // Log for debugging
-                      console.log("Opening YouTube URL:", youtubeUrl);
-                    }}
-                  >
-                    <Youtube className="h-5 w-5" />
-                    Subscribe YouTube
-                  </Button>
-                </div>
-
-                <div className="mt-4">
-                  <Button
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      // Make sure WhatsApp URL starts with https://
-                      let whatsappUrl = config?.social?.whatsapp || 
-                        "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
-
-                      // Ensure URL has proper protocol
-                      if (!whatsappUrl.startsWith('http')) {
-                        whatsappUrl = 'https://' + whatsappUrl;
-                      }
-
-                      // Open in new window using proper window.open() method
-                      const newWindow = window.open(whatsappUrl, '_blank');
-                      if (newWindow) {
-                        newWindow.opener = null;
-                      }
-                    }}
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                    Join WhatsApp
-                  </Button>              
-                </div>
+                </p>                            
               </>
             )}
           </motion.div>
 
           <motion.div 
-            className="md:w-1/2 mb-10 md:mb-0"
+            className="md:w-1/2 mb-4 md:mb-0"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}

@@ -64,31 +64,43 @@ export default function HomePage() {
       {/* Alert popup that shows on page load */}
       <AlertPopup />
       
-      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-200 shadow-sm">
-        <div className="responsive-container py-4 flex flex-wrap items-center justify-between space-y-3">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-100 shadow-sm">
+        <div className="responsive-container py-3 flex flex-wrap items-center justify-between space-y-4">
           <div className="flex items-center">
-            <button onClick={toggleMobileMenu} aria-label="Toggle menu">
-              {useCustomLogo && logoUrl ? (
-                <div className="h-10 mr-3">
-                  <img
-                    src={logoUrl}
-                    alt={config?.siteTitle || "JET 2025"}
-                    className="h-full w-auto object-contain"
-                  />
+            <div className="flex items-center">
+              <button onClick={toggleMobileMenu} className="mr-2" aria-label="Toggle menu">
+                <div className="bg-primary rounded-full p-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <line x1="4" x2="20" y1="12" y2="12" />
+                    <line x1="4" x2="20" y1="6" y2="6" />
+                    <line x1="4" x2="20" y1="18" y2="18" />
+                  </svg>
                 </div>
-              ) : (
-                <div className="bg-primary rounded-full p-2 mr-3">
-                  <SquareRadical className="h-6 w-6 text-white" />
+              </button>
+              
+              <Link href="/" className="flex items-center">
+                {useCustomLogo && logoUrl ? (
+                  <div className="h-10 mr-3">
+                    <img
+                      src={logoUrl}
+                      alt={config?.siteTitle || "JET 2025"}
+                      className="h-full w-auto object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-primary rounded-full p-2 mr-3">
+                    <SquareRadical className="h-6 w-6 text-white" />
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-lg sm:text-xl font-bold hover:text-primary transition-colors">
+                    {config?.siteTitle || "JET 2025"}
+                  </span>
+                  <span className="text-xs text-gray-600">
+                    {config?.tagline || "Exam Support"}
+                  </span>
                 </div>
-              )}
-            </button>
-            <div className="flex flex-col">
-              <span className="text-lg sm:text-xl font-bold">
-                {config?.siteTitle || "JET 2025"}
-              </span>
-              <span className="text-xs text-gray-600">
-                {config?.tagline || "Exam Support"}
-              </span>
+              </Link>
             </div>
           </div>
 
@@ -177,7 +189,7 @@ export default function HomePage() {
 
             <div className="mt-4">
               <Button
-                className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
+                className="w-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center gap-2"
                 onClick={(e) => {
                   e.preventDefault();
                   
@@ -207,7 +219,7 @@ export default function HomePage() {
 
             <div className="mt-4">
               <Button
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full bg-green-500 hover:bg-green-600 text-white"
                 onClick={(e) => {
                   e.preventDefault();
                   // Make sure WhatsApp URL starts with https://
