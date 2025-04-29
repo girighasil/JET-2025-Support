@@ -8,7 +8,7 @@ export default function HeroSection() {
 
   // Default values if config isn't loaded yet
   const hero = config.hero || {
-    title: "JOINT ENTRANCE TEST-2025",    
+    title: "Joint Entrance Test-2025",    
     subtitle: "For Admission to Under Graduate Programmes in Agriculture & Allied Sciences in Rajasthan.",
     primaryButtonText: "Explore Courses",
     primaryButtonUrl: "https://jetskrau2025.com/",
@@ -19,8 +19,9 @@ export default function HeroSection() {
 
   return (
     <section id="home" className="bg-gradient-to-r from-amber-50 to-amber-100 text-gray-800">
-      <div className="container mx-auto px-4 py-16 md:py-24">
-        <div className="flex flex-col md:flex-row items-center space-y-3">
+      <div className="container mx-auto px-2 py-8 md:py-24">
+        <div className="flex flex-col md:flex-row items-center space-y-4">
+          
           <motion.div 
             className="md:w-1/2 mb-10 md:mb-0"
             initial={{ opacity: 0, x: -20 }}
@@ -37,17 +38,22 @@ export default function HeroSection() {
                 </div>
               </>
             ) : (
-              <>                               <h1 className="font-bold text-xl md:text-4xl lg:text-5xl mb-4 text-center"> {/* Added text-center */}
-                  <a href={hero.secondaryButtonUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"> {/* Added link */}
-                    {hero.title}
-                  </a>
+              <>            
+                <h2 className="text-center text-xl text-gray-900 mb-4">A complete guide for</h2>
+                <h1 className="text-2xl sm:text-3xl font-bold text-center text-amber-900 mb-4 whitespace-pre-line">                   
+                  {hero.title}
                 </h1>
+                
+                <p className="text-gray-700 text-center mb-6">
+                  {hero.subtitle}
+                </p>
                 <h5
-                  className="text-xm font-bold text-center mb-2 text-gray-800">
+                  className="text-xm font-bold text-center mb-4 text-gray-600">
                   "Conducted by:
                     SKRAU
                     Bikaner"
-                </h5>                   
+                </h5>
+                                   
                       <img 
                         src={hero.backgroundImage} 
                         alt="Students studying mathematics" 
@@ -65,24 +71,18 @@ export default function HeroSection() {
             {isLoading ? (
               <Skeleton className="h-64 w-full bg-white/20 rounded-lg" />
             ) : (
-            <div className="bg-gradient-to-b from-amber-50 to-amber-100 p-6 sm:p-6 ">
-              <h1 className="text-3xl sm:text-xl font-bold mb-3 text-amber-900 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 mr-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.465 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
-                </svg>
-                Coming Soon
-              </h1>
-              <h3 className="text-center text-sm text-amber-700 mb-6">Stay tuned for updates</h3>
+            <div className="bg-gradient-to-b from-amber-50 to-amber-100 p-6 sm:p-6 ">                          
 
-              <div className="flex flex-col items-center justify-center my-8">
+              <div className="flex flex-col items-center justify-center my-4">                
+                <p className="text-gray-700 text-center font-bold mb-6">
+                  For
+                </p>
                 <h2 className="text-2xl sm:text-3xl font-bold text-center text-amber-800 mb-4">
-                  JET 2025 Online Application Form
+                  JET-2025
                 </h2>
+                <h1 className="text-3xl sm:text-xl font-bold mb-3 text-amber-900 flex items-center justify-center">
+                                  Coming Soon
+                </h1>
                 <p className="text-gray-700 text-center mb-6">
                   The online application form will be available soon. Please check back later.
                 </p>
@@ -102,6 +102,7 @@ export default function HeroSection() {
             </div>
             )}
           </motion.div>
+          
         </div>
       </div>
     </section>
