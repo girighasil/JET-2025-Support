@@ -14,7 +14,7 @@ export default function HeroSection() {
     primaryButtonUrl: "https://jetskrau2025.com/",
     secondaryButtonText: "Try Free Demo",
     secondaryButtonUrl: "#doubt-classes", // Updated URL for Try Free Demo
-    backgroundImage: "https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    backgroundImage: "https://raubikaner.org/wp-content/themes/theme2/images/untitled_12.jpg"
   };
 
   return (
