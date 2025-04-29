@@ -220,9 +220,9 @@ export default function EnrollmentRequests() {
   const rejectedCourseRequests = courseRequests?.filter((req: any) => req.status === "rejected") || [];
 
   // Filter test requests by status
-  const pendingTestRequests = testRequests?.filter((req: any) => req.status === "pending") || [];
-  const approvedTestRequests = testRequests?.filter((req: any) => req.status === "approved") || [];
-  const rejectedTestRequests = testRequests?.filter((req: any) => req.status === "rejected") || [];
+  const pendingTestRequests = Array.isArray(testRequests) ? testRequests.filter((req: any) => req.status === "pending") : [];
+  const approvedTestRequests = Array.isArray(testRequests) ? testRequests.filter((req: any) => req.status === "approved") : [];
+  const rejectedTestRequests = Array.isArray(testRequests) ? testRequests.filter((req: any) => req.status === "rejected") : [];
 
   // Render course request card
   const renderCourseRequestCard = (request: any, showActions: boolean = true) => (

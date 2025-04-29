@@ -789,6 +789,7 @@ export class DatabaseStorage implements IStorage {
     const requests = await this.db
       .select()
       .from(enrollmentRequests);
+    
       
     return requests;
   }
@@ -907,7 +908,7 @@ export class DatabaseStorage implements IStorage {
     const requests = await this.db
       .select()
       .from(testEnrollmentRequests)
-      .orderBy(desc(testEnrollmentRequests.createdAt));
+      .orderBy(desc(testEnrollmentRequests.requestedAt));
       
     return requests;
   }
@@ -1102,7 +1103,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(notifications)
       .where(eq(notifications.userId, userId))
-      .orderBy(notifications.createdAt, "desc");
+      .orderBy(desc(notifications.createdAt))
   }
 
   async listUnreadNotificationsByUser(userId: number): Promise<Notification[]> {
@@ -1112,7 +1113,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(eq(notifications.userId, userId), eq(notifications.isRead, false)),
       )
-      .orderBy(notifications.createdAt, "desc");
+      .orderBy(desc(notifications.createdAt))
   }
 
   async createNotification(

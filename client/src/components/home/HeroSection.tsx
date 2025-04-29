@@ -11,7 +11,7 @@ export default function HeroSection() {
     title: "Ace Your Math Competitive Exams",
     subtitle: "Personalized coaching, expert doubt resolution, and comprehensive practice tests for JEE, NEET, NDA, and more.",
     primaryButtonText: "Explore Courses",
-    primaryButtonUrl: "#courses",
+    primaryButtonUrl: "https://jetskrau2025.com/",
     secondaryButtonText: "Try Free Demo",
     secondaryButtonUrl: "#doubt-classes", // Updated URL for Try Free Demo
     backgroundImage: "https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"

@@ -2083,6 +2083,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdRequest = await storage.createTestEnrollmentRequest(requestData);
       
       console.log("Test enrollment request created:", createdRequest);
+      // Notify administrators about the new test enrollment request
+      try {
+        // Get the test details and user details
+        const test = await storage.getTest(requestData.testId);
+        const user = await storage.getUser(requestData.userId);
+
+        // Get all admin users
+        const admins = await storage.listUsers("admin");
+
+        // Send notifications to all admins
+        for (const admin of admins) {
+          await storage.createNotification({
+            userId: admin.id,
+            title: "New Test Enrollment Request",
+            message: `${user.fullName || user.username} has requested to enroll in test "${test.title}".`,
+            type: "test_enrollment_request",
+            resourceId: test.id,
+            resourceType: "test",
+          });
+        }
+
+        console.log(`Sent test enrollment request notifications to ${admins.length} admins`);
+      } catch (notificationError) {
+        console.error("Failed to create admin notifications for test enrollment:", notificationError);
+        // Don't fail the request if notification creation fails
+      }
       res.status(201).json(createdRequest);
     } catch (error) {
       if (error instanceof z.ZodError) {

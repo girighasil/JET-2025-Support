@@ -137,7 +137,7 @@ export default function HomePage() {
           links={navLinks}
         />           
                
-                
+        <HeroSection /> 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 mb-4 mx-auto max-w-[97%] lg:max-w-6xl">
           <div className="bg-gradient-to-b from-amber-100 to-amber-50 p-6 sm:p-6 rounded-lg border border-amber-200">
             <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-800 flex items-center justify-center">
