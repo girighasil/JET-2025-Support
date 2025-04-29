@@ -67,40 +67,28 @@ export default function HomePage() {
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-amber-50 border-b border-amber-100 shadow-sm">
         <div className="responsive-container py-3 flex flex-wrap items-center justify-between space-y-4">
           <div className="flex items-center">
-            <div className="flex items-center">
-              <button onClick={toggleMobileMenu} className="mr-2" aria-label="Toggle menu">
-                <div className="bg-primary rounded-full p-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                    <line x1="4" x2="20" y1="12" y2="12" />
-                    <line x1="4" x2="20" y1="6" y2="6" />
-                    <line x1="4" x2="20" y1="18" y2="18" />
-                  </svg>
+            <button onClick={toggleMobileMenu} aria-label="Toggle menu">
+              {useCustomLogo && logoUrl ? (
+                <div className="h-10 mr-3">
+                  <img
+                    src={logoUrl}
+                    alt={config?.siteTitle || "JET 2025"}
+                    className="h-full w-auto object-contain"
+                  />
                 </div>
-              </button>
-              
-              <Link href="/" className="flex items-center">
-                {useCustomLogo && logoUrl ? (
-                  <div className="h-10 mr-3">
-                    <img
-                      src={logoUrl}
-                      alt={config?.siteTitle || "JET 2025"}
-                      className="h-full w-auto object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-primary rounded-full p-2 mr-3">
-                    <SquareRadical className="h-6 w-6 text-white" />
-                  </div>
-                )}
-                <div className="flex flex-col">
-                  <span className="text-lg sm:text-xl font-bold hover:text-primary transition-colors">
-                    {config?.siteTitle || "JET 2025"}
-                  </span>
-                  <span className="text-xs text-gray-600">
-                    {config?.tagline || "Exam Support"}
-                  </span>
+              ) : (
+                <div className="bg-primary rounded-full p-2 mr-3">
+                  <SquareRadical className="h-6 w-6 text-white" />
                 </div>
-              </Link>
+              )}
+            </button>
+            <div className="flex flex-col">
+              <span className="text-lg sm:text-xl font-bold">
+                {config?.siteTitle || "JET 2025"}
+              </span>
+              <span className="text-xs text-gray-600">
+                {config?.tagline || "Exam Support"}
+              </span>
             </div>
           </div>
 
@@ -117,24 +105,7 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Link href="/auth">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs sm:text-sm"
-              >
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/auth?tab=register">
-              <Button size="sm" className="text-xs sm:text-sm">
-                Register
-              </Button>
-            </Link>
-          </div>
+          </div>          
         </div>        
         <PromoBanner />
       </header>      

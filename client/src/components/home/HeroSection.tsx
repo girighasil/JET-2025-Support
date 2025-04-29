@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link, useLocation } from "wouter";
 
 export default function HeroSection() {
   const { config, isLoading } = useSiteConfig();
@@ -46,7 +47,23 @@ export default function HeroSection() {
                 
                 <p className="text-gray-700 text-center px-2 mb-6">
                   {hero.subtitle}
-                </p>                            
+                </p> 
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <Link href="/auth">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs sm:text-sm"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/auth?tab=register">
+                    <Button size="sm" className="text-xs sm:text-sm">
+                      Register
+                    </Button>
+                  </Link>
+                </div>
               </>
             )}
           </motion.div>
