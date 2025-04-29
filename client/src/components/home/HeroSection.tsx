@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
-
+import { SquareRadical, Youtube, MessageCircle } from "lucide-react";
 export default function HeroSection() {
   const { config, isLoading } = useSiteConfig();
 
@@ -24,7 +24,7 @@ export default function HeroSection() {
         <div className="flex flex-col md:flex-row items-center">
           
           <motion.div 
-            className="md:w-1/2 mb-2 md:mb-0"
+            className="md:w-1/2 mb-6 md:mb-0"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -48,21 +48,46 @@ export default function HeroSection() {
                 <p className="text-gray-700 text-center px-2 mb-6">
                   {hero.subtitle}
                 </p> 
-                <div className="flex flex-col md:flex-row mx-auto flex items-center gap-2 sm:gap-4 mx-auto">
-                  <Link href="/auth">
-                    <Button
-                      variant="outline"
+                <div className="flex items-center gap-2 sm:gap-4 justify-center gap-4"><div>
+                  <Link href="/student/tests">
+                    <Button                      
                       size="sm"
-                      className="text-xs sm:text-sm"
+                      className="w-full text-xs sm:text-sm bg-primary hover:bg-gray-900 text-stone-50 flex items-center justify-center gap-2"
                     >
-                      Sign In
+                      Demo test
                     </Button>
                   </Link>
-                  <Link href="/auth?tab=register">
-                    <Button size="sm" className="text-xs sm:text-sm">
-                      Register
+                  </div>
+                  <div>
+                    <Button
+                      size="sm"
+                      className="w-full text-xs sm:text-sm bg-red-500 hover:bg-red-600 text-white flex items-center justify-center gap-2"
+                      onClick={(e) => {
+                        e.preventDefault();
+
+                        // Force the correct YouTube channel URL with subscription confirmation
+                        const youtubeUrl = "https://www.youtube.com/@JET2025Support?sub_confirmation=1";
+
+                        // Open in new window with correct security attributes
+                        const newWindow = window.open(
+                          youtubeUrl, 
+                          '_blank', 
+                          'noopener,noreferrer'
+                        );
+
+                        // Additional security for older browsers
+                        if (newWindow) {
+                          newWindow.opener = null;
+                        }
+
+                        // Log for debugging
+                        console.log("Opening YouTube URL:", youtubeUrl);
+                      }}
+                    >
+                      <Youtube className="h-4 w-4" />
+                      Subscribe
                     </Button>
-                  </Link>
+                  </div>
                 </div>
               </>
             )}
