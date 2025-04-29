@@ -39,7 +39,7 @@ export default function HeroSection() {
             ) : (
               <>
                 <h1 className="font-bold text-3xl md:text-4xl lg:text-5xl mb-4 text-center"> {/* Added text-center */}
-                  <a href={hero.secondaryButtonUrl} className="hover:text-primary transition-colors"> {/* Added link */}
+                  <a href={hero.secondaryButtonUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"> {/* Added link */}
                     {hero.title}
                   </a>
                 </h1>
@@ -48,10 +48,10 @@ export default function HeroSection() {
                 </p>
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                   <Button size="lg" className="bg-orange-200 text-primary hover:bg-orange-300">
-                    <a href={hero.primaryButtonUrl}>{hero.primaryButtonText}</a>
+                    <a href={hero.primaryButtonUrl} target="_blank" rel="noopener noreferrer">{hero.primaryButtonText}</a>
                   </Button>
                   <Button size="lg" className="bg-[#D97706] hover:bg-[#B45309] text-white">
-                    <a href={hero.secondaryButtonUrl}>{hero.secondaryButtonText}</a>
+                    <a href={hero.secondaryButtonUrl} target="_blank" rel="noopener noreferrer">{hero.secondaryButtonText}</a>
                   </Button>
                 </div>
               </>
