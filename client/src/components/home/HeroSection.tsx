@@ -8,7 +8,7 @@ export default function HeroSection() {
 
   // Default values if config isn't loaded yet
   const hero = config.hero || {
-    title: "JOINT ENTRANCE TEST (JET) – 2025",    
+    title: "JET-2025 (JOINT ENTRANCE TEST)",    
     subtitle: "For Admission to Under Graduate Programmes in Agriculture & Allied Sciences in Rajasthan.",
     primaryButtonText: "Explore Courses",
     primaryButtonUrl: "https://jetskrau2025.com/",
@@ -37,29 +37,25 @@ export default function HeroSection() {
                 </div>
               </>
             ) : (
-              <>
-                <h1 className="font-bold text-3xl md:text-4xl lg:text-5xl mb-4 text-center"> {/* Added text-center */}
+              <>                               <h1 className="font-bold text-xl md:text-4xl lg:text-5xl mb-4 text-center"> {/* Added text-center */}
                   <a href={hero.secondaryButtonUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"> {/* Added link */}
                     {hero.title}
                   </a>
                 </h1>
-                <p className="text-lg font-bold text-center mb-8 text-gray-800">
+                <h5
+                  className="text-xm font-bold text-center mb-2 text-gray-800">
                   "Conducted by:
                     SKRAU
                     Bikaner"
-                </p>
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                  <Button size="lg" className="bg-orange-200 text-primary hover:bg-orange-300">
-                    <a href={hero.primaryButtonUrl} target="_blank" rel="noopener noreferrer">{hero.primaryButtonText}</a>
-                  </Button>
-                  <Button size="lg" className="bg-[#D97706] hover:bg-[#B45309] text-white">
-                    <a href={hero.secondaryButtonUrl} target="_blank" rel="noopener noreferrer">{hero.secondaryButtonText}</a>
-                  </Button>
-                </div>
+                </h5>                   
+                      <img 
+                        src={hero.backgroundImage} 
+                        alt="Students studying mathematics" 
+                        className="rounded-lg shadow-lg w-full h-auto object-cover"
+                      />                                  
               </>
             )}
           </motion.div>
-
           <motion.div 
             className="md:w-1/2"
             initial={{ opacity: 0, x: 20 }}
@@ -69,11 +65,41 @@ export default function HeroSection() {
             {isLoading ? (
               <Skeleton className="h-64 w-full bg-white/20 rounded-lg" />
             ) : (
-              <img 
-                src={hero.backgroundImage} 
-                alt="Students studying mathematics" 
-                className="rounded-lg shadow-lg w-full h-auto object-cover"
-              />
+            <div className="bg-gradient-to-b from-amber-50 to-amber-100 p-6 sm:p-6 ">
+              <h1 className="text-3xl sm:text-xl font-bold mb-3 text-amber-900 flex items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 mr-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.465 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
+                </svg>
+                Coming Soon
+              </h1>
+              <h3 className="text-center text-sm text-amber-700 mb-6">Stay tuned for updates</h3>
+
+              <div className="flex flex-col items-center justify-center my-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-center text-amber-800 mb-4">
+                  JET 2025 Online Application Form
+                </h2>
+                <p className="text-gray-700 text-center mb-6">
+                  The online application form will be available soon. Please check back later.
+                </p>
+                <div className="w-full max-w-xs">
+                  <Button 
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                    disabled
+                  >
+                    Apply Online (Coming Soon)
+                  </Button>
+                </div>
+
+                <p className="text-xs text-gray-500 text-center mt-6">
+                  Registration link will be activated soon. Stay connected for further updates.
+                </p>
+              </div>
+            </div>
             )}
           </motion.div>
         </div>
