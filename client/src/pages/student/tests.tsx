@@ -153,7 +153,10 @@ export default function StudentTests() {
 
   // Filter tests by status
   const upcomingTests = processedTests.filter((test: any) => test.status === 'upcoming');
-  const availableTests = processedTests.filter((test: any) => test.status === 'available');
+  // Include both available and locked tests in the available tests tab
+  const availableTests = processedTests.filter((test: any) => 
+    test.status === 'available' || test.status === 'locked'
+  );
   const completedTests = processedTests.filter((test: any) => test.status === 'completed');
   
   // Prepare data for completed tests table
