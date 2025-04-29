@@ -108,7 +108,10 @@ export default function StudentTests() {
     }
   });
 
-  // Process test data
+  // Process test data and log some debug info
+  console.log("Available tests from API:", tests);
+  console.log("Test enrollment requests:", testEnrollmentRequests);
+  
   const processedTests = tests.map((test: any) => {
     // Find attempts for this test
     const testAttempts = attempts.filter((attempt: any) => attempt.testId === test.id);
@@ -121,7 +124,9 @@ export default function StudentTests() {
     );
     
     // Check if the test is locked (private test that requires enrollment)
-    const isLocked = test.visibility === 'private' && test.accessStatus === 'locked';
+    const isLocked = test.visibility === 'private' && (test.accessStatus === 'locked' || !test.accessStatus);
+    
+    console.log(`Processing test ${test.id}: ${test.title} - visibility: ${test.visibility}, accessStatus: ${test.accessStatus || 'undefined'}, calculated isLocked: ${isLocked}`);
     
     // Determine test status
     let status = isLocked ? 'locked' : 'available';
@@ -132,6 +137,8 @@ export default function StudentTests() {
     } else if (test.scheduledFor && isPast(addMinutes(new Date(test.scheduledFor), test.duration))) {
       status = 'expired';
     }
+    
+    console.log(`Test ${test.id} status determined as: ${status}`);
     
     return {
       ...test,
