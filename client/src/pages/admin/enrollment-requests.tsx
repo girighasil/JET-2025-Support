@@ -19,7 +19,8 @@ import {
   Loader2,
   UserPlus,
   UserCheck,
-  UserX
+  UserX,
+  FileText
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -34,16 +35,32 @@ const rejectionSchema = z.object({
 
 type RejectionFormValues = z.infer<typeof rejectionSchema>;
 
+// Type for request kind
+type RequestKind = "course" | "test";
+
 export default function EnrollmentRequests() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [requestKind, setRequestKind] = useState<RequestKind>("course");
 
-  // Fetch all enrollment requests
-  const { data: requests, isLoading } = useQuery({
+  // Fetch all course enrollment requests
+  const { 
+    data: courseRequests, 
+    isLoading: isLoadingCourseRequests 
+  } = useQuery({
     queryKey: ["/api/enrollment-requests"],
     queryFn: () => fetch(`/api/enrollment-requests`).then(res => res.json()),
+  });
+
+  // Fetch all test enrollment requests
+  const { 
+    data: testRequests, 
+    isLoading: isLoadingTestRequests 
+  } = useQuery({
+    queryKey: ["/api/test-enrollment-requests"],
+    queryFn: () => fetch(`/api/test-enrollment-requests`).then(res => res.json()),
   });
 
   // Form for rejection reason
@@ -54,8 +71,8 @@ export default function EnrollmentRequests() {
     },
   });
 
-  // Approve request mutation
-  const approveMutation = useMutation({
+  // Approve course request mutation
+  const approveCourseRequestMutation = useMutation({
     mutationFn: (requestData: { userId: number; courseId: number }) => {
       return apiRequest("PATCH", `/api/enrollment-requests/${requestData.userId}/${requestData.courseId}`, { 
         status: "approved" 
@@ -64,7 +81,7 @@ export default function EnrollmentRequests() {
     onSuccess: () => {
       toast({
         title: "Request Approved",
-        description: "The enrollment request has been approved successfully.",
+        description: "The course enrollment request has been approved successfully.",
       });
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/enrollment-requests"] });
@@ -73,14 +90,14 @@ export default function EnrollmentRequests() {
     onError: (error: any) => {
       toast({
         title: "Failed to Approve Request",
-        description: error.message || "An error occurred while approving the enrollment request.",
+        description: error.message || "An error occurred while approving the course enrollment request.",
         variant: "destructive",
       });
     },
   });
 
-  // Reject request mutation
-  const rejectMutation = useMutation({
+  // Reject course request mutation
+  const rejectCourseRequestMutation = useMutation({
     mutationFn: (data: { userId: number; courseId: number; notes: string }) => {
       return apiRequest("PATCH", `/api/enrollment-requests/${data.userId}/${data.courseId}`, { 
         status: "rejected",
@@ -90,7 +107,7 @@ export default function EnrollmentRequests() {
     onSuccess: () => {
       toast({
         title: "Request Rejected",
-        description: "The enrollment request has been rejected.",
+        description: "The course enrollment request has been rejected.",
       });
       setIsRejectDialogOpen(false);
       form.reset();
@@ -100,7 +117,58 @@ export default function EnrollmentRequests() {
     onError: (error: any) => {
       toast({
         title: "Failed to Reject Request",
-        description: error.message || "An error occurred while rejecting the enrollment request.",
+        description: error.message || "An error occurred while rejecting the course enrollment request.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Approve test request mutation
+  const approveTestRequestMutation = useMutation({
+    mutationFn: (requestData: { userId: number; testId: number }) => {
+      return apiRequest("PATCH", `/api/test-enrollment-requests/${requestData.userId}/${requestData.testId}`, { 
+        status: "approved" 
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request Approved",
+        description: "The test enrollment request has been approved successfully.",
+      });
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/test-enrollment-requests"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Approve Request",
+        description: error.message || "An error occurred while approving the test enrollment request.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reject test request mutation
+  const rejectTestRequestMutation = useMutation({
+    mutationFn: (data: { userId: number; testId: number; notes: string }) => {
+      return apiRequest("PATCH", `/api/test-enrollment-requests/${data.userId}/${data.testId}`, { 
+        status: "rejected",
+        notes: data.notes
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request Rejected",
+        description: "The test enrollment request has been rejected.",
+      });
+      setIsRejectDialogOpen(false);
+      form.reset();
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/test-enrollment-requests"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Reject Request",
+        description: error.message || "An error occurred while rejecting the test enrollment request.",
         variant: "destructive",
       });
     },
@@ -108,10 +176,17 @@ export default function EnrollmentRequests() {
 
   // Handle approval
   const handleApprove = (request: any) => {
-    approveMutation.mutate({
-      userId: request.userId,
-      courseId: request.courseId,
-    });
+    if (requestKind === "course") {
+      approveCourseRequestMutation.mutate({
+        userId: request.userId,
+        courseId: request.courseId,
+      });
+    } else {
+      approveTestRequestMutation.mutate({
+        userId: request.userId,
+        testId: request.testId,
+      });
+    }
   };
 
   // Handle rejection dialog open
@@ -123,22 +198,35 @@ export default function EnrollmentRequests() {
   // Handle rejection submission
   const onSubmitRejection = (values: RejectionFormValues) => {
     if (selectedRequest) {
-      rejectMutation.mutate({
-        userId: selectedRequest.userId,
-        courseId: selectedRequest.courseId,
-        notes: values.notes,
-      });
+      if (requestKind === "course") {
+        rejectCourseRequestMutation.mutate({
+          userId: selectedRequest.userId,
+          courseId: selectedRequest.courseId,
+          notes: values.notes,
+        });
+      } else {
+        rejectTestRequestMutation.mutate({
+          userId: selectedRequest.userId,
+          testId: selectedRequest.testId,
+          notes: values.notes,
+        });
+      }
     }
   };
 
-  // Filter requests by status
-  const pendingRequests = requests?.filter((req: any) => req.status === "pending") || [];
-  const approvedRequests = requests?.filter((req: any) => req.status === "approved") || [];
-  const rejectedRequests = requests?.filter((req: any) => req.status === "rejected") || [];
+  // Filter course requests by status
+  const pendingCourseRequests = courseRequests?.filter((req: any) => req.status === "pending") || [];
+  const approvedCourseRequests = courseRequests?.filter((req: any) => req.status === "approved") || [];
+  const rejectedCourseRequests = courseRequests?.filter((req: any) => req.status === "rejected") || [];
 
-  // Render request card
-  const renderRequestCard = (request: any, showActions: boolean = true) => (
-    <Card key={`${request.userId}-${request.courseId}`} className="mb-4">
+  // Filter test requests by status
+  const pendingTestRequests = testRequests?.filter((req: any) => req.status === "pending") || [];
+  const approvedTestRequests = testRequests?.filter((req: any) => req.status === "approved") || [];
+  const rejectedTestRequests = testRequests?.filter((req: any) => req.status === "rejected") || [];
+
+  // Render course request card
+  const renderCourseRequestCard = (request: any, showActions: boolean = true) => (
+    <Card key={`course-${request.userId}-${request.courseId}`} className="mb-4">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">
@@ -186,9 +274,9 @@ export default function EnrollmentRequests() {
               variant="outline" 
               className="w-1/2 border-green-500 text-green-600 hover:bg-green-50"
               onClick={() => handleApprove(request)}
-              disabled={approveMutation.isPending}
+              disabled={approveCourseRequestMutation.isPending}
             >
-              {approveMutation.isPending ? (
+              {approveCourseRequestMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <UserCheck className="h-4 w-4 mr-2" />
@@ -199,9 +287,94 @@ export default function EnrollmentRequests() {
               variant="outline" 
               className="w-1/2 border-red-500 text-red-600 hover:bg-red-50"
               onClick={() => handleOpenRejectDialog(request)}
-              disabled={rejectMutation.isPending}
+              disabled={rejectCourseRequestMutation.isPending}
             >
-              {rejectMutation.isPending ? (
+              {rejectCourseRequestMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <UserX className="h-4 w-4 mr-2" />
+              )}
+              Reject
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  // Render test request card
+  const renderTestRequestCard = (request: any, showActions: boolean = true) => (
+    <Card key={`test-${request.userId}-${request.testId}`} className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">
+            <span className="flex items-center">
+              <FileText className="h-5 w-5 mr-2 text-primary" />
+              {request.testTitle || "Unknown Test"}
+            </span>
+          </CardTitle>
+          <Badge variant={
+            request.status === "pending" ? "outline" : 
+            request.status === "approved" ? "success" : 
+            "destructive"
+          }>
+            {request.status === "pending" && <Clock className="h-3 w-3 mr-1" />}
+            {request.status === "approved" && <Check className="h-3 w-3 mr-1" />}
+            {request.status === "rejected" && <X className="h-3 w-3 mr-1" />}
+            {request.status}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center text-sm text-gray-500">
+            <User className="h-4 w-4 mr-2" />
+            <span>Student: <span className="font-medium text-gray-900">{request.userName || "Unknown User"}</span></span>
+          </div>
+          <div className="flex items-center text-sm text-gray-500">
+            <Calendar className="h-4 w-4 mr-2" />
+            <span>Requested: <span className="font-medium text-gray-900">
+              {request.requestedAt ? format(new Date(request.requestedAt), 'MMM d, yyyy') : "Unknown"}
+            </span></span>
+          </div>
+        </div>
+        
+        {request.courseTitle && (
+          <div className="mt-2 flex items-center text-sm text-gray-500">
+            <BookOpen className="h-4 w-4 mr-2" />
+            <span>Course: <span className="font-medium text-gray-900">{request.courseTitle}</span></span>
+          </div>
+        )}
+        
+        {request.notes && (
+          <div className="mt-3 p-3 bg-gray-50 rounded-md text-sm">
+            <p className="font-medium mb-1">Student's Notes:</p>
+            <p className="text-gray-700">{request.notes}</p>
+          </div>
+        )}
+        
+        {showActions && request.status === "pending" && (
+          <div className="flex gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              className="w-1/2 border-green-500 text-green-600 hover:bg-green-50"
+              onClick={() => handleApprove(request)}
+              disabled={approveTestRequestMutation.isPending}
+            >
+              {approveTestRequestMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <UserCheck className="h-4 w-4 mr-2" />
+              )}
+              Approve
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-1/2 border-red-500 text-red-600 hover:bg-red-50"
+              onClick={() => handleOpenRejectDialog(request)}
+              disabled={rejectTestRequestMutation.isPending}
+            >
+              {rejectTestRequestMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <UserX className="h-4 w-4 mr-2" />
@@ -221,82 +394,182 @@ export default function EnrollmentRequests() {
           <div>
             <h1 className="text-3xl font-bold">Enrollment Requests</h1>
             <p className="text-gray-500 mt-1">
-              Manage student enrollment requests
+              Manage student enrollment requests for courses and tests
             </p>
           </div>
         </div>
 
-        <Tabs defaultValue="pending" className="mt-6">
-          <TabsList className="mb-6">
-            <TabsTrigger value="pending" className="flex items-center">
-              <Clock className="h-4 w-4 mr-2" />
-              Pending
-              <Badge variant="secondary" className="ml-2">{pendingRequests.length}</Badge>
+        {/* Main Tabs for Course vs Test Requests */}
+        <Tabs 
+          defaultValue="course" 
+          className="mt-4"
+          onValueChange={(value) => setRequestKind(value as RequestKind)}
+        >
+          <TabsList className="mb-6 w-full justify-start">
+            <TabsTrigger value="course" className="flex items-center">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Course Requests
+              <Badge variant="secondary" className="ml-2">{pendingCourseRequests.length}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="approved" className="flex items-center">
-              <UserCheck className="h-4 w-4 mr-2" />
-              Approved
-              <Badge variant="secondary" className="ml-2">{approvedRequests.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="rejected" className="flex items-center">
-              <UserX className="h-4 w-4 mr-2" />
-              Rejected
-              <Badge variant="secondary" className="ml-2">{rejectedRequests.length}</Badge>
+            <TabsTrigger value="test" className="flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              Test Requests
+              <Badge variant="secondary" className="ml-2">{pendingTestRequests.length}</Badge>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pending" className="mt-2">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : pendingRequests.length > 0 ? (
-              pendingRequests.map((request: any) => renderRequestCard(request))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Clock className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-600">No Pending Requests</h3>
-                <p className="text-gray-500 mt-2 max-w-md">
-                  There are currently no pending enrollment requests to review.
-                </p>
-              </div>
-            )}
+          {/* Course Requests Tab Content */}
+          <TabsContent value="course">
+            <Tabs defaultValue="pending" className="mt-6">
+              <TabsList className="mb-6">
+                <TabsTrigger value="pending" className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Pending
+                  <Badge variant="secondary" className="ml-2">{pendingCourseRequests.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="approved" className="flex items-center">
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Approved
+                  <Badge variant="secondary" className="ml-2">{approvedCourseRequests.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="rejected" className="flex items-center">
+                  <UserX className="h-4 w-4 mr-2" />
+                  Rejected
+                  <Badge variant="secondary" className="ml-2">{rejectedCourseRequests.length}</Badge>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="pending" className="mt-2">
+                {isLoadingCourseRequests ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : pendingCourseRequests.length > 0 ? (
+                  pendingCourseRequests.map((request: any) => renderCourseRequestCard(request))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Clock className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-600">No Pending Course Requests</h3>
+                    <p className="text-gray-500 mt-2 max-w-md">
+                      There are currently no pending course enrollment requests to review.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="approved" className="mt-2">
+                {isLoadingCourseRequests ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : approvedCourseRequests.length > 0 ? (
+                  approvedCourseRequests.map((request: any) => renderCourseRequestCard(request, false))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UserCheck className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-600">No Approved Course Requests</h3>
+                    <p className="text-gray-500 mt-2 max-w-md">
+                      There are no approved course enrollment requests yet.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="rejected" className="mt-2">
+                {isLoadingCourseRequests ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : rejectedCourseRequests.length > 0 ? (
+                  rejectedCourseRequests.map((request: any) => renderCourseRequestCard(request, false))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UserX className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-600">No Rejected Course Requests</h3>
+                    <p className="text-gray-500 mt-2 max-w-md">
+                      There are no rejected course enrollment requests.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
-          <TabsContent value="approved" className="mt-2">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : approvedRequests.length > 0 ? (
-              approvedRequests.map((request: any) => renderRequestCard(request, false))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <UserCheck className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-600">No Approved Requests</h3>
-                <p className="text-gray-500 mt-2 max-w-md">
-                  There are no approved enrollment requests yet.
-                </p>
-              </div>
-            )}
-          </TabsContent>
+          {/* Test Requests Tab Content */}
+          <TabsContent value="test">
+            <Tabs defaultValue="pending" className="mt-6">
+              <TabsList className="mb-6">
+                <TabsTrigger value="pending" className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Pending
+                  <Badge variant="secondary" className="ml-2">{pendingTestRequests.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="approved" className="flex items-center">
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Approved
+                  <Badge variant="secondary" className="ml-2">{approvedTestRequests.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="rejected" className="flex items-center">
+                  <UserX className="h-4 w-4 mr-2" />
+                  Rejected
+                  <Badge variant="secondary" className="ml-2">{rejectedTestRequests.length}</Badge>
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="rejected" className="mt-2">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : rejectedRequests.length > 0 ? (
-              rejectedRequests.map((request: any) => renderRequestCard(request, false))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <UserX className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-600">No Rejected Requests</h3>
-                <p className="text-gray-500 mt-2 max-w-md">
-                  There are no rejected enrollment requests.
-                </p>
-              </div>
-            )}
+              <TabsContent value="pending" className="mt-2">
+                {isLoadingTestRequests ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : pendingTestRequests.length > 0 ? (
+                  pendingTestRequests.map((request: any) => renderTestRequestCard(request))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Clock className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-600">No Pending Test Requests</h3>
+                    <p className="text-gray-500 mt-2 max-w-md">
+                      There are currently no pending test enrollment requests to review.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="approved" className="mt-2">
+                {isLoadingTestRequests ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : approvedTestRequests.length > 0 ? (
+                  approvedTestRequests.map((request: any) => renderTestRequestCard(request, false))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UserCheck className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-600">No Approved Test Requests</h3>
+                    <p className="text-gray-500 mt-2 max-w-md">
+                      There are no approved test enrollment requests yet.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="rejected" className="mt-2">
+                {isLoadingTestRequests ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : rejectedTestRequests.length > 0 ? (
+                  rejectedTestRequests.map((request: any) => renderTestRequestCard(request, false))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UserX className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-600">No Rejected Test Requests</h3>
+                    <p className="text-gray-500 mt-2 max-w-md">
+                      There are no rejected test enrollment requests.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
 
@@ -304,9 +577,9 @@ export default function EnrollmentRequests() {
         <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Reject Enrollment Request</DialogTitle>
+              <DialogTitle>Reject {requestKind === "course" ? "Course" : "Test"} Enrollment Request</DialogTitle>
               <DialogDescription>
-                Please provide a reason for rejecting this enrollment request. This will be visible to the student.
+                Please provide a reason for rejecting this {requestKind === "course" ? "course" : "test"} enrollment request. This will be visible to the student.
               </DialogDescription>
             </DialogHeader>
 
@@ -320,7 +593,7 @@ export default function EnrollmentRequests() {
                       <FormLabel>Reason for Rejection</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Please explain why this enrollment request is being rejected..."
+                          placeholder={`Please explain why this ${requestKind === "course" ? "course" : "test"} enrollment request is being rejected...`}
                           className="resize-none"
                           {...field}
                         />
@@ -338,8 +611,18 @@ export default function EnrollmentRequests() {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" variant="destructive" disabled={rejectMutation.isPending}>
-                    {rejectMutation.isPending ? (
+                  <Button 
+                    type="submit" 
+                    variant="destructive" 
+                    disabled={requestKind === "course" 
+                      ? rejectCourseRequestMutation.isPending 
+                      : rejectTestRequestMutation.isPending
+                    }
+                  >
+                    {(requestKind === "course" 
+                      ? rejectCourseRequestMutation.isPending 
+                      : rejectTestRequestMutation.isPending
+                    ) ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Rejecting...
