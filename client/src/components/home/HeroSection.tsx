@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useSiteConfig } from "@/hooks/use-site-config";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { SquareRadical, Youtube, MessageCircle } from "lucide-react";
 export default function HeroSection() {
   const { config, isLoading } = useSiteConfig();
 
@@ -14,13 +14,13 @@ export default function HeroSection() {
     primaryButtonUrl: "https://jetskrau2025.com/",
     secondaryButtonText: "Try Free Demo",
     secondaryButtonUrl: "#doubt-classes", // Updated URL for Try Free Demo
-    backgroundImage: "https://raubikaner.org/wp-content/themes/theme2/images/untitled_12.jpg"
+    backgroundImage: "https://i.ytimg.com/vi/6FS2DgxUdj8/maxresdefault.jpg"
   };
 
   return (
-    <section id="home" className="bg-gradient-to-r from-amber-50 to-amber-100 text-gray-800">
-      <div className="container mx-auto px-2 py-8 md:py-24">
-        <div className="flex flex-col md:flex-row items-center space-y-4">
+    <section id="home" className="bg-gradient-to-r from-amber-50 to-orange-50 text-gray-800">
+      <div className="container mx-auto px-2 py-6 md:py-12">
+        <div className="flex flex-col md:flex-row items-center space-y-1">
           
           <motion.div 
             className="md:w-1/2 mb-10 md:mb-0"
@@ -39,70 +39,98 @@ export default function HeroSection() {
               </>
             ) : (
               <>            
-                <h2 className="text-center text-xl text-gray-900 mb-4">A complete guide for</h2>
+                <h2 className="text-center text-xl text-primary mb-4">A complete guide for</h2>
                 <h1 className="text-2xl sm:text-3xl font-bold text-center text-amber-900 mb-4 whitespace-pre-line">                   
                   {hero.title}
                 </h1>
                 
                 <p className="text-gray-700 text-center mb-6">
                   {hero.subtitle}
-                </p>
-                <h5
-                  className="text-xm font-bold text-center mb-4 text-gray-600">
-                  "Conducted by:
-                    SKRAU
-                    Bikaner"
-                </h5>
-                                   
-                      <img 
-                        src={hero.backgroundImage} 
-                        alt="Students studying mathematics" 
-                        className="rounded-lg shadow-lg w-full h-auto object-cover"
-                      />                                  
-              </>
-            )}
-          </motion.div>
-          <motion.div 
-            className="md:w-1/2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {isLoading ? (
-              <Skeleton className="h-64 w-full bg-white/20 rounded-lg" />
-            ) : (
-            <div className="bg-gradient-to-b from-amber-50 to-amber-100 p-6 sm:p-6 ">                          
+                </p> 
+                <div className="mt-4">
+                  <Button
+                    className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
+                    onClick={(e) => {
+                      e.preventDefault();
 
-              <div className="flex flex-col items-center justify-center my-4">                
-                <p className="text-gray-700 text-center font-bold mb-6">
-                  For
-                </p>
-                <h2 className="text-2xl sm:text-3xl font-bold text-center text-amber-800 mb-4">
-                  JET-2025
-                </h2>
-                <h1 className="text-3xl sm:text-xl font-bold mb-3 text-amber-900 flex items-center justify-center">
-                                  Coming Soon
-                </h1>
-                <p className="text-gray-700 text-center mb-6">
-                  The online application form will be available soon. Please check back later.
-                </p>
-                <div className="w-full max-w-xs">
-                  <Button 
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-                    disabled
+                      // Force the correct YouTube channel URL with subscription confirmation
+                      const youtubeUrl = "https://www.youtube.com/@JET2025Support?sub_confirmation=1";
+
+                      // Open in new window with correct security attributes
+                      const newWindow = window.open(
+                        youtubeUrl, 
+                        '_blank', 
+                        'noopener,noreferrer'
+                      );
+
+                      // Additional security for older browsers
+                      if (newWindow) {
+                        newWindow.opener = null;
+                      }
+
+                      // Log for debugging
+                      console.log("Opening YouTube URL:", youtubeUrl);
+                    }}
                   >
-                    Apply Online (Coming Soon)
+                    <Youtube className="h-5 w-5" />
+                    Subscribe YouTube
                   </Button>
                 </div>
 
-                <p className="text-xs text-gray-500 text-center mt-6">
-                  Registration link will be activated soon. Stay connected for further updates.
-                </p>
-              </div>
-            </div>
+                <div className="mt-4">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Make sure WhatsApp URL starts with https://
+                      let whatsappUrl = config?.social?.whatsapp || 
+                        "https://whatsapp.com/channel/0029VbAudzTHbFV5ppcj0b07";
+
+                      // Ensure URL has proper protocol
+                      if (!whatsappUrl.startsWith('http')) {
+                        whatsappUrl = 'https://' + whatsappUrl;
+                      }
+
+                      // Open in new window using proper window.open() method
+                      const newWindow = window.open(whatsappUrl, '_blank');
+                      if (newWindow) {
+                        newWindow.opener = null;
+                      }
+                    }}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    Join WhatsApp
+                  </Button>              
+                </div>
+              </>
             )}
           </motion.div>
-          
+
+          <motion.div 
+            className="md:w-1/2 mb-10 md:mb-0"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {isLoading ? (
+              <>
+                <Skeleton className="h-12 w-3/4 bg-white/20 mb-4" />
+                <Skeleton className="h-20 w-full bg-white/20 mb-8" />
+                <div className="flex space-x-4">
+                  <Skeleton className="h-12 w-32 bg-white/20" />
+                  <Skeleton className="h-12 w-32 bg-white/20" />
+                </div>
+              </>
+            ) : (
+              <>           
+
+              <img 
+                src={hero.backgroundImage} 
+                alt="sknau, bikaner" 
+                className="rounded-lg shadow-lg w-full h-object object-cover"              />                
+              </>
+            )}
+          </motion.div> 
         </div>
       </div>
     </section>
