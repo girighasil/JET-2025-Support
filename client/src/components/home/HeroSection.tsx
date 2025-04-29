@@ -8,7 +8,7 @@ export default function HeroSection() {
 
   // Default values if config isn't loaded yet
   const hero = config.hero || {
-    title: "JET-2025 \n (JOINT ENTRANCE TEST)",    
+    title: "\n(JOINT ENTRANCE TEST)",    
     subtitle: "For Admission to Under Graduate Programmes in Agriculture & Allied Sciences in Rajasthan.",
     primaryButtonText: "Explore Courses",
     primaryButtonUrl: "https://jetskrau2025.com/",
