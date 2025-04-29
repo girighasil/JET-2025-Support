@@ -48,7 +48,7 @@ export default function HeroSection() {
                 <p className="text-gray-700 text-center px-2 mb-6">
                   {hero.subtitle}
                 </p> 
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex flex-col md:flex-row mx-auto flex items-center gap-2 sm:gap-4 mx-auto">
                   <Link href="/auth">
                     <Button
                       variant="outline"
