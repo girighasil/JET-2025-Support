@@ -8,8 +8,8 @@ export default function HeroSection() {
 
   // Default values if config isn't loaded yet
   const hero = config.hero || {
-    title: "Ace Your Math Competitive Exams",
-    subtitle: "Personalized coaching, expert doubt resolution, and comprehensive practice tests for JEE, NEET, NDA, and more.",
+    title: "JOINT ENTRANCE TEST (JET) – 2025",    
+    subtitle: "For Admission to Under Graduate Programmes in Agriculture & Allied Sciences in Rajasthan.",
     primaryButtonText: "Explore Courses",
     primaryButtonUrl: "https://jetskrau2025.com/",
     secondaryButtonText: "Try Free Demo",
@@ -43,8 +43,10 @@ export default function HeroSection() {
                     {hero.title}
                   </a>
                 </h1>
-                <p className="text-lg mb-8 text-gray-700">
-                  {hero.subtitle}
+                <p className="text-lg font-bold text-center mb-8 text-gray-800">
+                  "Conducted by:
+                    SKRAU
+                    Bikaner"
                 </p>
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                   <Button size="lg" className="bg-orange-200 text-primary hover:bg-orange-300">

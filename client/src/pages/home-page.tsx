@@ -123,11 +123,9 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-        </div>     
-      
+        </div>        
         <PromoBanner />
-      </header>
-      
+      </header>      
       
       {/* Add padding to account for fixed header height plus promo banner */}
       <div className="pt-32">
